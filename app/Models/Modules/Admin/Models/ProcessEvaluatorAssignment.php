@@ -11,7 +11,22 @@ class ProcessEvaluatorAssignment extends Model
     protected $fillable = [
         'selection_process_id',
         'user_id',
+        'pode_avaliar',
+        'pode_visualizar_resultados',
+        'pode_baixar_documentos',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'pode_avaliar' => 'boolean',
+            'pode_visualizar_resultados' => 'boolean',
+            'pode_baixar_documentos' => 'boolean',
+        ];
+    }
 
     public function selectionProcess(): BelongsTo
     {

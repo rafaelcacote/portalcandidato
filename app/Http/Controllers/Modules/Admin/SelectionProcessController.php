@@ -8,9 +8,10 @@ use App\Http\Requests\Modules\Admin\UpdateSelectionProcessRequest;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Admin\Models\TipoDocumento;
 use App\Models\Modules\Admin\Models\TipoTitulo;
+use App\Support\InertiaToast;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class SelectionProcessController extends Controller
 {
@@ -30,9 +31,10 @@ class SelectionProcessController extends Controller
     {
         $selectionProcess = SelectionProcess::query()->create($request->validated());
 
+        InertiaToast::success('Processo seletivo criado com sucesso.');
+
         return redirect()
-            ->route('admin.processes.show', $selectionProcess)
-            ->with('success', 'Processo seletivo criado com sucesso.');
+            ->route('admin.processes.show', $selectionProcess);
     }
 
     public function show(SelectionProcess $selectionProcess): Response
@@ -40,7 +42,7 @@ class SelectionProcessController extends Controller
         $selectionProcess->load([
             'stages',
             'requiredDocuments.tipoDocumento',
-            'requiredDocuments.tipoTitulo',
+            'requiredTitulos.tipoTitulo',
             'criteria',
             'evaluatorAssignments',
             'applicationFields',
@@ -70,17 +72,19 @@ class SelectionProcessController extends Controller
     {
         $selectionProcess->update($request->validated());
 
+        InertiaToast::success('Processo seletivo atualizado com sucesso.');
+
         return redirect()
-            ->route('admin.processes.show', $selectionProcess)
-            ->with('success', 'Processo seletivo atualizado com sucesso.');
+            ->route('admin.processes.show', $selectionProcess);
     }
 
     public function destroy(SelectionProcess $selectionProcess): RedirectResponse
     {
         $selectionProcess->delete();
 
+        InertiaToast::success('Processo seletivo removido com sucesso.');
+
         return redirect()
-            ->route('admin.processes.index')
-            ->with('success', 'Processo seletivo removido com sucesso.');
+            ->route('admin.processes.index');
     }
 }

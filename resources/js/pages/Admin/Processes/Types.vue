@@ -1,26 +1,28 @@
 <script setup lang="ts">
-import { router, useForm } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import { Settings2 } from 'lucide-vue-next';
 import Button from 'primevue/button';
-import ButtonGroup from 'primevue/buttongroup';
 import Card from 'primevue/card';
 import Column from 'primevue/column';
 import ConfirmDialog from 'primevue/confirmdialog';
 import DataTable from 'primevue/datatable';
-import InputText from 'primevue/inputtext';
-import Select from 'primevue/select';
 import ToggleSwitch from 'primevue/toggleswitch';
 import Tooltip from 'primevue/tooltip';
-import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import {
+    create as createDocumentTypePage,
+    edit as editDocumentTypePage,
+} from '@/routes/admin/support-tables/document-types';
+import {
+    create as createTitleTypePage,
+    edit as editTitleTypePage,
+} from '@/routes/admin/support-tables/title-types';
+import {
     destroy as destroyTipoDocumento,
-    store as storeTipoDocumento,
     update as updateTipoDocumento,
 } from '@/routes/admin/processes/types/documentos';
 import {
     destroy as destroyTipoTitulo,
-    store as storeTipoTitulo,
     update as updateTipoTitulo,
 } from '@/routes/admin/processes/types/titulos';
 
@@ -43,74 +45,6 @@ const props = defineProps<{
 }>();
 
 const vTooltip = Tooltip;
-const editingDocumentoId = ref<number | null>(null);
-const editingTituloId = ref<number | null>(null);
-const calculoOptions = [
-    { label: 'Data', value: 'data' },
-    { label: 'Valor', value: 'valor' },
-];
-
-const documentoForm = useForm({
-    descricao: '',
-    status: true,
-});
-
-const tituloForm = useForm({
-    descricao: '',
-    status: true,
-    calculo: 'data',
-});
-
-const saveDocumento = (): void => {
-    if (editingDocumentoId.value) {
-        documentoForm.put(updateTipoDocumento(editingDocumentoId.value).url, {
-            preserveScroll: true,
-            onSuccess: () => {
-                documentoForm.reset();
-                editingDocumentoId.value = null;
-            },
-        });
-
-        return;
-    }
-
-    documentoForm.post(storeTipoDocumento().url, {
-        preserveScroll: true,
-        onSuccess: () => documentoForm.reset(),
-    });
-};
-
-const saveTitulo = (): void => {
-    if (editingTituloId.value) {
-        tituloForm.put(updateTipoTitulo(editingTituloId.value).url, {
-            preserveScroll: true,
-            onSuccess: () => {
-                tituloForm.reset();
-                editingTituloId.value = null;
-            },
-        });
-
-        return;
-    }
-
-    tituloForm.post(storeTipoTitulo().url, {
-        preserveScroll: true,
-        onSuccess: () => tituloForm.reset(),
-    });
-};
-
-const startEditDocumento = (item: TipoDocumento): void => {
-    editingDocumentoId.value = item.id;
-    documentoForm.descricao = item.descricao;
-    documentoForm.status = item.status;
-};
-
-const startEditTitulo = (item: TipoTitulo): void => {
-    editingTituloId.value = item.id;
-    tituloForm.descricao = item.descricao;
-    tituloForm.status = item.status;
-    tituloForm.calculo = item.calculo ?? 'data';
-};
 
 const deleteDocumento = (id: number): void => {
     router.delete(destroyTipoDocumento(id).url, { preserveScroll: true });
@@ -159,39 +93,32 @@ const toggleTituloStatus = (item: TipoTitulo): void => {
 
             <div class="grid gap-4 xl:grid-cols-2">
                 <Card class="rounded-xl shadow-md">
-                    <template #title>Tipos de Documento</template>
+                    <template #title>
+                        <div
+                            class="flex flex-wrap items-center justify-between gap-3 pr-2"
+                        >
+                            <span>Tipos de Documento</span>
+                            <Link :href="createDocumentTypePage().url">
+                                <Button
+                                    v-tooltip.bottom="'Novo tipo de documento'"
+                                    label="Novo"
+                                    icon="pi pi-plus"
+                                    size="small"
+                                />
+                            </Link>
+                        </div>
+                    </template>
                     <template #content>
-                        <form class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto]" @submit.prevent="saveDocumento">
-                            <InputText
-                                v-model="documentoForm.descricao"
-                                placeholder="Descrição do tipo de documento"
-                            />
-                            <div class="flex items-center gap-2 rounded border px-3 py-2">
-                                <ToggleSwitch v-model="documentoForm.status" />
-                                <span class="text-sm">Ativo</span>
-                            </div>
-                            <Button
-                                type="submit"
-                                :label="
-                                    editingDocumentoId
-                                        ? 'Atualizar'
-                                        : 'Adicionar'
-                                "
-                                icon="pi pi-check"
-                            />
-                        </form>
-
-                        <DataTable :value="props.tiposDocumento" striped-rows>
-                            <Column
-                                field="descricao"
-                                header="Descrição"
-                                header-class="px-4 py-3"
-                                body-class="px-4 py-3"
-                            />
+                        <DataTable
+                            :value="props.tiposDocumento"
+                            striped-rows
+                            class="w-full"
+                            table-style="width: 100%; table-layout: fixed"
+                        >
                             <Column
                                 header="Status"
-                                header-class="px-4 py-3"
-                                body-class="px-4 py-3"
+                                header-class="px-4 py-3 whitespace-nowrap"
+                                body-class="px-4 py-3 whitespace-nowrap"
                             >
                                 <template #body="{ data }">
                                     <div class="flex items-center gap-2">
@@ -201,7 +128,9 @@ const toggleTituloStatus = (item: TipoTitulo): void => {
                                                 toggleDocumentoStatus(data)
                                             "
                                         />
-                                        <span class="text-xs text-muted-foreground">
+                                        <span
+                                            class="text-xs text-muted-foreground"
+                                        >
                                             {{
                                                 data.status
                                                     ? 'Ativo'
@@ -212,19 +141,32 @@ const toggleTituloStatus = (item: TipoTitulo): void => {
                                 </template>
                             </Column>
                             <Column
+                                field="descricao"
+                                header="Descrição"
+                                header-class="px-4 py-3 text-end min-w-0"
+                                body-class="px-4 py-3 text-end min-w-0"
+                            />
+                            <Column
                                 header="Ações"
-                                header-class="px-4 py-3"
-                                body-class="px-4 py-3"
+                                header-class="px-4 py-3 text-end w-32 whitespace-nowrap"
+                                body-class="px-4 py-3 text-end w-32 whitespace-nowrap"
                             >
                                 <template #body="{ data }">
-                                    <ButtonGroup>
-                                        <Button
-                                            v-tooltip.left="'Editar'"
-                                            rounded
-                                            text
-                                            icon="pi pi-pencil"
-                                            @click="startEditDocumento(data)"
-                                        />
+                                    <div class="flex justify-end gap-1">
+                                        <Link
+                                            :href="
+                                                editDocumentTypePage(data.id)
+                                                    .url
+                                            "
+                                            class="inline-flex"
+                                        >
+                                            <Button
+                                                v-tooltip.left="'Editar'"
+                                                rounded
+                                                text
+                                                icon="pi pi-pencil"
+                                            />
+                                        </Link>
                                         <Button
                                             v-tooltip.left="'Excluir'"
                                             rounded
@@ -233,7 +175,7 @@ const toggleTituloStatus = (item: TipoTitulo): void => {
                                             icon="pi pi-trash"
                                             @click="deleteDocumento(data.id)"
                                         />
-                                    </ButtonGroup>
+                                    </div>
                                 </template>
                             </Column>
                         </DataTable>
@@ -241,53 +183,45 @@ const toggleTituloStatus = (item: TipoTitulo): void => {
                 </Card>
 
                 <Card class="rounded-xl shadow-md">
-                    <template #title>Tipos de Título</template>
+                    <template #title>
+                        <div
+                            class="flex flex-wrap items-center justify-between gap-3 pr-2"
+                        >
+                            <span>Tipos de Título</span>
+                            <Link :href="createTitleTypePage().url">
+                                <Button
+                                    v-tooltip.bottom="'Novo tipo de título'"
+                                    label="Novo"
+                                    icon="pi pi-plus"
+                                    size="small"
+                                />
+                            </Link>
+                        </div>
+                    </template>
                     <template #content>
-                        <form class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_auto_auto]" @submit.prevent="saveTitulo">
-                            <InputText
-                                v-model="tituloForm.descricao"
-                                placeholder="Descrição do tipo de título"
-                            />
-                            <Select
-                                v-model="tituloForm.calculo"
-                                :options="calculoOptions"
-                                option-label="label"
-                                option-value="value"
-                                placeholder="Regra de cálculo"
-                            />
-                            <div class="flex items-center gap-2 rounded border px-3 py-2">
-                                <ToggleSwitch v-model="tituloForm.status" />
-                                <span class="text-sm">Ativo</span>
-                            </div>
-                            <Button
-                                type="submit"
-                                :label="
-                                    editingTituloId ? 'Atualizar' : 'Adicionar'
-                                "
-                                icon="pi pi-check"
-                            />
-                        </form>
-
-                        <DataTable :value="props.tiposTitulo" striped-rows>
-                            <Column
-                                field="descricao"
-                                header="Descrição"
-                                header-class="px-4 py-3"
-                                body-class="px-4 py-3"
-                            />
+                        <DataTable
+                            :value="props.tiposTitulo"
+                            striped-rows
+                            class="w-full"
+                            table-style="width: 100%; table-layout: fixed"
+                        >
                             <Column
                                 header="Cálculo"
-                                header-class="px-4 py-3"
-                                body-class="px-4 py-3"
+                                header-class="px-4 py-3 whitespace-nowrap"
+                                body-class="px-4 py-3 whitespace-nowrap"
                             >
                                 <template #body="{ data }">
-                                    {{ data.calculo === 'valor' ? 'Valor' : 'Data' }}
+                                    {{
+                                        data.calculo === 'valor'
+                                            ? 'Valor'
+                                            : 'Data'
+                                    }}
                                 </template>
                             </Column>
                             <Column
                                 header="Status"
-                                header-class="px-4 py-3"
-                                body-class="px-4 py-3"
+                                header-class="px-4 py-3 whitespace-nowrap"
+                                body-class="px-4 py-3 whitespace-nowrap"
                             >
                                 <template #body="{ data }">
                                     <div class="flex items-center gap-2">
@@ -297,7 +231,9 @@ const toggleTituloStatus = (item: TipoTitulo): void => {
                                                 toggleTituloStatus(data)
                                             "
                                         />
-                                        <span class="text-xs text-muted-foreground">
+                                        <span
+                                            class="text-xs text-muted-foreground"
+                                        >
                                             {{
                                                 data.status
                                                     ? 'Ativo'
@@ -308,19 +244,31 @@ const toggleTituloStatus = (item: TipoTitulo): void => {
                                 </template>
                             </Column>
                             <Column
+                                field="descricao"
+                                header="Descrição"
+                                header-class="px-4 py-3 text-end min-w-0"
+                                body-class="px-4 py-3 text-end min-w-0"
+                            />
+                            <Column
                                 header="Ações"
-                                header-class="px-4 py-3"
-                                body-class="px-4 py-3"
+                                header-class="px-4 py-3 text-end w-32 whitespace-nowrap"
+                                body-class="px-4 py-3 text-end w-32 whitespace-nowrap"
                             >
                                 <template #body="{ data }">
-                                    <ButtonGroup>
-                                        <Button
-                                            v-tooltip.left="'Editar'"
-                                            rounded
-                                            text
-                                            icon="pi pi-pencil"
-                                            @click="startEditTitulo(data)"
-                                        />
+                                    <div class="flex justify-end gap-1">
+                                        <Link
+                                            :href="
+                                                editTitleTypePage(data.id).url
+                                            "
+                                            class="inline-flex"
+                                        >
+                                            <Button
+                                                v-tooltip.left="'Editar'"
+                                                rounded
+                                                text
+                                                icon="pi pi-pencil"
+                                            />
+                                        </Link>
                                         <Button
                                             v-tooltip.left="'Excluir'"
                                             rounded
@@ -329,7 +277,7 @@ const toggleTituloStatus = (item: TipoTitulo): void => {
                                             icon="pi pi-trash"
                                             @click="deleteTitulo(data.id)"
                                         />
-                                    </ButtonGroup>
+                                    </div>
                                 </template>
                             </Column>
                         </DataTable>

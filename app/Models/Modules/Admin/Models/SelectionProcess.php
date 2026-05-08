@@ -35,6 +35,11 @@ class SelectionProcess extends Model
         return $this->hasMany(ProcessRequiredDocument::class);
     }
 
+    public function requiredTitulos(): HasMany
+    {
+        return $this->hasMany(ProcessRequiredTitulo::class);
+    }
+
     public function criteria(): HasMany
     {
         return $this->hasMany(ProcessCriteria::class);

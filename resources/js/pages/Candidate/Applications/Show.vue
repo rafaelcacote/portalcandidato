@@ -100,7 +100,9 @@ const uploadDocument = (): void => {
                                         />
                                         <div class="flex justify-end">
                                             <Button
+                                                :fluid="false"
                                                 label="Salvar etapa 1"
+                                                size="small"
                                                 @click="saveStep(1)"
                                             />
                                         </div>
@@ -124,7 +126,9 @@ const uploadDocument = (): void => {
                                         />
                                         <div class="flex justify-end">
                                             <Button
+                                                :fluid="false"
                                                 label="Salvar etapa 2"
+                                                size="small"
                                                 @click="saveStep(2)"
                                             />
                                         </div>
@@ -150,7 +154,9 @@ const uploadDocument = (): void => {
                                         />
                                         <div class="flex justify-end">
                                             <Button
+                                                :fluid="false"
                                                 label="Enviar documento"
+                                                size="small"
                                                 @click="uploadDocument"
                                             />
                                         </div>
@@ -164,8 +170,10 @@ const uploadDocument = (): void => {
                                     </p>
                                     <div class="flex justify-end">
                                         <Button
+                                            :fluid="false"
                                             label="Finalizar inscrição"
                                             icon="pi pi-check"
+                                            size="small"
                                             @click="submitApplication"
                                         />
                                     </div>

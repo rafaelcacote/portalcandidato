@@ -30,4 +30,21 @@ class UpdateSelectionProcessRequest extends FormRequest
             'inscricao_fim_em' => ['nullable', 'date', 'after_or_equal:inscricao_inicio_em'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'titulo.required' => 'Este campo é obrigatório.',
+            'titulo.max' => 'O título não pode ter mais de :max caracteres.',
+            'descricao.required' => 'Este campo é obrigatório.',
+            'status.required' => 'Este campo é obrigatório.',
+            'status.in' => 'O status selecionado é inválido.',
+            'inscricao_inicio_em.date' => 'Informe uma data de início válida.',
+            'inscricao_fim_em.date' => 'Informe uma data de fim válida.',
+            'inscricao_fim_em.after_or_equal' => 'A data de fim das inscrições deve ser igual ou posterior à data de início.',
+        ];
+    }
 }

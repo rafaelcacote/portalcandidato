@@ -3,45 +3,44 @@
 namespace App\Http\Controllers\Modules\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Modules\Admin\StoreProcessRequiredDocumentRequest;
-use App\Models\Modules\Admin\Models\ProcessRequiredDocument;
+use App\Http\Requests\Modules\Admin\StoreProcessRequiredTituloRequest;
+use App\Models\Modules\Admin\Models\ProcessRequiredTitulo;
 use App\Models\Modules\Admin\Models\SelectionProcess;
-use App\Models\Modules\Admin\Models\TipoDocumento;
 use App\Support\InertiaToast;
 use Illuminate\Http\RedirectResponse;
 
-class ProcessRequiredDocumentController extends Controller
+class ProcessRequiredTituloController extends Controller
 {
     public function store(
-        StoreProcessRequiredDocumentRequest $request,
+        StoreProcessRequiredTituloRequest $request,
         SelectionProcess $selectionProcess
     ): RedirectResponse {
         $validated = $request->validated();
-        $tipoDocumento = TipoDocumento::query()->findOrFail($validated['tipo_documento_id']);
 
-        $selectionProcess->requiredDocuments()->create([
-            'tipo_documento_id' => $tipoDocumento->id,
-            'nome' => $tipoDocumento->descricao,
-            'descricao' => $validated['descricao'] ?? null,
+        $selectionProcess->requiredTitulos()->create([
+            'tipo_titulo_id' => $validated['tipo_titulo_id'],
+            'pontuacao_max' => $validated['pontuacao_max'],
+            'qtd_maxima' => $validated['qtd_maxima'] ?? null,
+            'obrigatorio' => $validated['obrigatorio'],
             'formatos_aceitos' => $this->parseOptions($validated['formatos_aceitos'] ?? null),
             'tamanho_max_mb' => $validated['tamanho_max_mb'],
-            'obrigatorio' => $validated['obrigatorio'],
+            'descricao' => $validated['descricao'] ?? null,
         ]);
 
-        InertiaToast::success('Documento exigido vinculado ao processo.');
+        InertiaToast::success('Título aceito vinculado ao processo.');
 
         return back();
     }
 
     public function destroy(
         SelectionProcess $selectionProcess,
-        ProcessRequiredDocument $processRequiredDocument
+        ProcessRequiredTitulo $processRequiredTitulo
     ): RedirectResponse {
-        abort_unless($processRequiredDocument->selection_process_id === $selectionProcess->id, 404);
+        abort_unless($processRequiredTitulo->selection_process_id === $selectionProcess->id, 404);
 
-        $processRequiredDocument->delete();
+        $processRequiredTitulo->delete();
 
-        InertiaToast::success('Documento exigido removido do processo.');
+        InertiaToast::success('Título aceito removido do processo.');
 
         return back();
     }

@@ -14,8 +14,7 @@ import Tooltip from 'primevue/tooltip';
 import { useConfirm } from 'primevue/useconfirm';
 import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
-import { create } from '@/routes/admin/processes';
-import { destroy, show } from '@/routes/admin/processes';
+import { create, destroy, edit, show } from '@/routes/admin/processes';
 
 const props = defineProps<{
     processes: {
@@ -121,13 +120,16 @@ const confirmRemoveProcess = (id: number): void => {
                         v-tooltip.bottom="'Novo processo'"
                         label="Novo processo"
                         icon="pi pi-plus"
+                        size="small"
                     />
                 </Link>
             </div>
 
             <Card class="overflow-hidden rounded-xl shadow-md">
                 <template #content>
-                    <div class="mb-5 grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px_auto]">
+                    <div
+                        class="mb-5 grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px_auto]"
+                    >
                         <InputText
                             v-model="searchTerm"
                             placeholder="Buscar por título do processo"
@@ -144,6 +146,7 @@ const confirmRemoveProcess = (id: number): void => {
                             label="Limpar"
                             severity="secondary"
                             outlined
+                            size="small"
                             @click="
                                 searchTerm = '';
                                 selectedStatus = null;
@@ -154,7 +157,8 @@ const confirmRemoveProcess = (id: number): void => {
                     <DataTable
                         :value="filteredProcesses"
                         striped-rows
-                        table-style="min-width: 50rem"
+                        class="w-full"
+                        table-style="min-width: 50rem; width: 100%; table-layout: fixed"
                     >
                         <template #empty>
                             <div
@@ -166,14 +170,18 @@ const confirmRemoveProcess = (id: number): void => {
                                 <p class="text-base font-medium">
                                     Nenhum processo cadastrado
                                 </p>
-                                <p class="max-w-md text-sm text-muted-foreground">
-                                    Ainda nao existem processos seletivos registrados.
-                                    Clique em "Novo processo" para criar o primeiro.
+                                <p
+                                    class="max-w-md text-sm text-muted-foreground"
+                                >
+                                    Ainda nao existem processos seletivos
+                                    registrados. Clique em "Novo processo" para
+                                    criar o primeiro.
                                 </p>
                                 <Link :href="create().url">
                                     <Button
                                         label="Novo processo"
                                         icon="pi pi-plus"
+                                        size="small"
                                     />
                                 </Link>
                             </div>
@@ -181,29 +189,29 @@ const confirmRemoveProcess = (id: number): void => {
 
                         <Column
                             field="id"
-                            header="#"
-                            header-class="px-4 py-3"
-                            body-class="px-4 py-3"
+                            header="ID"
+                            header-class="px-4 py-3 w-16 whitespace-nowrap"
+                            body-class="px-4 py-3 w-16 whitespace-nowrap"
                         />
                         <Column
                             field="titulo"
                             header="Título"
-                            header-class="px-4 py-3"
-                            body-class="px-4 py-3"
+                            header-class="px-4 py-3 min-w-0"
+                            body-class="px-4 py-3 min-w-0"
                         />
                         <Column
-                            header="Início inscrições"
-                            header-class="px-4 py-3"
-                            body-class="px-4 py-3"
+                            header="Início Inscrição"
+                            header-class="px-4 py-3 whitespace-nowrap"
+                            body-class="px-4 py-3 whitespace-nowrap"
                         >
                             <template #body="{ data }">
                                 {{ formatDateTime(data.inscricao_inicio_em) }}
                             </template>
                         </Column>
                         <Column
-                            header="Fim inscrições"
-                            header-class="px-4 py-3"
-                            body-class="px-4 py-3"
+                            header="Fim Inscrição"
+                            header-class="px-4 py-3 whitespace-nowrap"
+                            body-class="px-4 py-3 whitespace-nowrap"
                         >
                             <template #body="{ data }">
                                 {{ formatDateTime(data.inscricao_fim_em) }}
@@ -211,51 +219,72 @@ const confirmRemoveProcess = (id: number): void => {
                         </Column>
                         <Column
                             header="Status"
-                            header-class="px-4 py-3"
-                            body-class="px-4 py-3"
+                            header-class="px-4 py-3 w-32 whitespace-nowrap"
+                            body-class="px-4 py-3 w-32 whitespace-nowrap"
                         >
                             <template #body="{ data }">
                                 <Tag
                                     :value="data.status"
                                     :severity="
-                                        statusSeverity[data.status] ?? 'secondary'
+                                        statusSeverity[data.status] ??
+                                        'secondary'
                                     "
                                 />
                             </template>
                         </Column>
                         <Column
                             header="Ações"
-                            header-class="px-4 py-3"
-                            body-class="px-4 py-3"
+                            header-class="px-4 py-3 text-end w-40 whitespace-nowrap"
+                            body-class="px-4 py-3 text-end w-40 whitespace-nowrap"
                         >
                             <template #body="{ data }">
-                                <ButtonGroup>
-                                    <Link :href="show(data.id).url">
+                                <div class="flex justify-end">
+                                    <ButtonGroup>
+                                        <Link :href="edit(data.id).url">
+                                            <Button
+                                                v-tooltip.left="
+                                                    'Editar processo'
+                                                "
+                                                rounded
+                                                text
+                                                icon="pi pi-pencil"
+                                                class="h-9 w-9"
+                                                aria-label="Editar processo"
+                                            />
+                                        </Link>
+                                        <Link :href="show(data.id).url">
+                                            <Button
+                                                v-tooltip.left="
+                                                    'Configurar processo'
+                                                "
+                                                rounded
+                                                text
+                                                icon="pi pi-cog"
+                                                class="h-9 w-9"
+                                                aria-label="Configurar processo"
+                                            />
+                                        </Link>
                                         <Button
-                                            v-tooltip.left="'Configurar processo'"
+                                            v-tooltip.left="'Excluir processo'"
                                             rounded
                                             text
-                                            icon="pi pi-cog"
+                                            severity="danger"
+                                            icon="pi pi-trash"
                                             class="h-9 w-9"
-                                            aria-label="Configurar processo"
+                                            aria-label="Excluir processo"
+                                            @click="
+                                                confirmRemoveProcess(data.id)
+                                            "
                                         />
-                                    </Link>
-                                    <Button
-                                        v-tooltip.left="'Excluir processo'"
-                                        rounded
-                                        text
-                                        severity="danger"
-                                        icon="pi pi-trash"
-                                        class="h-9 w-9"
-                                        aria-label="Excluir processo"
-                                        @click="confirmRemoveProcess(data.id)"
-                                    />
-                                </ButtonGroup>
+                                    </ButtonGroup>
+                                </div>
                             </template>
                         </Column>
 
                         <template #footer>
-                            <div class="px-2 py-3 text-sm text-muted-foreground">
+                            <div
+                                class="px-2 py-3 text-sm text-muted-foreground"
+                            >
                                 Total: {{ filteredProcesses.length }}
                             </div>
                         </template>

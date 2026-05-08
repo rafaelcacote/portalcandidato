@@ -9,6 +9,7 @@ use App\Http\Requests\Modules\Admin\UpdateTipoDocumentoRequest;
 use App\Http\Requests\Modules\Admin\UpdateTipoTituloRequest;
 use App\Models\Modules\Admin\Models\TipoDocumento;
 use App\Models\Modules\Admin\Models\TipoTitulo;
+use App\Support\InertiaToast;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -34,12 +35,38 @@ class ProcessTypeController extends Controller
         ]);
     }
 
+    public function createDocumentType(): Response
+    {
+        return Inertia::render('Admin/SupportTables/DocumentTypesForm');
+    }
+
+    public function editDocumentType(TipoDocumento $tipoDocumento): Response
+    {
+        return Inertia::render('Admin/SupportTables/DocumentTypesForm', [
+            'tipoDocumento' => $tipoDocumento,
+        ]);
+    }
+
+    public function createTitleType(): Response
+    {
+        return Inertia::render('Admin/SupportTables/TitleTypesForm');
+    }
+
+    public function editTitleType(TipoTitulo $tipoTitulo): Response
+    {
+        return Inertia::render('Admin/SupportTables/TitleTypesForm', [
+            'tipoTitulo' => $tipoTitulo,
+        ]);
+    }
+
     public function storeTipoDocumento(
         StoreTipoDocumentoRequest $request
     ): RedirectResponse {
         TipoDocumento::query()->create($request->validated());
 
-        return back()->with('success', 'Tipo de documento criado com sucesso.');
+        InertiaToast::success('Tipo de documento criado com sucesso.');
+
+        return redirect()->route('admin.support-tables.document-types.index');
     }
 
     public function updateTipoDocumento(
@@ -48,21 +75,27 @@ class ProcessTypeController extends Controller
     ): RedirectResponse {
         $tipoDocumento->update($request->validated());
 
-        return back()->with('success', 'Tipo de documento atualizado com sucesso.');
+        InertiaToast::success('Tipo de documento atualizado com sucesso.');
+
+        return redirect()->route('admin.support-tables.document-types.index');
     }
 
     public function destroyTipoDocumento(TipoDocumento $tipoDocumento): RedirectResponse
     {
         $tipoDocumento->delete();
 
-        return back()->with('success', 'Tipo de documento removido com sucesso.');
+        InertiaToast::success('Tipo de documento removido com sucesso.');
+
+        return back();
     }
 
     public function storeTipoTitulo(StoreTipoTituloRequest $request): RedirectResponse
     {
         TipoTitulo::query()->create($request->validated());
 
-        return back()->with('success', 'Tipo de título criado com sucesso.');
+        InertiaToast::success('Tipo de título criado com sucesso.');
+
+        return redirect()->route('admin.support-tables.title-types.index');
     }
 
     public function updateTipoTitulo(
@@ -71,13 +104,17 @@ class ProcessTypeController extends Controller
     ): RedirectResponse {
         $tipoTitulo->update($request->validated());
 
-        return back()->with('success', 'Tipo de título atualizado com sucesso.');
+        InertiaToast::success('Tipo de título atualizado com sucesso.');
+
+        return redirect()->route('admin.support-tables.title-types.index');
     }
 
     public function destroyTipoTitulo(TipoTitulo $tipoTitulo): RedirectResponse
     {
         $tipoTitulo->delete();
 
-        return back()->with('success', 'Tipo de título removido com sucesso.');
+        InertiaToast::success('Tipo de título removido com sucesso.');
+
+        return back();
     }
 }

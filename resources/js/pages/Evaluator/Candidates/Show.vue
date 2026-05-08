@@ -132,6 +132,7 @@ const saveScore = (): void => {
                                         />
                                         <ButtonGroup>
                                             <Button
+                                                :fluid="false"
                                                 size="small"
                                                 label="Salvar decisão"
                                                 @click="decideDocument(data.id)"
@@ -178,8 +179,10 @@ const saveScore = (): void => {
                             />
                             <div class="flex justify-end">
                                 <Button
+                                    :fluid="false"
                                     label="Salvar pontuação e parecer"
                                     icon="pi pi-check"
+                                    size="small"
                                     @click="saveScore"
                                 />
                             </div>

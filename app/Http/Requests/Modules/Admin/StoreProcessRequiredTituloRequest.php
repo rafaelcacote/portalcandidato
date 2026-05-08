@@ -5,7 +5,7 @@ namespace App\Http\Requests\Modules\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreProcessRequiredDocumentRequest extends FormRequest
+class StoreProcessRequiredTituloRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -20,15 +20,17 @@ class StoreProcessRequiredDocumentRequest extends FormRequest
         $selectionProcessId = $this->route('selectionProcess')?->id;
 
         return [
-            'tipo_documento_id' => [
-                'required', 'integer', 'exists:tipo_documentos,id',
-                Rule::unique('process_required_documents', 'tipo_documento_id')
+            'tipo_titulo_id' => [
+                'required', 'integer', 'exists:tipo_titulos,id',
+                Rule::unique('process_required_titulos', 'tipo_titulo_id')
                     ->where(fn ($query) => $query->where('selection_process_id', $selectionProcessId)),
             ],
-            'descricao' => ['nullable', 'string'],
+            'pontuacao_max' => ['required', 'numeric', 'min:0', 'max:9999.99'],
+            'qtd_maxima' => ['nullable', 'integer', 'min:1', 'max:999'],
+            'obrigatorio' => ['required', 'boolean'],
             'formatos_aceitos' => ['nullable', 'string', 'max:255'],
             'tamanho_max_mb' => ['required', 'integer', 'min:1', 'max:100'],
-            'obrigatorio' => ['required', 'boolean'],
+            'descricao' => ['nullable', 'string'],
         ];
     }
 
@@ -38,8 +40,9 @@ class StoreProcessRequiredDocumentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'tipo_documento_id.required' => 'Selecione um tipo de documento.',
-            'tipo_documento_id.unique' => 'Este tipo de documento já está vinculado ao processo.',
+            'tipo_titulo_id.required' => 'Selecione um tipo de título.',
+            'tipo_titulo_id.unique' => 'Este tipo de título já está vinculado ao processo.',
+            'pontuacao_max.required' => 'Informe a pontuação máxima.',
         ];
     }
 }

@@ -2,28 +2,33 @@
 
 namespace App\Models\Modules\Admin\Models;
 
-use App\Models\Modules\Candidate\Models\ApplicationDocument;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class ProcessRequiredDocument extends Model
+class ProcessRequiredTitulo extends Model
 {
+    protected $table = 'process_required_titulos';
+
     protected $fillable = [
         'selection_process_id',
-        'tipo_documento_id',
-        'nome',
-        'descricao',
+        'tipo_titulo_id',
+        'pontuacao_max',
+        'qtd_maxima',
+        'obrigatorio',
         'formatos_aceitos',
         'tamanho_max_mb',
-        'obrigatorio',
+        'descricao',
     ];
 
+    /**
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
-            'formatos_aceitos' => 'array',
+            'pontuacao_max' => 'decimal:2',
             'obrigatorio' => 'boolean',
+            'formatos_aceitos' => 'array',
         ];
     }
 
@@ -32,13 +37,8 @@ class ProcessRequiredDocument extends Model
         return $this->belongsTo(SelectionProcess::class);
     }
 
-    public function tipoDocumento(): BelongsTo
+    public function tipoTitulo(): BelongsTo
     {
-        return $this->belongsTo(TipoDocumento::class);
-    }
-
-    public function applicationDocuments(): HasMany
-    {
-        return $this->hasMany(ApplicationDocument::class);
+        return $this->belongsTo(TipoTitulo::class);
     }
 }
