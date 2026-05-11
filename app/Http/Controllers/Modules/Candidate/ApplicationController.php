@@ -25,7 +25,11 @@ class ApplicationController extends Controller
     {
         abort_if($application->user_id !== $request->user()->id, 403);
 
-        $application->load(['selectionProcess', 'documents.requiredDocument', 'evaluations.evaluator']);
+        $application->load([
+            'selectionProcess.requiredDocuments',
+            'documents.requiredDocument',
+            'evaluations.evaluator',
+        ]);
 
         return Inertia::render('Candidate/Applications/Show', [
             'application' => $application,

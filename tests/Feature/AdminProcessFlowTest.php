@@ -25,6 +25,7 @@ test('admin can create and update a selection process', function () {
             'descricao' => 'Processo seletivo de teste',
             'regras' => 'Regras gerais',
             'status' => 'rascunho',
+            'tipo_programa' => 'mestrado',
             'inscricao_inicio_em' => now()->toDateTimeString(),
             'inscricao_fim_em' => now()->addDays(10)->toDateTimeString(),
         ])
@@ -39,12 +40,21 @@ test('admin can create and update a selection process', function () {
 
     $process = SelectionProcess::query()->firstOrFail();
 
+    expect(ProcessRequiredDocument::query()->where('selection_process_id', $process->id)->count())->toBe(11);
+    expect(
+        ProcessRequiredDocument::query()
+            ->where('selection_process_id', $process->id)
+            ->where('gerado_por_template', true)
+            ->count(),
+    )->toBe(11);
+
     $this->actingAs($admin)
         ->put(route('admin.processes.update', $process), [
             'titulo' => 'PS 2026 Atualizado',
             'descricao' => 'Processo seletivo de teste',
             'regras' => 'Regras gerais',
             'status' => 'ativo',
+            'tipo_programa' => 'mestrado',
             'inscricao_inicio_em' => now()->toDateTimeString(),
             'inscricao_fim_em' => now()->addDays(10)->toDateTimeString(),
         ])
@@ -71,6 +81,7 @@ test('selection process store rejects end date before start date', function () {
             'descricao' => 'Processo seletivo de teste',
             'regras' => null,
             'status' => 'rascunho',
+            'tipo_programa' => 'mestrado',
             'inscricao_inicio_em' => now()->addDays(5)->toDateTimeString(),
             'inscricao_fim_em' => now()->toDateTimeString(),
         ])
@@ -88,6 +99,7 @@ test('selection process store requires titulo and descricao', function () {
             'descricao' => '',
             'regras' => null,
             'status' => 'rascunho',
+            'tipo_programa' => 'mestrado',
         ])
         ->assertSessionHasErrors(['titulo', 'descricao']);
 });
@@ -101,6 +113,7 @@ test('selection process update rejects end date before start date', function () 
         'titulo' => 'PS Update Validação',
         'descricao' => 'Descrição',
         'status' => 'rascunho',
+        'tipo_programa' => 'mestrado',
     ]);
 
     $this->actingAs($admin)
@@ -109,6 +122,7 @@ test('selection process update rejects end date before start date', function () 
             'descricao' => $process->descricao,
             'regras' => null,
             'status' => 'rascunho',
+            'tipo_programa' => 'mestrado',
             'inscricao_inicio_em' => now()->addDays(10)->toDateTimeString(),
             'inscricao_fim_em' => now()->toDateTimeString(),
         ])
@@ -125,6 +139,7 @@ test('admin can configure required documents, criteria and dynamic application f
         'descricao' => 'Configuração de teste',
         'regras' => 'Regras de teste',
         'status' => 'rascunho',
+        'tipo_programa' => 'mestrado',
     ]);
     $tipoDocumento = TipoDocumento::query()->create([
         'descricao' => 'RG',
@@ -206,6 +221,7 @@ test('admin can attach and remove required titulos with permissions', function (
         'titulo' => 'PS Títulos',
         'descricao' => 'Configuração de títulos',
         'status' => 'rascunho',
+        'tipo_programa' => 'mestrado',
     ]);
     $tipoTitulo = TipoTitulo::query()->create([
         'descricao' => 'Mestrado',
@@ -262,6 +278,7 @@ test('cannot attach the same required document twice to the same process', funct
         'titulo' => 'PS Único Doc',
         'descricao' => 'Descrição',
         'status' => 'rascunho',
+        'tipo_programa' => 'mestrado',
     ]);
     $tipoDocumento = TipoDocumento::query()->create([
         'descricao' => 'CPF',

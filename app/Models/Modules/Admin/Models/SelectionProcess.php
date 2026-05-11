@@ -3,16 +3,26 @@
 namespace App\Models\Modules\Admin\Models;
 
 use App\Models\Modules\Candidate\Models\Application;
+use App\Modules\Shared\Enums\SelectionProcessProgramType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SelectionProcess extends Model
 {
+    /**
+     * @var list<string>
+     */
+    protected $hidden = [
+        'edital_pdf_path',
+    ];
+
     protected $fillable = [
         'titulo',
         'descricao',
         'regras',
         'status',
+        'tipo_programa',
+        'edital_pdf_path',
         'inscricao_inicio_em',
         'inscricao_fim_em',
     ];
@@ -20,6 +30,7 @@ class SelectionProcess extends Model
     protected function casts(): array
     {
         return [
+            'tipo_programa' => SelectionProcessProgramType::class,
             'inscricao_inicio_em' => 'datetime',
             'inscricao_fim_em' => 'datetime',
         ];

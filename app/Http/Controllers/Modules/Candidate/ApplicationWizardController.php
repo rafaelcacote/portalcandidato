@@ -8,6 +8,7 @@ use App\Mail\InscricaoConfirmada;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Modules\Candidate\Services\ApplicationService;
+use App\Support\InertiaToast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
 
@@ -17,6 +18,13 @@ class ApplicationWizardController extends Controller
 
     public function start(SelectionProcess $selectionProcess): RedirectResponse
     {
+        $user = auth()->user();
+        if ($user !== null && $user->hasRole('candidato') && ! $user->candidateProfileIsComplete()) {
+            InertiaToast::error('Preencha todos os dados do seu perfil cadastral antes de se inscrever em um processo.');
+
+            return redirect()->route('profile.edit');
+        }
+
         $application = Application::query()->firstOrCreate([
             'selection_process_id' => $selectionProcess->id,
             'user_id' => auth()->id(),

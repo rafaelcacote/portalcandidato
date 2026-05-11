@@ -20,6 +20,11 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            ui: {
+                settings: string;
+                log_out: string;
+            };
+            candidateProfileComplete?: boolean;
             [key: string]: unknown;
         };
         flashDataType: {

@@ -8,6 +8,7 @@ use App\Http\Controllers\Modules\Admin\ProcessRequiredTituloController;
 use App\Http\Controllers\Modules\Admin\ProcessTypeController;
 use App\Http\Controllers\Modules\Admin\ReportController;
 use App\Http\Controllers\Modules\Admin\SelectionProcessController;
+use App\Http\Controllers\Modules\Admin\SelectionProcessEditalController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'role:admin'])
@@ -43,6 +44,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             ->name('processes.types.titulos.destroy');
         Route::resource('processes', SelectionProcessController::class)
             ->parameters(['processes' => 'selectionProcess']);
+        Route::post('processes/{selectionProcess}/edital', [SelectionProcessEditalController::class, 'store'])
+            ->name('processes.edital.store');
+        Route::delete('processes/{selectionProcess}/edital', [SelectionProcessEditalController::class, 'destroy'])
+            ->name('processes.edital.destroy');
         Route::post('processes/{selectionProcess}/required-documents', [ProcessRequiredDocumentController::class, 'store'])
             ->name('processes.required-documents.store');
         Route::delete('processes/{selectionProcess}/required-documents/{processRequiredDocument}', [ProcessRequiredDocumentController::class, 'destroy'])

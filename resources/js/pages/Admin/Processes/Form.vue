@@ -9,7 +9,7 @@ import Fluid from 'primevue/fluid';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { index, store, update } from '@/routes/admin/processes';
 
@@ -19,6 +19,8 @@ const form = useForm({
     descricao: (props.selectionProcess?.descricao as string) ?? '',
     regras: (props.selectionProcess?.regras as string) ?? '',
     status: (props.selectionProcess?.status as string) ?? 'rascunho',
+    tipo_programa:
+        (props.selectionProcess?.tipo_programa as string) ?? 'mestrado',
     inscricao_inicio_em:
         (props.selectionProcess?.inscricao_inicio_em as string) ?? '',
     inscricao_fim_em:
@@ -32,6 +34,21 @@ const statusOptions = [
     { label: 'Ativo', value: 'ativo' },
     { label: 'Encerrado', value: 'encerrado' },
 ];
+
+const programTypeOptions = [
+    { label: 'Mestrado', value: 'mestrado' },
+    { label: 'Doutorado', value: 'doutorado' },
+];
+
+const formPageTitle = computed(() =>
+    props.selectionProcess?.id ? 'Editar processo' : 'Novo processo',
+);
+
+const formPageDescription = computed(() =>
+    props.selectionProcess?.id
+        ? 'Atualize os dados do processo seletivo.'
+        : 'Cadastre e organize as informações principais do processo.',
+);
 
 function errorMessage(field: string): string {
     const client = clientErrors.value[field];
@@ -93,6 +110,11 @@ function validateClient(): boolean {
         valid = false;
     }
 
+    if (!form.tipo_programa) {
+        clientErrors.value.tipo_programa = 'Selecione o tipo do programa.';
+        valid = false;
+    }
+
     const start = form.inscricao_inicio_em;
     const end = form.inscricao_fim_em;
 
@@ -136,8 +158,8 @@ const submit = (): void => {
         <div class="mx-auto flex w-full max-w-[1820px] flex-col gap-5">
             <div class="flex items-start justify-between gap-8 py-3">
                 <Heading
-                    title="Novo Processo"
-                    description="Cadastre e organize as informações principais do processo."
+                    :title="formPageTitle"
+                    :description="formPageDescription"
                     :icon="FileText"
                 />
                 <Link :href="index().url">
@@ -224,6 +246,32 @@ const submit = (): void => {
                                             v-if="errorMessage('status')"
                                             class="text-sm text-red-600"
                                             >{{ errorMessage('status') }}</small
+                                        >
+                                    </label>
+                                    <label class="flex flex-col gap-2">
+                                        <span class="text-sm"
+                                            >Tipo do programa
+                                            <span class="text-red-600">*</span></span
+                                        >
+                                        <Select
+                                            v-model="form.tipo_programa"
+                                            :options="programTypeOptions"
+                                            option-label="label"
+                                            option-value="value"
+                                            placeholder="Selecione"
+                                            :invalid="fieldInvalid('tipo_programa')"
+                                            @update:model-value="
+                                                touchField('tipo_programa')
+                                            "
+                                        />
+                                        <small class="text-xs text-muted-foreground">
+                                            Define a checklist padrão de documentos da inscrição
+                                            (Mestrado ou Doutorado).
+                                        </small>
+                                        <small
+                                            v-if="errorMessage('tipo_programa')"
+                                            class="text-sm text-red-600"
+                                            >{{ errorMessage('tipo_programa') }}</small
                                         >
                                     </label>
                                 </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Modules\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreTipoDocumentoRequest extends FormRequest
 {
@@ -22,6 +23,7 @@ class StoreTipoDocumentoRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'codigo' => ['nullable', 'string', 'max:64', Rule::unique('tipo_documentos', 'codigo')],
             'descricao' => ['required', 'string', 'max:255'],
             'status' => ['required', 'boolean'],
         ];

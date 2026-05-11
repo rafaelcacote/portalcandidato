@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Modules\Admin;
 
+use App\Modules\Shared\Enums\SelectionProcessProgramType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreSelectionProcessRequest extends FormRequest
 {
@@ -26,6 +28,7 @@ class StoreSelectionProcessRequest extends FormRequest
             'descricao' => ['required', 'string'],
             'regras' => ['nullable', 'string'],
             'status' => ['required', 'in:rascunho,ativo,encerrado'],
+            'tipo_programa' => ['required', Rule::enum(SelectionProcessProgramType::class)],
             'inscricao_inicio_em' => ['nullable', 'date'],
             'inscricao_fim_em' => ['nullable', 'date', 'after_or_equal:inscricao_inicio_em'],
         ];

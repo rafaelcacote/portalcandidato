@@ -2,7 +2,11 @@
 
 namespace App\Http\Requests\Modules\Admin;
 
+use App\Models\Modules\Admin\Models\SelectionProcess;
+use App\Modules\Shared\Enums\SelectionProcessProgramType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateSelectionProcessRequest extends FormRequest
 {
@@ -26,9 +30,34 @@ class UpdateSelectionProcessRequest extends FormRequest
             'descricao' => ['required', 'string'],
             'regras' => ['nullable', 'string'],
             'status' => ['required', 'in:rascunho,ativo,encerrado'],
+            'tipo_programa' => ['required', Rule::enum(SelectionProcessProgramType::class)],
             'inscricao_inicio_em' => ['nullable', 'date'],
             'inscricao_fim_em' => ['nullable', 'date', 'after_or_equal:inscricao_inicio_em'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $process = $this->route('selectionProcess');
+            if (! $process instanceof SelectionProcess) {
+                return;
+            }
+
+            $incoming = $this->string('tipo_programa')->toString();
+            $current = $process->tipo_programa?->value;
+
+            if ($incoming === $current) {
+                return;
+            }
+
+            if ($process->applications()->exists()) {
+                $validator->errors()->add(
+                    'tipo_programa',
+                    'Não é possível alterar o tipo do programa porque já existem inscrições vinculadas a este processo.',
+                );
+            }
+        });
     }
 
     /**

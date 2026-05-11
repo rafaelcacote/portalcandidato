@@ -16,12 +16,36 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'cpf', 'telefone', 'data_nascimento', 'ativo', 'password'])]
+#[Fillable([
+    'name',
+    'email',
+    'cpf',
+    'telefone',
+    'telefone_fixo',
+    'data_nascimento',
+    'ativo',
+    'password',
+    'foto_path',
+    'identidade',
+    'orgao_emissor',
+    'identidade_uf',
+    'identidade_data_emissao',
+    'naturalidade',
+    'nacionalidade',
+    'sexo',
+    'endereco',
+    'endereco_numero',
+    'bairro',
+    'cep',
+    'cidade',
+    'endereco_uf',
+    'pais',
+])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;
+    use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * Get the attributes that should be cast.
@@ -33,6 +57,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'data_nascimento' => 'date',
+            'identidade_data_emissao' => 'date',
             'ativo' => 'boolean',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
@@ -52,5 +77,43 @@ class User extends Authenticatable
     public function evaluations(): HasMany
     {
         return $this->hasMany(ApplicationEvaluation::class, 'evaluator_id');
+    }
+
+    public function candidateProfileIsComplete(): bool
+    {
+        if (! $this->hasRole('candidato')) {
+            return true;
+        }
+
+        $stringFields = [
+            'name',
+            'email',
+            'cpf',
+            'telefone',
+            'foto_path',
+            'identidade',
+            'orgao_emissor',
+            'identidade_uf',
+            'naturalidade',
+            'nacionalidade',
+            'sexo',
+            'endereco',
+            'endereco_numero',
+            'bairro',
+            'cep',
+            'cidade',
+            'endereco_uf',
+            'pais',
+        ];
+
+        foreach ($stringFields as $field) {
+            $value = $this->getAttribute($field);
+            if ($value === null || trim((string) $value) === '') {
+                return false;
+            }
+        }
+
+        return $this->data_nascimento !== null
+            && $this->identidade_data_emissao !== null;
     }
 }

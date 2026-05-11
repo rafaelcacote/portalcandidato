@@ -26,6 +26,7 @@ class ProcessRequiredDocumentController extends Controller
             'formatos_aceitos' => $this->parseOptions($validated['formatos_aceitos'] ?? null),
             'tamanho_max_mb' => $validated['tamanho_max_mb'],
             'obrigatorio' => $validated['obrigatorio'],
+            'gerado_por_template' => false,
         ]);
 
         InertiaToast::success('Documento exigido vinculado ao processo.');

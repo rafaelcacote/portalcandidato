@@ -2,34 +2,58 @@
 
 namespace App\Actions\Fortify;
 
-use App\Concerns\PasswordValidationRules;
-use App\Concerns\ProfileValidationRules;
+use App\Concerns\CandidateRegistrationValidationRules;
 use App\Models\User;
+use App\Rules\Cpf;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 use Spatie\Permission\Models\Role;
 
 class CreateNewUser implements CreatesNewUsers
 {
-    use PasswordValidationRules, ProfileValidationRules;
+    use CandidateRegistrationValidationRules;
 
     /**
      * Validate and create a newly registered user.
      *
-     * @param  array<string, string>  $input
+     * @param  array<string, mixed>  $input
      */
     public function create(array $input): User
     {
-        Validator::make($input, [
-            ...$this->profileRules(),
-            'password' => $this->passwordRules(),
-        ])->validate();
+        $input = $this->prepareRegistrationInput($input);
 
-        $user = User::create([
-            'name' => $input['name'],
-            'email' => $input['email'],
-            'password' => $input['password'],
+        Validator::make($input, $this->candidateRegistrationRules())->validate();
+
+        /** @var UploadedFile|null $foto */
+        $foto = $input['foto'] ?? null;
+
+        $attributes = Arr::only($input, [
+            'name',
+            'email',
+            'password',
+            'data_nascimento',
+            'cpf',
+            'telefone',
+            'identidade',
+            'orgao_emissor',
+            'identidade_uf',
+            'identidade_data_emissao',
+            'naturalidade',
+            'nacionalidade',
+            'sexo',
+            'endereco',
+            'endereco_numero',
+            'bairro',
+            'cep',
+            'cidade',
+            'endereco_uf',
+            'pais',
+            'telefone_fixo',
         ]);
+
+        $user = User::create($attributes);
 
         Role::query()->firstOrCreate([
             'name' => 'candidato',
@@ -38,6 +62,26 @@ class CreateNewUser implements CreatesNewUsers
 
         $user->assignRole('candidato');
 
+        if ($foto instanceof UploadedFile) {
+            $path = $foto->store('candidate-photos/'.$user->id, 'public');
+            $user->forceFill(['foto_path' => $path])->save();
+        }
+
         return $user;
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    private function prepareRegistrationInput(array $input): array
+    {
+        $cpf = Cpf::normalizeToDigits($input['cpf'] ?? '');
+        $cepRaw = isset($input['cep']) ? preg_replace('/\D/', '', (string) $input['cep']) : '';
+
+        return array_merge($input, [
+            'cpf' => $cpf,
+            'cep' => $cepRaw,
+        ]);
     }
 }

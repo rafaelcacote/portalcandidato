@@ -10,7 +10,9 @@ uses(RefreshDatabase::class);
 
 test('candidate can start and submit application flow', function () {
     Role::findOrCreate('candidato', 'web');
-    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate = User::factory()
+        ->completeCandidateProfile()
+        ->create(['email_verified_at' => now()]);
     $candidate->assignRole('candidato');
     $process = SelectionProcess::query()->create([
         'titulo' => 'Edital Teste',
@@ -25,8 +27,12 @@ test('candidate can start and submit application flow', function () {
     $application = Application::query()->firstOrFail();
 
     $this->actingAs($candidate)
-        ->post(route('candidate.applications.step.store', ['application' => $application, 'step' => 1]), [
-            'payload' => ['nome' => 'Candidato Teste'],
+        ->post(route('candidate.applications.step.store', ['application' => $application, 'step' => 2]), [
+            'payload' => [
+                'formacao' => 'Enfermagem',
+                'experiencia' => 'Hospital',
+                'cursos' => 'TEA',
+            ],
         ])
         ->assertRedirect();
 

@@ -20,6 +20,7 @@ import Fieldset from 'primevue/fieldset';
 import Fluid from 'primevue/fluid';
 import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
 import Select from 'primevue/select';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
@@ -41,6 +42,10 @@ import {
     destroy as destroyRequiredTitulo,
     store as storeRequiredTitulo,
 } from '@/routes/admin/processes/required-titulos';
+import {
+    destroy as destroyEdital,
+    store as storeEdital,
+} from '@/routes/admin/processes/edital';
 
 type SelectionProcess = {
     id: number;
@@ -48,6 +53,7 @@ type SelectionProcess = {
     descricao?: string | null;
     regras?: string | null;
     status: string;
+    tipo_programa?: string | null;
     inscricao_inicio_em?: string | null;
     inscricao_fim_em?: string | null;
     stages?: Array<{ id: number; nome: string; ordem: number }>;
@@ -59,6 +65,7 @@ type SelectionProcess = {
         formatos_aceitos?: string[] | null;
         tamanho_max_mb: number;
         obrigatorio: boolean;
+        gerado_por_template?: boolean;
         tipo_documento?: { id: number; descricao: string } | null;
     }>;
     required_titulos?: Array<{
@@ -84,6 +91,7 @@ type SelectionProcess = {
         pontuacao_max: number;
     }>;
     evaluator_assignments?: Array<{ id: number }>;
+    edital_download_url?: string | null;
 };
 
 const props = defineProps<{
@@ -98,6 +106,50 @@ const props = defineProps<{
 
 const vTooltip = Tooltip;
 const confirm = useConfirm();
+
+const editalForm = useForm({
+    edital: null as File | null,
+});
+
+const editalInputKey = ref(0);
+
+const hasEditalPdf = computed(
+    () => Boolean(props.selectionProcess.edital_download_url),
+);
+
+const onEditalFileChange = (event: Event): void => {
+    const input = event.target as HTMLInputElement;
+    editalForm.edital = input.files?.[0] ?? null;
+};
+
+const submitEditalPdf = (): void => {
+    editalForm.post(storeEdital(props.selectionProcess.id).url, {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            editalForm.reset();
+            editalInputKey.value += 1;
+        },
+    });
+};
+
+const confirmRemoveEditalPdf = (): void => {
+    confirm.require({
+        header: 'Excluir edital',
+        message:
+            'Deseja excluir o PDF do edital deste processo? Os candidatos deixarão de ver o edital até que você envie um novo arquivo.',
+        icon: 'pi pi-exclamation-triangle',
+        rejectLabel: 'Cancelar',
+        acceptLabel: 'Remover',
+        rejectProps: { outlined: true, icon: 'pi pi-times' },
+        acceptProps: { severity: 'danger', icon: 'pi pi-trash' },
+        accept: () => {
+            router.delete(destroyEdital(props.selectionProcess.id).url, {
+                preserveScroll: true,
+            });
+        },
+    });
+};
 
 const requiredDocumentForm = useForm({
     tipo_documento_id: null as number | null,
@@ -325,6 +377,17 @@ const formatPontuacao = (value: string | number): string => {
         maximumFractionDigits: 2,
     });
 };
+
+const programTypeLabel = computed((): string => {
+    const t = props.selectionProcess.tipo_programa;
+    if (t === 'mestrado') {
+        return 'Mestrado';
+    }
+    if (t === 'doutorado') {
+        return 'Doutorado';
+    }
+    return 'Não definido';
+});
 </script>
 
 <template>
@@ -349,7 +412,7 @@ const formatPontuacao = (value: string | number): string => {
 
             <Card class="rounded-xl shadow-md">
                 <template #content>
-                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                         <div
                             class="flex items-start gap-3 rounded-xl border p-4"
                         >
@@ -371,6 +434,25 @@ const formatPontuacao = (value: string | number): string => {
                                         ] ?? 'secondary'
                                     "
                                 />
+                            </div>
+                        </div>
+                        <div
+                            class="flex items-start gap-3 rounded-xl border p-4"
+                        >
+                            <div
+                                class="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600"
+                            >
+                                <GraduationCap :size="20" />
+                            </div>
+                            <div class="flex flex-col">
+                                <p class="text-xs text-muted-foreground">
+                                    Tipo do programa
+                                </p>
+                                <p
+                                    class="mt-1 text-sm font-semibold leading-tight"
+                                >
+                                    {{ programTypeLabel }}
+                                </p>
                             </div>
                         </div>
                         <div
@@ -424,6 +506,122 @@ const formatPontuacao = (value: string | number): string => {
                                 <p class="mt-1 text-2xl font-semibold">
                                     {{ evaluatorsCount }}
                                 </p>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </Card>
+
+            <Card class="rounded-xl shadow-md">
+                <template #content>
+                    <div
+                        class="flex flex-col gap-5 p-2 md:flex-row md:items-start md:justify-between md:p-3"
+                    >
+                        <div class="flex items-start gap-3">
+                            <div
+                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600"
+                            >
+                                <FileBadge :size="20" />
+                            </div>
+                            <div class="flex min-w-0 flex-col gap-1">
+                                <h3 class="text-base font-semibold">
+                                    Edital do processo (PDF)
+                                </h3>
+                                <p class="text-sm text-muted-foreground">
+                                    Envie o edital oficial em formato PDF. Os
+                                    candidatos poderão baixar este arquivo na
+                                    página do processo.
+                                </p>
+                                <div
+                                    v-if="hasEditalPdf"
+                                    class="mt-3 flex flex-col gap-3 rounded-lg border border-green-200 bg-green-50/90 px-4 py-3 dark:border-green-900 dark:bg-green-950/40"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        <i
+                                            class="pi pi-check-circle text-green-600 dark:text-green-400"
+                                        />
+                                        <span
+                                            class="text-sm font-medium text-green-900 dark:text-green-100"
+                                            >Edital em PDF salvo neste
+                                            processo.</span
+                                        >
+                                    </div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <a
+                                            :href="
+                                                selectionProcess.edital_download_url ??
+                                                '#'
+                                            "
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="inline-flex"
+                                        >
+                                            <Button
+                                                label="Ver edital"
+                                                icon="pi pi-eye"
+                                                size="small"
+                                                type="button"
+                                            />
+                                        </a>
+                                        <Button
+                                            label="Excluir edital"
+                                            icon="pi pi-trash"
+                                            severity="danger"
+                                            outlined
+                                            size="small"
+                                            type="button"
+                                            :disabled="editalForm.processing"
+                                            @click="confirmRemoveEditalPdf"
+                                        />
+                                    </div>
+                                    <p class="text-xs text-muted-foreground">
+                                        Use
+                                        <strong>Ver edital</strong> para
+                                        conferir o arquivo. Use
+                                        <strong>Excluir edital</strong> para
+                                        remover e enviar outro depois, ou envie
+                                        um novo PDF à direita para substituir.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="flex w-full max-w-md flex-col gap-3 md:shrink-0"
+                        >
+                            <label
+                                class="flex cursor-pointer flex-col gap-2 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50"
+                            >
+                                <span class="text-sm font-medium">{{
+                                    hasEditalPdf
+                                        ? 'Substituir por outro PDF'
+                                        : 'Arquivo PDF'
+                                }}</span>
+                                <input
+                                    :key="editalInputKey"
+                                    type="file"
+                                    accept="application/pdf,.pdf"
+                                    class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-foreground"
+                                    @change="onEditalFileChange"
+                                />
+                                <small
+                                    v-if="editalForm.errors.edital"
+                                    class="text-sm text-red-600"
+                                    >{{ editalForm.errors.edital }}</small
+                                >
+                            </label>
+                            <div class="flex flex-wrap gap-2">
+                                <Button
+                                    :label="
+                                        hasEditalPdf
+                                            ? 'Salvar novo edital'
+                                            : 'Salvar edital'
+                                    "
+                                    icon="pi pi-upload"
+                                    size="small"
+                                    :loading="editalForm.processing"
+                                    :disabled="!editalForm.edital"
+                                    @click="submitEditalPdf"
+                                />
                             </div>
                         </div>
                     </div>
@@ -504,6 +702,18 @@ const formatPontuacao = (value: string | number): string => {
                                 class="self-start"
                             />
                         </div>
+
+                        <Message
+                            v-if="props.selectionProcess.tipo_programa"
+                            severity="info"
+                            :closable="false"
+                        >
+                            A lista base de documentos da inscrição é gerada
+                            automaticamente conforme o tipo do programa
+                            (Mestrado ou Doutorado). Você pode incluir documentos
+                            adicionais abaixo ou remover itens do padrão, se
+                            necessário.
+                        </Message>
 
                         <Fieldset legend="Adicionar documento exigido">
                             <Fluid>
@@ -686,7 +896,7 @@ const formatPontuacao = (value: string | number): string => {
                                 body-class="px-4 py-3 min-w-0"
                             >
                                 <template #body="{ data }">
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex flex-wrap items-center gap-2">
                                         <FileText
                                             :size="16"
                                             class="text-primary"
@@ -698,6 +908,12 @@ const formatPontuacao = (value: string | number): string => {
                                                 'Não informado'
                                             }}
                                         </span>
+                                        <Tag
+                                            v-if="data.gerado_por_template"
+                                            value="Padrão edital"
+                                            severity="secondary"
+                                            class="text-xs"
+                                        />
                                     </div>
                                 </template>
                             </Column>

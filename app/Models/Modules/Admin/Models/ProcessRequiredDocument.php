@@ -17,6 +17,7 @@ class ProcessRequiredDocument extends Model
         'formatos_aceitos',
         'tamanho_max_mb',
         'obrigatorio',
+        'gerado_por_template',
     ];
 
     protected function casts(): array
@@ -24,6 +25,7 @@ class ProcessRequiredDocument extends Model
         return [
             'formatos_aceitos' => 'array',
             'obrigatorio' => 'boolean',
+            'gerado_por_template' => 'boolean',
         ];
     }
 

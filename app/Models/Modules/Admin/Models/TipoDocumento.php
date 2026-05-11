@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class TipoDocumento extends Model
 {
     protected $fillable = [
+        'codigo',
         'descricao',
         'status',
     ];
