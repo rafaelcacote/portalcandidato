@@ -26,7 +26,7 @@ import Textarea from 'primevue/textarea';
 import ToggleSwitch from 'primevue/toggleswitch';
 import Tooltip from 'primevue/tooltip';
 import { useConfirm } from 'primevue/useconfirm';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { edit } from '@/routes/admin/processes';
 import {
@@ -171,6 +171,25 @@ const stagesCount = computed(
 const evaluatorsCount = computed(
     () => props.selectionProcess.evaluator_assignments?.length ?? 0,
 );
+
+type ConfigStepKey = 'documentos' | 'titulos';
+
+const configSteps = computed<
+    Array<{ key: ConfigStepKey; label: string; count: number }>
+>(() => [
+    {
+        key: 'documentos',
+        label: 'Documentos exigidos',
+        count: requiredDocumentsCount.value,
+    },
+    {
+        key: 'titulos',
+        label: 'Títulos aceitos',
+        count: requiredTitulosCount.value,
+    },
+]);
+
+const activeConfigStep = ref<ConfigStepKey>('documentos');
 
 const calculoLabel = (calculo?: string | null): string => {
     if (calculo === 'data') {
@@ -411,7 +430,52 @@ const formatPontuacao = (value: string | number): string => {
                 </template>
             </Card>
 
-            <Card class="overflow-hidden rounded-xl shadow-md">
+            <Card class="rounded-xl shadow-md">
+                <template #content>
+                    <div class="flex flex-col gap-4 p-2 md:p-3">
+                        <div class="flex flex-col gap-1">
+                            <h3 class="text-base font-semibold">
+                                Etapas da configuração
+                            </h3>
+                            <p class="text-sm text-muted-foreground">
+                                Configure os itens em sequência para montar o
+                                processo seletivo.
+                            </p>
+                        </div>
+                        <div class="grid gap-2 md:grid-cols-2">
+                            <button
+                                v-for="step in configSteps"
+                                :key="step.key"
+                                type="button"
+                                class="flex items-center justify-between rounded-lg border px-3 py-2 text-left transition-colors"
+                                :class="
+                                    activeConfigStep === step.key
+                                        ? 'border-primary bg-primary/5 text-primary'
+                                        : 'border-border hover:bg-muted/40'
+                                "
+                                @click="activeConfigStep = step.key"
+                            >
+                                <span class="text-sm font-medium">
+                                    {{ step.label }}
+                                </span>
+                                <Tag
+                                    :value="String(step.count)"
+                                    :severity="
+                                        activeConfigStep === step.key
+                                            ? 'contrast'
+                                            : 'secondary'
+                                    "
+                                />
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </Card>
+
+            <Card
+                v-if="activeConfigStep === 'documentos'"
+                class="overflow-hidden rounded-xl shadow-md"
+            >
                 <template #content>
                     <div class="flex flex-col gap-5 p-2 md:p-3">
                         <div
@@ -732,7 +796,10 @@ const formatPontuacao = (value: string | number): string => {
                 </template>
             </Card>
 
-            <Card class="overflow-hidden rounded-xl shadow-md">
+            <Card
+                v-if="activeConfigStep === 'titulos'"
+                class="overflow-hidden rounded-xl shadow-md"
+            >
                 <template #content>
                     <div class="flex flex-col gap-5 p-2 md:p-3">
                         <div

@@ -27,7 +27,7 @@ test('admin can register a new evaluator', function () {
         ->post(route('admin.evaluators.store'), [
             'name' => 'Maria Avaliadora',
             'email' => 'maria.avaliadora@example.com',
-            'cpf' => '123.456.789-00',
+            'cpf' => '529.982.247-25',
             'telefone' => '(11) 98888-7777',
             'password' => 'senhaSegura123',
             'ativo' => true,
@@ -45,7 +45,8 @@ test('admin can register a new evaluator', function () {
         ->where('email', 'maria.avaliadora@example.com')
         ->firstOrFail();
 
-    expect($evaluator->hasRole('avaliador'))->toBeTrue();
+    expect($evaluator->hasRole('avaliador'))->toBeTrue()
+        ->and($evaluator->cpf)->toBe('52998224725');
     expect(Hash::check('senhaSegura123', $evaluator->password))->toBeTrue();
 });
 
@@ -59,7 +60,37 @@ test('store evaluator validates required fields and unique email', function () {
             'email' => 'existente@example.com',
             'password' => '',
         ])
-        ->assertSessionHasErrors(['name', 'password', 'email']);
+        ->assertSessionHasErrors(['name', 'password', 'email', 'cpf']);
+});
+
+test('store evaluator rejects invalid cpf', function () {
+    $admin = adminUser();
+
+    $this->actingAs($admin)
+        ->post(route('admin.evaluators.store'), [
+            'name' => 'Nome',
+            'email' => 'novo@example.com',
+            'cpf' => '123.456.789-00',
+            'password' => 'senhaSegura12',
+            'ativo' => true,
+        ])
+        ->assertSessionHasErrors(['cpf']);
+});
+
+test('store evaluator rejects duplicate cpf', function () {
+    $admin = adminUser();
+
+    User::factory()->create(['cpf' => '52998224725']);
+
+    $this->actingAs($admin)
+        ->post(route('admin.evaluators.store'), [
+            'name' => 'Outro',
+            'email' => 'outro@example.com',
+            'cpf' => '52998224725',
+            'password' => 'senhaSegura12',
+            'ativo' => true,
+        ])
+        ->assertSessionHasErrors(['cpf']);
 });
 
 test('admin can update evaluator data and keep current password when blank', function () {
@@ -76,9 +107,9 @@ test('admin can update evaluator data and keep current password when blank', fun
         ->put(route('admin.evaluators.update', $evaluator), [
             'name' => 'João Silva',
             'email' => 'joao.silva@example.com',
-            'cpf' => null,
+            'cpf' => '52998224725',
             'telefone' => '(11) 91234-5678',
-            'password' => null,
+            'password' => '',
             'ativo' => true,
         ])
         ->assertRedirect();
@@ -87,6 +118,7 @@ test('admin can update evaluator data and keep current password when blank', fun
 
     expect($evaluator->name)->toBe('João Silva');
     expect($evaluator->email)->toBe('joao.silva@example.com');
+    expect($evaluator->cpf)->toBe('52998224725');
     expect(Hash::check('original-password', $evaluator->password))->toBeTrue();
 });
 

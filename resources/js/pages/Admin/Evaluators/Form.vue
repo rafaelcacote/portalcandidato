@@ -9,6 +9,7 @@ import ConfirmDialog from 'primevue/confirmdialog';
 import DataTable from 'primevue/datatable';
 import Fieldset from 'primevue/fieldset';
 import Fluid from 'primevue/fluid';
+import InputMask from 'primevue/inputmask';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import Select from 'primevue/select';
@@ -69,6 +70,43 @@ const props = defineProps<{
 const vTooltip = Tooltip;
 const confirm = useConfirm();
 
+/** Teclado numérico em mobile; a máscara só aceita dígitos ao digitar. */
+const cpfInputPt = {
+    pcInputText: {
+        root: {
+            inputmode: 'numeric',
+            autocomplete: 'off',
+        },
+    },
+} as const;
+
+function cpfOnlyDigits(value: string): string {
+    return value.replace(/\D/g, '');
+}
+
+/** Brazilian CPF check digits (11 digits). */
+function isValidCpfDigits(digits: string): boolean {
+    if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) {
+        return false;
+    }
+
+    for (let t = 9; t < 11; t++) {
+        let d = 0;
+
+        for (let c = 0; c < t; c++) {
+            d += Number.parseInt(digits[c]!, 10) * (t + 1 - c);
+        }
+
+        d = ((10 * d) % 11) % 10;
+
+        if (Number.parseInt(digits[t]!, 10) !== d) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 const isEditing = (): boolean => Boolean(props.evaluator?.id);
 
 const form = useForm({
@@ -115,9 +153,11 @@ function fieldInvalid(field: string): boolean {
 
 function touchField(field: string): void {
     form.clearErrors(field);
+
     if (!clientErrors.value[field]) {
         return;
     }
+
     const next = { ...clientErrors.value };
     delete next[field];
     clientErrors.value = next;
@@ -147,6 +187,16 @@ function validateClient(): boolean {
     } else if (isEditing() && form.password && form.password.length < 8) {
         clientErrors.value.password =
             'A senha deve ter no mínimo 8 caracteres.';
+        valid = false;
+    }
+
+    const cpfDigits = cpfOnlyDigits(form.cpf);
+
+    if (!cpfDigits) {
+        clientErrors.value.cpf = 'Este campo é obrigatório.';
+        valid = false;
+    } else if (!isValidCpfDigits(cpfDigits)) {
+        clientErrors.value.cpf = 'Informe um CPF válido.';
         valid = false;
     }
 
@@ -323,12 +373,19 @@ const confirmRemoveAssignment = (assignment: Assignment): void => {
                                         </small>
                                     </label>
                                     <label class="flex flex-col gap-2">
-                                        <span class="text-sm">CPF</span>
-                                        <InputText
+                                        <span class="text-sm">
+                                            CPF
+                                            <span class="text-red-600">*</span>
+                                        </span>
+                                        <InputMask
                                             v-model="form.cpf"
+                                            mask="999.999.999-99"
                                             placeholder="000.000.000-00"
+                                            :unmask="true"
+                                            :auto-clear="false"
                                             :invalid="fieldInvalid('cpf')"
-                                            maxlength="14"
+                                            class="w-full"
+                                            :pt="cpfInputPt"
                                             @update:model-value="
                                                 touchField('cpf')
                                             "

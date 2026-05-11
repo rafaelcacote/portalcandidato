@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Modules\Admin;
 
+use App\Models\User;
+use App\Rules\Cpf;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -12,7 +14,28 @@ class UpdateEvaluatorRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $evaluator = $this->route('evaluator');
+
+        if ($evaluator instanceof User) {
+            abort_unless($evaluator->hasRole('avaliador'), 404);
+        }
+
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $cpf = $this->input('cpf');
+
+        if ($cpf === null) {
+            return;
+        }
+
+        $trimmed = trim((string) $cpf);
+
+        $this->merge([
+            'cpf' => $trimmed === '' ? '' : Cpf::normalizeToDigits($trimmed),
+        ]);
     }
 
     /**
@@ -29,7 +52,7 @@ class UpdateEvaluatorRequest extends FormRequest
                 Rule::unique('users', 'email')->ignore($userId),
             ],
             'cpf' => [
-                'nullable', 'string', 'max:14',
+                'required', 'string', 'size:11', new Cpf,
                 Rule::unique('users', 'cpf')->ignore($userId),
             ],
             'telefone' => ['nullable', 'string', 'max:20'],
@@ -48,6 +71,8 @@ class UpdateEvaluatorRequest extends FormRequest
             'email.required' => 'Este campo é obrigatório.',
             'email.email' => 'Informe um e-mail válido.',
             'email.unique' => 'Já existe um usuário com este e-mail.',
+            'cpf.required' => 'Este campo é obrigatório.',
+            'cpf.size' => 'Informe um CPF válido.',
             'cpf.unique' => 'Já existe um usuário com este CPF.',
             'password.min' => 'A senha deve ter no mínimo :min caracteres.',
         ];
