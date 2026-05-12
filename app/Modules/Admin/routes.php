@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Modules\Admin\AdminDashboardController;
 use App\Http\Controllers\Modules\Admin\EvaluatorController;
 use App\Http\Controllers\Modules\Admin\ProcessApplicationFieldController;
 use App\Http\Controllers\Modules\Admin\ProcessCriteriaController;
@@ -17,7 +18,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function (): void {
-        Route::inertia('dashboard', 'Admin/Dashboard')->name('dashboard');
+        Route::get('dashboard', AdminDashboardController::class)->name('dashboard');
         Route::get('processes/types', [ProcessTypeController::class, 'index'])
             ->name('processes.types.index');
         Route::get('support-tables/document-types/create', [ProcessTypeController::class, 'createDocumentType'])

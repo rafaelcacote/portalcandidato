@@ -23,7 +23,7 @@ import type { ProcessTitleGroupRow } from '@/components/Candidate/processTitleTy
 import Heading from '@/components/Heading.vue';
 import { edit as profileEdit } from '@/routes/profile';
 import { home } from '@/routes';
-import { start as startApplication } from '@/routes/candidate/applications';
+import { start as startApplication, show as applicationShow } from '@/routes/candidate/applications';
 import { index, show } from '@/routes/candidate/processes';
 
 defineOptions({
@@ -72,6 +72,7 @@ const props = defineProps<{
         title_groups?: ProcessTitleGroupRow[];
     };
     alreadyApplied?: boolean;
+    draftApplicationId?: number | null;
 }>();
 
 const statusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'danger'> = {
@@ -155,7 +156,7 @@ const timelineEvents = (
 
             <!-- Banner de status e prazo -->
             <Message
-                v-if="isInscricaoAberta() && !alreadyApplied && !candidateProfileComplete"
+                v-if="isInscricaoAberta() && !alreadyApplied && !draftApplicationId && !candidateProfileComplete"
                 severity="warn"
                 :closable="false"
                 class="rounded-xl"
@@ -191,15 +192,24 @@ const timelineEvents = (
                         </p>
                     </div>
                 </div>
+                <Link v-if="draftApplicationId" :href="applicationShow({ application: draftApplicationId }).url">
+                    <Button
+                        label="Continuar sua inscrição"
+                        icon="pi pi-arrow-right"
+                        size="small"
+                        type="button"
+                    />
+                </Link>
                 <Button
-                    v-if="!alreadyApplied && candidateProfileComplete"
+                    v-else-if="!alreadyApplied && candidateProfileComplete"
                     label="Inscrever-se agora"
                     icon="pi pi-send"
                     size="small"
+                    type="button"
                     @click="doStartApplication"
                 />
                 <Tag
-                    v-else
+                    v-else-if="alreadyApplied"
                     value="Já inscrito"
                     severity="success"
                     icon="pi pi-check"
@@ -465,19 +475,45 @@ const timelineEvents = (
                     </Card>
 
                     <!-- CTA mobile -->
-                    <div v-if="isInscricaoAberta() && !alreadyApplied && candidateProfileComplete" class="lg:hidden">
+                    <div
+                        v-if="isInscricaoAberta() && (draftApplicationId || (!alreadyApplied && candidateProfileComplete))"
+                        class="lg:hidden"
+                    >
+                        <Link v-if="draftApplicationId" :href="applicationShow({ application: draftApplicationId }).url" class="block w-full">
+                            <Button
+                                label="Continuar sua inscrição"
+                                icon="pi pi-arrow-right"
+                                class="w-full"
+                                type="button"
+                            />
+                        </Link>
                         <Button
+                            v-else
                             label="Inscrever-se neste processo"
                             icon="pi pi-send"
                             class="w-full"
+                            type="button"
                             @click="doStartApplication"
                         />
                     </div>
-                    <div v-if="isInscricaoAberta() && !alreadyApplied && candidateProfileComplete" class="hidden lg:block">
+                    <div
+                        v-if="isInscricaoAberta() && (draftApplicationId || (!alreadyApplied && candidateProfileComplete))"
+                        class="hidden lg:block"
+                    >
+                        <Link v-if="draftApplicationId" :href="applicationShow({ application: draftApplicationId }).url" class="block w-full">
+                            <Button
+                                label="Continuar sua inscrição"
+                                icon="pi pi-arrow-right"
+                                class="w-full"
+                                type="button"
+                            />
+                        </Link>
                         <Button
+                            v-else
                             label="Inscrever-se neste processo"
                             icon="pi pi-send"
                             class="w-full"
+                            type="button"
                             @click="doStartApplication"
                         />
                     </div>

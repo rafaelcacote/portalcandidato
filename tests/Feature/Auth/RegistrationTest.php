@@ -105,3 +105,19 @@ test('registration rejects invalid cpf', function () {
 
     $this->assertGuest();
 });
+
+test('registration rejects duplicate cpf with portuguese message', function () {
+    User::factory()->create([
+        'email' => 'existing-'.uniqid().'@example.com',
+        'cpf' => '52998224725',
+    ]);
+
+    $email = 'cand-dup-'.uniqid().'@example.com';
+    $payload = validCandidateRegistrationPayload($email);
+
+    $this->from(route('register'))
+        ->post(route('register.store'), $payload)
+        ->assertSessionHasErrors(['cpf' => 'Este CPF já está cadastrado.']);
+
+    $this->assertGuest();
+});

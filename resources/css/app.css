@@ -170,3 +170,45 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Admin panel — slate-950 sidebar, emerald/teal accents (Linear/Vercel style). */
+.admin-app-shell {
+    --background: hsl(220 13% 96%);
+    --foreground: hsl(222 47% 11%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(222 47% 11%);
+    --muted: hsl(220 14% 93%);
+    --muted-foreground: hsl(215 16% 47%);
+    --border: hsl(214 32% 91%);
+    --primary: hsl(162 95% 34%);
+    --primary-foreground: hsl(0 0% 100%);
+    /* ── sidebar tokens ─────────────────────── */
+    --sidebar: hsl(222 47% 4%);
+    --sidebar-background: hsl(222 47% 4%);
+    --sidebar-foreground: hsl(215 20% 58%);
+    --sidebar-border: hsl(215 28% 9%);
+    --sidebar-accent: hsl(162 55% 11%);
+    --sidebar-accent-foreground: hsl(160 55% 62%);
+    --sidebar-primary: hsl(162 95% 34%);
+    --sidebar-primary-foreground: hsl(222 47% 4%);
+    --sidebar-ring: hsl(162 95% 34%);
+}
+
+/* ── Nav item refinements (admin only) ────────────────────────────────── */
+.admin-app-shell [data-sidebar="menu-button"] {
+    border-radius: 0.625rem;
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-app-shell [data-sidebar="menu-button"][data-active="true"] {
+    box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.15), 0 0 16px rgba(52, 211, 153, 0.07);
+}
+
+.admin-app-shell [data-sidebar="group-label"] {
+    font-size: 0.6rem;
+    letter-spacing: 0.11em;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: hsl(215 20% 30%);
+    padding-top: 1rem;
+}

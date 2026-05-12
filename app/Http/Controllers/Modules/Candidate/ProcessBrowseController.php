@@ -5,22 +5,43 @@ namespace App\Http\Controllers\Modules\Candidate;
 use App\Http\Controllers\Controller;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
+use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProcessBrowseController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $search = $request->string('search')->trim()->value();
+        $tipoPrograma = $request->string('tipo_programa')->trim()->value();
+
         $processes = SelectionProcess::query()
             ->where('status', 'ativo')
+            ->when($search !== '', fn ($q) => $q->where('titulo', 'like', "%{$search}%"))
+            ->when($tipoPrograma !== '', fn ($q) => $q->where('tipo_programa', $tipoPrograma))
             ->latest()
             ->paginate(12)
             ->withQueryString();
 
+        $draftApplicationIdsByProcessId = [];
+        if ($processes->isNotEmpty()) {
+            $draftApplicationIdsByProcessId = Application::query()
+                ->where('user_id', auth()->id())
+                ->whereIn('selection_process_id', $processes->pluck('id'))
+                ->where('status', ApplicationStatus::Rascunho->value)
+                ->pluck('id', 'selection_process_id')
+                ->all();
+        }
+
         return Inertia::render('Candidate/Processes/Index', [
             'processes' => $processes,
+            'draftApplicationIdsByProcessId' => $draftApplicationIdsByProcessId,
+            'filters' => [
+                'search' => $search,
+                'tipo_programa' => $tipoPrograma,
+            ],
         ]);
     }
 
@@ -31,14 +52,25 @@ class ProcessBrowseController extends Controller
             SelectionProcess::candidateTitleCatalogEagerLoads(),
         ));
 
-        $alreadyApplied = Application::query()
+        $application = Application::query()
             ->where('selection_process_id', $selectionProcess->id)
             ->where('user_id', $request->user()->id)
-            ->exists();
+            ->first();
+
+        $draftApplicationId = null;
+        $alreadyApplied = false;
+        if ($application !== null) {
+            if ($application->status === ApplicationStatus::Rascunho->value) {
+                $draftApplicationId = $application->id;
+            } else {
+                $alreadyApplied = true;
+            }
+        }
 
         return Inertia::render('Candidate/Processes/Show', [
             'selectionProcess' => $selectionProcess,
             'alreadyApplied' => $alreadyApplied,
+            'draftApplicationId' => $draftApplicationId,
         ]);
     }
 }

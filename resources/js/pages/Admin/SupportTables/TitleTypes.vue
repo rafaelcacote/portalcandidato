@@ -13,13 +13,13 @@ import Tooltip from 'primevue/tooltip';
 import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import {
-    create as createTitleTypePage,
-    edit as editTitleTypePage,
-} from '@/routes/admin/support-tables/title-types';
-import {
     destroy as destroyTipoTitulo,
     update as updateTipoTitulo,
 } from '@/routes/admin/processes/types/titulos';
+import {
+    create as createTitleTypePage,
+    edit as editTitleTypePage,
+} from '@/routes/admin/support-tables/title-types';
 
 type TipoTitulo = {
     id: number;
@@ -89,7 +89,7 @@ const toggleTituloStatus = (item: TipoTitulo): void => {
 </script>
 
 <template>
-    <div class="p-1">
+    <div class="px-4 py-3 sm:px-6 md:px-8 lg:px-10 md:py-4">
         <div class="mx-auto flex w-full max-w-[1820px] flex-col gap-5">
             <ConfirmDialog />
 

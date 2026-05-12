@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { ChevronRight } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { toast } from 'vue-sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
     SidebarGroup,
@@ -13,20 +15,43 @@ import {
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
-import type { NavItem } from '@/types';
+import type { NavItem, NavSection } from '@/types';
 
-defineProps<{
-    items: NavItem[];
+const props = defineProps<{
+    items?: NavItem[];
+    sections?: NavSection[];
 }>();
 
 const { isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
+
+function showComingSoonNotice(item: NavItem): void {
+    const description =
+        item.comingSoonMessage ??
+        'Esta área ainda está em desenvolvimento e estará disponível em breve.';
+
+    toast(item.title, {
+        description,
+    });
+}
+
+const resolvedSections = computed<NavSection[]>(() => {
+    if (props.sections?.length) {
+        return props.sections;
+    }
+
+    return [{ label: 'Platform', items: props.items ?? [] }];
+});
 </script>
 
 <template>
-    <SidebarGroup class="px-2 py-0">
-        <SidebarGroupLabel>Platform</SidebarGroupLabel>
+    <SidebarGroup
+        v-for="section in resolvedSections"
+        :key="section.label"
+        class="px-2 py-0"
+    >
+        <SidebarGroupLabel>{{ section.label }}</SidebarGroupLabel>
         <SidebarMenu>
-            <SidebarMenuItem v-for="item in items" :key="item.title">
+            <SidebarMenuItem v-for="item in section.items" :key="item.title">
                 <template v-if="item.children?.length">
                     <Collapsible
                         :default-open="isCurrentOrParentUrl(item.href)"
@@ -63,6 +88,16 @@ const { isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
                         </CollapsibleContent>
                     </Collapsible>
                 </template>
+
+                <SidebarMenuButton
+                    v-else-if="item.comingSoon"
+                    type="button"
+                    :tooltip="item.title"
+                    @click="showComingSoonNotice(item)"
+                >
+                    <component :is="item.icon" />
+                    <span>{{ item.title }}</span>
+                </SidebarMenuButton>
 
                 <SidebarMenuButton
                     v-else

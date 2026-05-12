@@ -1,0 +1,43 @@
+/**
+ * Brazilian CPF / CEP helpers for client-side validation and masks.
+ */
+
+export function cpfDigitsOnly(value: string): string {
+    return value.replace(/\D/g, '');
+}
+
+/** Validates 11-digit CPF (same algorithm as backend `App\Rules\Cpf`). */
+export function isValidCpfDigits(digits: string): boolean {
+    if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) {
+        return false;
+    }
+
+    for (let t = 9; t < 11; t++) {
+        let d = 0;
+
+        for (let c = 0; c < t; c++) {
+            d += Number.parseInt(digits[c]!, 10) * (t + 1 - c);
+        }
+
+        d = ((10 * d) % 11) % 10;
+
+        if (Number.parseInt(digits[t]!, 10) !== d) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+export function cepDigitsOnly(value: string): string {
+    return value.replace(/\D/g, '').slice(0, 8);
+}
+
+export function formatCepDisplay(digits: string): string {
+    const d = cepDigitsOnly(digits);
+    if (d.length <= 5) {
+        return d;
+    }
+
+    return `${d.slice(0, 5)}-${d.slice(5)}`;
+}

@@ -12,4 +12,15 @@ export type NavItem = {
     icon?: LucideIcon;
     isActive?: boolean;
     children?: NavItem[];
+    /**
+     * When true, a click shows a notice instead of visiting `href` (e.g. feature not ready yet).
+     */
+    comingSoon?: boolean;
+    /** Custom body for the coming-soon notice; falls back to a default message. */
+    comingSoonMessage?: string;
+};
+
+export type NavSection = {
+    label: string;
+    items: NavItem[];
 };

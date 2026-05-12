@@ -24,7 +24,10 @@ class CreateNewUser implements CreatesNewUsers
     {
         $input = $this->prepareRegistrationInput($input);
 
-        Validator::make($input, $this->candidateRegistrationRules())->validate();
+        Validator::make($input, $this->candidateRegistrationRules(), [
+            'cpf.unique' => 'Este CPF já está cadastrado.',
+            'email.unique' => 'Este e-mail já está cadastrado.',
+        ])->validate();
 
         /** @var UploadedFile|null $foto */
         $foto = $input['foto'] ?? null;

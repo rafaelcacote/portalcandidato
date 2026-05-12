@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Modules\Admin\Models\SelectionProcess;
+use App\Models\Modules\Candidate\Models\Application;
 use App\Models\User;
+use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -72,5 +74,105 @@ test('candidate processes index has null edital url when process has no edital f
             ->component('Candidate/Processes/Index')
             ->has('processes.data', 1)
             ->where('processes.data.0.edital_download_url', null)
+        );
+});
+
+test('candidate processes index exposes filters prop', function (): void {
+    Role::findOrCreate('candidato', 'web');
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    $this->actingAs($candidate)
+        ->get(route('candidate.processes.index', ['search' => 'Mestrado', 'tipo_programa' => 'mestrado']))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Candidate/Processes/Index')
+            ->where('filters.search', 'Mestrado')
+            ->where('filters.tipo_programa', 'mestrado')
+        );
+});
+
+test('candidate processes index filters by tipo_programa', function (): void {
+    Role::findOrCreate('candidato', 'web');
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    SelectionProcess::query()->create([
+        'titulo' => 'Mestrado em Eng',
+        'descricao' => 'D',
+        'status' => 'ativo',
+        'tipo_programa' => 'mestrado',
+    ]);
+
+    SelectionProcess::query()->create([
+        'titulo' => 'Doutorado em Física',
+        'descricao' => 'D',
+        'status' => 'ativo',
+        'tipo_programa' => 'doutorado',
+    ]);
+
+    $this->actingAs($candidate)
+        ->get(route('candidate.processes.index', ['tipo_programa' => 'doutorado']))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Candidate/Processes/Index')
+            ->has('processes.data', 1)
+            ->where('processes.data.0.titulo', 'Doutorado em Física')
+        );
+});
+
+test('candidate processes index filters by search term', function (): void {
+    Role::findOrCreate('candidato', 'web');
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    SelectionProcess::query()->create([
+        'titulo' => 'Programa de Biologia',
+        'descricao' => 'D',
+        'status' => 'ativo',
+        'tipo_programa' => 'mestrado',
+    ]);
+
+    SelectionProcess::query()->create([
+        'titulo' => 'Programa de Física',
+        'descricao' => 'D',
+        'status' => 'ativo',
+        'tipo_programa' => 'mestrado',
+    ]);
+
+    $this->actingAs($candidate)
+        ->get(route('candidate.processes.index', ['search' => 'Biologia']))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Candidate/Processes/Index')
+            ->has('processes.data', 1)
+            ->where('processes.data.0.titulo', 'Programa de Biologia')
+        );
+});
+
+test('candidate processes index maps draft application ids for rascunho applications', function (): void {
+    Role::findOrCreate('candidato', 'web');
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS Rascunho',
+        'descricao' => 'Descrição',
+        'status' => 'ativo',
+        'tipo_programa' => 'mestrado',
+    ]);
+
+    $application = Application::query()->create([
+        'user_id' => $candidate->id,
+        'selection_process_id' => $process->id,
+        'status' => ApplicationStatus::Rascunho->value,
+    ]);
+
+    $this->actingAs($candidate)
+        ->get(route('candidate.processes.index'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Candidate/Processes/Index')
+            ->where('draftApplicationIdsByProcessId.'.$process->id, $application->id)
         );
 });

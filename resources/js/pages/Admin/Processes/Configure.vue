@@ -275,9 +275,11 @@ const storeTitleGroupAction = (): void => {
 
 const storeTitleItemAction = (): void => {
     const groupId = showAddItemFormForGroup.value;
+
     if (!groupId) {
         return;
     }
+
     titleItemForm.post(
         storeTitleItem({
             selectionProcess: props.selectionProcess.id,
@@ -378,14 +380,17 @@ const formatosToList = (formatos?: string[] | null): string[] => {
     if (!formatos) {
         return [];
     }
+
     return formatos.filter((value): value is string => Boolean(value));
 };
 
 const formatPontuacao = (value: string | number): string => {
     const parsed = typeof value === 'number' ? value : Number(value);
+
     if (Number.isNaN(parsed)) {
         return String(value);
     }
+
     return parsed.toLocaleString('pt-BR', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
@@ -394,9 +399,11 @@ const formatPontuacao = (value: string | number): string => {
 
 const formatScore = (value: string | number): string => {
     const parsed = typeof value === 'number' ? value : Number(value);
+
     if (Number.isNaN(parsed)) {
         return String(value);
     }
+
     return parsed.toLocaleString('pt-BR', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
@@ -407,10 +414,13 @@ const formatPeriod = (value?: string | null): string => {
     if (!value) {
         return '-';
     }
+
     const parsed = new Date(value);
+
     if (Number.isNaN(parsed.getTime())) {
         return value;
     }
+
     return new Intl.DateTimeFormat('pt-BR', {
         dateStyle: 'short',
         timeStyle: 'short',
@@ -420,20 +430,25 @@ const formatPeriod = (value?: string | null): string => {
 const periodLabel = computed(() => {
     const start = formatPeriod(props.selectionProcess.inscricao_inicio_em);
     const end = formatPeriod(props.selectionProcess.inscricao_fim_em);
+
     if (start === '-' && end === '-') {
         return 'Não definido';
     }
+
     return `${start} → ${end}`;
 });
 
 const programTypeLabel = computed((): string => {
     const t = props.selectionProcess.tipo_programa;
+
     if (t === 'mestrado') {
         return 'Mestrado';
     }
+
     if (t === 'doutorado') {
         return 'Doutorado';
     }
+
     return 'Não definido';
 });
 
@@ -536,7 +551,7 @@ const completionDoneCount = computed(
 </script>
 
 <template>
-    <div class="p-1">
+    <div class="px-4 py-3 sm:px-6 md:px-8 lg:px-10 md:py-4">
         <ConfirmDialog />
 
         <div class="mx-auto flex w-full max-w-[1400px] flex-col gap-6">

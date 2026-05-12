@@ -10,14 +10,6 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import Tooltip from 'primevue/tooltip';
 import Heading from '@/components/Heading.vue';
 import {
-    create as createDocumentTypePage,
-    edit as editDocumentTypePage,
-} from '@/routes/admin/support-tables/document-types';
-import {
-    create as createTitleTypePage,
-    edit as editTitleTypePage,
-} from '@/routes/admin/support-tables/title-types';
-import {
     destroy as destroyTipoDocumento,
     update as updateTipoDocumento,
 } from '@/routes/admin/processes/types/documentos';
@@ -25,6 +17,14 @@ import {
     destroy as destroyTipoTitulo,
     update as updateTipoTitulo,
 } from '@/routes/admin/processes/types/titulos';
+import {
+    create as createDocumentTypePage,
+    edit as editDocumentTypePage,
+} from '@/routes/admin/support-tables/document-types';
+import {
+    create as createTitleTypePage,
+    edit as editTitleTypePage,
+} from '@/routes/admin/support-tables/title-types';
 
 type TipoDocumento = {
     id: number;
@@ -79,7 +79,7 @@ const toggleTituloStatus = (item: TipoTitulo): void => {
 </script>
 
 <template>
-    <div class="p-1">
+    <div class="px-4 py-3 sm:px-6 md:px-8 lg:px-10 md:py-4">
         <div class="mx-auto flex w-full max-w-[1820px] flex-col gap-5">
             <ConfirmDialog />
 

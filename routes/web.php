@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\RegisterCpfAvailabilityController;
 use App\Http\Controllers\SelectionProcessEditalDownloadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,10 @@ Route::get('/', function (Request $request) {
 
     return redirect()->route('login');
 })->name('home');
+
+Route::middleware('throttle:40,1')
+    ->get('register/check-cpf', RegisterCpfAvailabilityController::class)
+    ->name('register.check-cpf');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');

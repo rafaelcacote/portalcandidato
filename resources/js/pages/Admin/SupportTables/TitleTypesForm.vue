@@ -10,11 +10,11 @@ import Select from 'primevue/select';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
-import { index } from '@/routes/admin/support-tables/title-types';
 import {
     store as storeTipoTitulo,
     update as updateTipoTitulo,
 } from '@/routes/admin/processes/types/titulos';
+import { index } from '@/routes/admin/support-tables/title-types';
 
 const props = defineProps<{
     tipoTitulo?: {
@@ -66,9 +66,11 @@ function fieldInvalid(field: string): boolean {
 
 function touchField(field: string): void {
     form.clearErrors(field);
+
     if (!clientErrors.value[field]) {
         return;
     }
+
     const next = { ...clientErrors.value };
     delete next[field];
     clientErrors.value = next;
@@ -111,7 +113,7 @@ const submit = (): void => {
 </script>
 
 <template>
-    <div class="p-1">
+    <div class="px-4 py-3 sm:px-6 md:px-8 lg:px-10 md:py-4">
         <div class="mx-auto flex w-full max-w-[1820px] flex-col gap-5">
             <div class="flex items-start justify-between gap-8 py-3">
                 <Heading
