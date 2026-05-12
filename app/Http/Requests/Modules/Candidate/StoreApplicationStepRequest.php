@@ -21,6 +21,15 @@ class StoreApplicationStepRequest extends FormRequest
      */
     public function rules(): array
     {
+        $step = (int) $this->route('step', 0);
+
+        if ($step === 1) {
+            return [
+                'payload' => ['required', 'array'],
+                'payload.concorre_vagas_pcd' => ['required', 'boolean'],
+            ];
+        }
+
         return [
             'payload' => ['required', 'array'],
         ];

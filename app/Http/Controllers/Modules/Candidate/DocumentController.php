@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Modules\Candidate\StoreApplicationDocumentRequest;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\Modules\Candidate\Models\ApplicationDocument;
+use App\Modules\Candidate\Enums\CandidaturaSpecialDocumentKind;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -50,12 +53,55 @@ class DocumentController extends Controller
     {
         abort_if($application->user_id !== auth()->id(), 403);
 
+        $validated = $request->validated();
         $file = $request->file('arquivo');
         $path = $file->store("private/documents/{$application->selection_process_id}/{$application->id}");
+
+        $kind = isset($validated['candidatura_document_kind'])
+            ? CandidaturaSpecialDocumentKind::tryFrom((string) $validated['candidatura_document_kind'])
+            : null;
+
+        if ($kind !== null) {
+            $this->replaceExisting(
+                $application->id,
+                fn ($q) => $q->where('candidatura_document_kind', $kind->value),
+            );
+
+            ApplicationDocument::query()->create([
+                'application_id' => $application->id,
+                'candidatura_document_kind' => $kind->value,
+                'process_required_document_id' => null,
+                'process_title_item_id' => null,
+                'caminho' => $path,
+                'nome_arquivo' => $file->getClientOriginalName(),
+                'mime' => $file->getMimeType() ?? 'application/octet-stream',
+                'status' => 'enviado',
+            ]);
+
+            return back()->with('success', 'Documento enviado.');
+        }
+
+        if ($request->filled('process_title_item_id')) {
+            $titleItemId = $request->integer('process_title_item_id');
+
+            ApplicationDocument::query()->create([
+                'application_id' => $application->id,
+                'process_required_document_id' => null,
+                'process_title_item_id' => $titleItemId,
+                'quantidade' => 1,
+                'caminho' => $path,
+                'nome_arquivo' => $file->getClientOriginalName(),
+                'mime' => $file->getMimeType() ?? 'application/octet-stream',
+                'status' => 'enviado',
+            ]);
+
+            return back()->with('success', 'Comprovante de título enviado.');
+        }
 
         ApplicationDocument::query()->create([
             'application_id' => $application->id,
             'process_required_document_id' => $request->integer('process_required_document_id'),
+            'process_title_item_id' => null,
             'caminho' => $path,
             'nome_arquivo' => $file->getClientOriginalName(),
             'mime' => $file->getMimeType() ?? 'application/octet-stream',
@@ -63,5 +109,39 @@ class DocumentController extends Controller
         ]);
 
         return back()->with('success', 'Documento enviado.');
+    }
+
+    public function destroy(Application $application, ApplicationDocument $document): RedirectResponse
+    {
+        abort_if($application->user_id !== auth()->id(), 403);
+        abort_if($document->application_id !== $application->id, 404);
+        abort_if($application->finalizada_em !== null, 422);
+
+        if ($document->caminho !== '') {
+            Storage::delete($document->caminho);
+        }
+
+        $document->delete();
+
+        return back()->with('success', 'Comprovante removido.');
+    }
+
+    /**
+     * Deletes any pre-existing document records (and their stored files) that
+     * match the given scope so a fresh upload replaces the previous version.
+     *
+     * @param  \Closure(Builder): Builder  $scope
+     */
+    private function replaceExisting(int $applicationId, \Closure $scope): void
+    {
+        $query = ApplicationDocument::query()->where('application_id', $applicationId);
+        $scope($query);
+
+        $query->get()->each(function (ApplicationDocument $document): void {
+            if ($document->caminho !== '') {
+                Storage::delete($document->caminho);
+            }
+            $document->delete();
+        });
     }
 }

@@ -21,4 +21,5 @@ Route::middleware(['auth', 'verified', 'role:candidato'])
         Route::post('applications/{application}/submit', [ApplicationWizardController::class, 'submit'])->name('applications.submit');
         Route::get('documents', [DocumentController::class, 'index'])->name('documents.index');
         Route::post('applications/{application}/documents', [DocumentController::class, 'store'])->name('documents.store');
+        Route::delete('applications/{application}/documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
     });

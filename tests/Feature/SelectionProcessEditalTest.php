@@ -5,6 +5,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -59,7 +60,7 @@ test('admin cannot upload non pdf as edital', function () {
     expect($process->fresh()->edital_pdf_path)->toBeNull();
 });
 
-test('authenticated user can download edital when present', function () {
+test('authenticated user receives edital pdf for inline viewing when present', function () {
     Storage::fake('local');
     Role::findOrCreate('candidato', 'web');
     $candidate = User::factory()->create(['email_verified_at' => now()]);
@@ -76,7 +77,67 @@ test('authenticated user can download edital when present', function () {
     Storage::disk('local')->put($path, '%PDF-1.4 fake');
     $process->update(['edital_pdf_path' => $path]);
 
-    $this->actingAs($candidate)
-        ->get(route('selection-processes.edital.show', $process))
-        ->assertOk();
+    $response = $this->actingAs($candidate)
+        ->get(route('selection-processes.edital.show', $process));
+
+    $response->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf');
+
+    expect($response->headers->get('Content-Disposition'))
+        ->toContain('inline');
+});
+
+test('admin configure page exposes edital download url when edital is stored', function (): void {
+    Storage::fake('local');
+    Role::findOrCreate('admin', 'web');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS Configure',
+        'descricao' => 'D',
+        'status' => 'rascunho',
+        'tipo_programa' => 'mestrado',
+    ]);
+
+    $path = 'process-editais/'.$process->id.'/edital.pdf';
+    Storage::disk('local')->put($path, '%PDF-1.4 fake');
+    $process->update(['edital_pdf_path' => $path]);
+
+    $expectedUrl = route('selection-processes.edital.show', $process);
+
+    $this->actingAs($admin)
+        ->get(route('admin.processes.show', $process))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Processes/Configure')
+            ->has('selectionProcess', fn (Assert $sp) => $sp
+                ->where('edital_download_url', $expectedUrl)
+                ->etc()
+            )
+        );
+});
+
+test('admin configure page exposes null edital download url when no edital', function (): void {
+    Role::findOrCreate('admin', 'web');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS Sem Edital',
+        'descricao' => 'D',
+        'status' => 'rascunho',
+        'tipo_programa' => 'mestrado',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.processes.show', $process))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Processes/Configure')
+            ->has('selectionProcess', fn (Assert $sp) => $sp
+                ->where('edital_download_url', null)
+                ->etc()
+            )
+        );
 });

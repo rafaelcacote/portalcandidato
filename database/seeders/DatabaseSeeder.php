@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesSeeder::class,
+            CandidateAndSelectionProcessSeeder::class,
         ]);
 
         User::factory()->create([

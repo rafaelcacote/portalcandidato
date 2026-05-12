@@ -21,10 +21,11 @@ class SelectionProcessEditalDownloadController extends Controller
 
         $filename = 'edital-'.preg_replace('/[^a-zA-Z0-9\-_]+/', '-', $selectionProcess->titulo).'.pdf';
 
-        return Storage::disk('local')->download(
+        return Storage::disk('local')->response(
             $selectionProcess->edital_pdf_path,
             $filename,
             ['Content-Type' => 'application/pdf'],
+            'inline',
         );
     }
 }

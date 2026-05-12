@@ -3,6 +3,7 @@
 namespace App\Models\Modules\Candidate\Models;
 
 use App\Models\Modules\Admin\Models\ProcessRequiredDocument;
+use App\Models\Modules\Admin\Models\ProcessTitleItem;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,10 @@ class ApplicationDocument extends Model
 {
     protected $fillable = [
         'application_id',
+        'candidatura_document_kind',
         'process_required_document_id',
+        'process_title_item_id',
+        'quantidade',
         'caminho',
         'nome_arquivo',
         'mime',
@@ -26,6 +30,7 @@ class ApplicationDocument extends Model
     {
         return [
             'validado_em' => 'datetime',
+            'quantidade' => 'integer',
         ];
     }
 
@@ -37,6 +42,11 @@ class ApplicationDocument extends Model
     public function requiredDocument(): BelongsTo
     {
         return $this->belongsTo(ProcessRequiredDocument::class, 'process_required_document_id');
+    }
+
+    public function titleItem(): BelongsTo
+    {
+        return $this->belongsTo(ProcessTitleItem::class, 'process_title_item_id');
     }
 
     public function validator(): BelongsTo

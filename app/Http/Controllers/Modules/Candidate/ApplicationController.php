@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Modules\Candidate;
 
 use App\Http\Controllers\Controller;
+use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,9 +27,15 @@ class ApplicationController extends Controller
         abort_if($application->user_id !== $request->user()->id, 403);
 
         $application->load([
-            'selectionProcess.requiredDocuments',
             'documents.requiredDocument',
+            'documents.titleItem',
             'evaluations.evaluator',
+            'selectionProcess' => function ($query): void {
+                $query->with(array_merge(
+                    ['requiredDocuments'],
+                    SelectionProcess::candidateTitleCatalogEagerLoads(),
+                ));
+            },
         ]);
 
         return Inertia::render('Candidate/Applications/Show', [

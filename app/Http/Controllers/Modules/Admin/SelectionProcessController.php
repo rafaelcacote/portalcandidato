@@ -49,7 +49,7 @@ class SelectionProcessController extends Controller
         $selectionProcess->load([
             'stages',
             'requiredDocuments.tipoDocumento',
-            'requiredTitulos.tipoTitulo',
+            'titleGroups.items',
             'criteria',
             'evaluatorAssignments',
             'applicationFields',

@@ -5,6 +5,8 @@ use App\Http\Controllers\Modules\Admin\ProcessApplicationFieldController;
 use App\Http\Controllers\Modules\Admin\ProcessCriteriaController;
 use App\Http\Controllers\Modules\Admin\ProcessRequiredDocumentController;
 use App\Http\Controllers\Modules\Admin\ProcessRequiredTituloController;
+use App\Http\Controllers\Modules\Admin\ProcessTitleGroupController;
+use App\Http\Controllers\Modules\Admin\ProcessTitleItemController;
 use App\Http\Controllers\Modules\Admin\ProcessTypeController;
 use App\Http\Controllers\Modules\Admin\ReportController;
 use App\Http\Controllers\Modules\Admin\SelectionProcessController;
@@ -56,6 +58,14 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             ->name('processes.required-titulos.store');
         Route::delete('processes/{selectionProcess}/required-titulos/{processRequiredTitulo}', [ProcessRequiredTituloController::class, 'destroy'])
             ->name('processes.required-titulos.destroy');
+        Route::post('processes/{selectionProcess}/title-groups', [ProcessTitleGroupController::class, 'store'])
+            ->name('processes.title-groups.store');
+        Route::delete('processes/{selectionProcess}/title-groups/{titleGroup}', [ProcessTitleGroupController::class, 'destroy'])
+            ->name('processes.title-groups.destroy');
+        Route::post('processes/{selectionProcess}/title-groups/{titleGroup}/items', [ProcessTitleItemController::class, 'store'])
+            ->name('processes.title-groups.items.store');
+        Route::delete('processes/{selectionProcess}/title-groups/{titleGroup}/items/{item}', [ProcessTitleItemController::class, 'destroy'])
+            ->name('processes.title-groups.items.destroy');
         Route::post('processes/{selectionProcess}/criteria', [ProcessCriteriaController::class, 'store'])
             ->name('processes.criteria.store');
         Route::delete('processes/{selectionProcess}/criteria/{processCriteria}', [ProcessCriteriaController::class, 'destroy'])

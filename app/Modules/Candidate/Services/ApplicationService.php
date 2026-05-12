@@ -3,13 +3,21 @@
 namespace App\Modules\Candidate\Services;
 
 use App\Models\Modules\Candidate\Models\Application;
+use App\Models\Modules\Candidate\Models\ApplicationDocument;
+use App\Modules\Candidate\Enums\CandidaturaSpecialDocumentKind;
 use App\Modules\Shared\Enums\ApplicationStatus;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ApplicationService
 {
     public function saveStep(Application $application, int $step, array $payload): Application
     {
+        if ($step === 1 && array_key_exists('concorre_vagas_pcd', $payload) && $payload['concorre_vagas_pcd'] === false) {
+            $this->deletePcdDocuments($application);
+        }
+
         $data = $application->dados_inscricao ?? [];
         $data['step_'.$step] = $payload;
 
@@ -22,6 +30,8 @@ class ApplicationService
 
     public function submit(Application $application): Application
     {
+        $this->assertSubmitRequirements($application);
+
         $application->update([
             'status' => ApplicationStatus::Inscrita->value,
             'finalizada_em' => now(),
@@ -29,6 +39,45 @@ class ApplicationService
         ]);
 
         return $application->refresh();
+    }
+
+    private function assertSubmitRequirements(Application $application): void
+    {
+        $data = $application->dados_inscricao ?? [];
+        $declaraPcd = ($data['step_1']['concorre_vagas_pcd'] ?? false) === true;
+        if (! $declaraPcd) {
+            return;
+        }
+
+        $application->loadMissing('documents');
+
+        $presentKinds = $application->documents
+            ->where('status', '!=', 'recusado')
+            ->pluck('candidatura_document_kind')
+            ->filter()
+            ->all();
+
+        foreach (CandidaturaSpecialDocumentKind::cases() as $case) {
+            if (! in_array($case->value, $presentKinds, true)) {
+                throw ValidationException::withMessages([
+                    'submit' => 'Envie a declaração PcD e o laudo médico ou carteira PcD antes de finalizar a inscrição.',
+                ]);
+            }
+        }
+    }
+
+    private function deletePcdDocuments(Application $application): void
+    {
+        ApplicationDocument::query()
+            ->where('application_id', $application->id)
+            ->whereIn('candidatura_document_kind', CandidaturaSpecialDocumentKind::values())
+            ->get()
+            ->each(function (ApplicationDocument $document): void {
+                if ($document->caminho !== '') {
+                    Storage::delete($document->caminho);
+                }
+                $document->delete();
+            });
     }
 
     private function generateProtocol(): string

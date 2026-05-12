@@ -27,11 +27,9 @@ test('candidate can start and submit application flow', function () {
     $application = Application::query()->firstOrFail();
 
     $this->actingAs($candidate)
-        ->post(route('candidate.applications.step.store', ['application' => $application, 'step' => 2]), [
+        ->post(route('candidate.applications.step.store', ['application' => $application, 'step' => 1]), [
             'payload' => [
-                'formacao' => 'Enfermagem',
-                'experiencia' => 'Hospital',
-                'cursos' => 'TEA',
+                'concorre_vagas_pcd' => false,
             ],
         ])
         ->assertRedirect();

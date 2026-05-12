@@ -18,6 +18,8 @@ import Message from 'primevue/message';
 import Tag from 'primevue/tag';
 import Timeline from 'primevue/timeline';
 import { computed } from 'vue';
+import ProcessTitleGroupsSection from '@/components/Candidate/ProcessTitleGroupsSection.vue';
+import type { ProcessTitleGroupRow } from '@/components/Candidate/processTitleTypes';
 import Heading from '@/components/Heading.vue';
 import { edit as profileEdit } from '@/routes/profile';
 import { home } from '@/routes';
@@ -67,6 +69,7 @@ const props = defineProps<{
             pontos_maximos: number;
             descricao?: string | null;
         }>;
+        title_groups?: ProcessTitleGroupRow[];
     };
     alreadyApplied?: boolean;
 }>();
@@ -221,6 +224,26 @@ const timelineEvents = (
             <div class="grid gap-5 lg:grid-cols-3">
                 <!-- Coluna principal -->
                 <div class="flex flex-col gap-5 lg:col-span-2">
+                    <!-- O que o candidato precisa preparar -->
+                    <Card class="rounded-xl border-primary/20 bg-primary/[0.03] shadow-sm">
+                        <template #title>
+                            <div class="flex items-center gap-2">
+                                <ClipboardList :size="16" class="text-primary" />
+                                O que você vai precisar
+                            </div>
+                        </template>
+                        <template #content>
+                            <p class="text-sm leading-relaxed text-muted-foreground">
+                                Antes de iniciar a inscrição, confira os
+                                <strong class="text-foreground">documentos exigidos</strong> na coluna ao
+                                lado e os
+                                <strong class="text-foreground">títulos para pontuação</strong> abaixo
+                                (quando houver). Assim você evita retrabalho e garante que os anexos
+                                estejam nos formatos aceitos.
+                            </p>
+                        </template>
+                    </Card>
+
                     <!-- Descrição e regras -->
                     <Card class="rounded-xl shadow-sm">
                         <template #title>
@@ -318,6 +341,11 @@ const timelineEvents = (
                             </div>
                         </template>
                     </Card>
+
+                    <ProcessTitleGroupsSection
+                        v-if="(selectionProcess.title_groups ?? []).length"
+                        :title-groups="selectionProcess.title_groups ?? []"
+                    />
                 </div>
 
                 <!-- Coluna lateral: info + documentos -->

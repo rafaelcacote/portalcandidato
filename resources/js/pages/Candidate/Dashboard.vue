@@ -15,6 +15,8 @@ import {
     index as applicationsIndex,
     show as applicationShow,
 } from '@/routes/candidate/applications';
+import { index as documentsIndex } from '@/routes/candidate/documents';
+import { index as processesIndex } from '@/routes/candidate/processes';
 
 defineOptions({
     layout: {
@@ -73,15 +75,33 @@ function statusInscricaoLabel(status: string): string {
                     description="Resumo das suas inscrições, pendências e mensagens."
                     :icon="LayoutGrid"
                 />
-                <Link :href="applicationsIndex.url()">
-                    <Button
-                        label="Minhas inscrições"
-                        icon="pi pi-list"
-                        severity="secondary"
-                        outlined
-                        size="small"
-                    />
-                </Link>
+                <div class="flex flex-wrap items-center gap-2">
+                    <Link :href="processesIndex().url">
+                        <Button
+                            label="Processos abertos"
+                            icon="pi pi-search"
+                            severity="secondary"
+                            outlined
+                            size="small"
+                        />
+                    </Link>
+                    <Link :href="documentsIndex.url()">
+                        <Button
+                            label="Meus documentos"
+                            icon="pi pi-folder-open"
+                            severity="secondary"
+                            outlined
+                            size="small"
+                        />
+                    </Link>
+                    <Link :href="applicationsIndex.url()">
+                        <Button
+                            label="Minhas inscrições"
+                            icon="pi pi-list"
+                            size="small"
+                        />
+                    </Link>
+                </div>
             </div>
 
             <Card class="overflow-hidden rounded-xl shadow-md">
