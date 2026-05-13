@@ -1,195 +1,303 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
-import { ClipboardCheck } from 'lucide-vue-next';
-import Button from 'primevue/button';
-import ButtonGroup from 'primevue/buttongroup';
-import Card from 'primevue/card';
-import Column from 'primevue/column';
-import DataTable from 'primevue/datatable';
-import Fluid from 'primevue/fluid';
-import InputNumber from 'primevue/inputnumber';
-import Select from 'primevue/select';
-import Textarea from 'primevue/textarea';
-import Heading from '@/components/Heading.vue';
-import evaluatorDocuments from '@/routes/evaluator/candidates/documents';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ChevronLeft, ClipboardCheck } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import CandidateHeroCard from '@/components/Evaluator/CandidateHeroCard.vue';
+import CandidateReviewActions from '@/components/Evaluator/CandidateReviewActions.vue';
+import CandidateScoreSection from '@/components/Evaluator/CandidateScoreSection.vue';
+import CandidateStatusBadge from '@/components/Evaluator/CandidateStatusBadge.vue';
+import DocumentSection from '@/components/Evaluator/DocumentSection.vue';
+import EvaluationSummary from '@/components/Evaluator/EvaluationSummary.vue';
+import ObservationDialog from '@/components/Evaluator/ObservationDialog.vue';
+import { buildEvaluatorDocumentSections } from '@/components/Evaluator/evaluatorDocumentGrouping';
+import type { EvaluatorApplicationDocument, EvaluatorDocumentSection } from '@/components/Evaluator/evaluatorDocumentTypes';
+import { home } from '@/routes';
+import { dashboard } from '@/routes/evaluator';
+import { index as processesIndex, show as processShow } from '@/routes/evaluator/processes';
 import scoreRoutes from '@/routes/evaluator/candidates/score';
+
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Início', href: home.url() },
+            { title: 'Painel do avaliador', href: dashboard.url() },
+            { title: 'Processos', href: processesIndex().url },
+        ],
+    },
+});
 
 const props = defineProps<{
     application: {
         id: number;
         status: string;
-        documents?: Array<{
+        numero_protocolo: string | null;
+        created_at: string;
+        user: { id: number; name: string; email: string; cpf?: string | null; foto_url?: string | null };
+        selectionProcess?: {
             id: number;
-            nome_arquivo: string;
-            status: string;
-            motivo_recusa?: string | null;
-        }>;
-        selection_process?: {
+            titulo: string;
             criteria?: Array<{
                 id: number;
                 nome: string;
+                peso: number;
                 pontuacao_max: number;
             }>;
-        };
+        } | null;
+        documents?: EvaluatorApplicationDocument[];
+        evaluations?: Array<{
+            id: number;
+            resultado: string | null;
+            pontuacao_total: number | null;
+            observacoes?: string | null;
+            scores?: Array<{ process_criteria_id: number; pontuacao: number }>;
+            document_scores?: Array<{ application_document_id: number; pontuacao: number }>;
+        }>;
     };
 }>();
 
-const decisionForm = useForm({
-    status: 'aprovado',
-    motivo_recusa: '',
+// ── Document sections ────────────────────────────────────────────────────────
+const allDocuments = computed(() => props.application.documents ?? []);
+const sections = computed(() => buildEvaluatorDocumentSections(allDocuments.value));
+
+const searchQuery = ref('');
+const statusFilter = ref('all');
+const categoryFilter = ref('all');
+
+const categoryOptions = computed(() => {
+    const base = [{ label: 'Todas as categorias', value: 'all' }];
+    sections.value.forEach((s) => {
+        base.push({ label: s.title, value: s.key });
+    });
+    return base;
 });
+
+const visibleSections = computed(() => {
+    if (categoryFilter.value === 'all') {
+        return sections.value;
+    }
+    return sections.value.filter((s) => s.key === categoryFilter.value);
+});
+
+// ── Observation dialog ───────────────────────────────────────────────────────
+const obsDialogVisible = ref(false);
+const obsDocument = ref<EvaluatorApplicationDocument | null>(null);
+const obsPendingStatus = ref<'recusado' | 'aprovado' | null>(null);
+
+function openObservation(doc: EvaluatorApplicationDocument): void {
+    obsDocument.value = doc;
+    obsPendingStatus.value = null;
+    obsDialogVisible.value = true;
+}
+
+function openRefuse(doc: EvaluatorApplicationDocument): void {
+    obsDocument.value = doc;
+    obsPendingStatus.value = 'recusado';
+    obsDialogVisible.value = true;
+}
+
+function buildInitialDocumentScores(): Array<{ application_document_id: number; pontuacao: number }> {
+    const docs = (props.application.documents ?? []).filter(
+        (d) => d.process_title_item_id != null && d.process_title_item_id > 0,
+    );
+    const eval0 = props.application.evaluations?.[0];
+    return docs.map((doc) => {
+        const existing = eval0?.document_scores?.find((s) => s.application_document_id === doc.id);
+        return {
+            application_document_id: doc.id,
+            pontuacao: Number(existing?.pontuacao ?? 0),
+        };
+    });
+}
+
+// ── Score form ───────────────────────────────────────────────────────────────
+const criteria = computed(() => props.application.selectionProcess?.criteria ?? []);
+const existingEvaluation = computed(() => props.application.evaluations?.[0]);
 
 const scoreForm = useForm({
-    scores: (props.application.selection_process?.criteria ?? []).map(
-        (item) => ({
+    scores: criteria.value.map((item) => {
+        const existing = existingEvaluation.value?.scores?.find(
+            (s) => s.process_criteria_id === item.id,
+        );
+        return {
             process_criteria_id: item.id,
-            pontuacao: 0,
-        }),
-    ),
-    resultado: 'classificado',
-    observacoes: '',
+            pontuacao: existing?.pontuacao ?? 0,
+        };
+    }),
+    document_scores: buildInitialDocumentScores(),
+    resultado: existingEvaluation.value?.resultado ?? 'classificado',
+    observacoes: existingEvaluation.value?.observacoes ?? '',
 });
 
-const decisionOptions = [
-    { label: 'Aprovado', value: 'aprovado' },
-    { label: 'Recusado', value: 'recusado' },
-];
+const titulacaoMaxTotal = computed(() => {
+    const seen = new Set<number>();
+    let sum = 0;
+    for (const d of allDocuments.value) {
+        if (!d.process_title_item_id) {
+            continue;
+        }
+        const gid = d.title_item?.title_group?.id;
+        if (gid == null || seen.has(gid)) {
+            continue;
+        }
+        seen.add(gid);
+        const m = d.title_item?.title_group?.max_score;
+        if (m != null && m !== '') {
+            sum += Number(m);
+        }
+    }
+    return sum;
+});
 
-const resultOptions = [
-    { label: 'Classificado', value: 'classificado' },
-    { label: 'Desclassificado', value: 'desclassificado' },
-    { label: 'Apto', value: 'apto' },
-    { label: 'Inapto', value: 'inapto' },
-    { label: 'Suplente', value: 'suplente' },
-];
+const documentScoresSum = computed(() =>
+    scoreForm.document_scores.reduce((a, s) => a + Number(s.pontuacao), 0),
+);
 
-const decideDocument = (documentId: number): void => {
-    decisionForm.post(
-        evaluatorDocuments.decision({
-            application: props.application.id,
-            applicationDocument: documentId,
-        }).url,
+function titleGroupStatsForSection(
+    section: EvaluatorDocumentSection,
+): { current: number; max: number } | undefined {
+    if (section.kind !== 'titles' || section.documents.length === 0) {
+        return undefined;
+    }
+    const g = section.documents[0].title_item?.title_group;
+    if (g?.max_score == null || g.max_score === '') {
+        return undefined;
+    }
+    const ids = new Set(section.documents.map((d) => d.id));
+    const current = scoreForm.document_scores
+        .filter((s) => ids.has(s.application_document_id))
+        .reduce((a, s) => a + Number(s.pontuacao), 0);
+    return { current, max: Number(g.max_score) };
+}
+
+function patchDocumentScore(payload: { application_document_id: number; pontuacao: number }): void {
+    const idx = scoreForm.document_scores.findIndex(
+        (r) => r.application_document_id === payload.application_document_id,
     );
-};
+    if (idx === -1) {
+        return;
+    }
+    scoreForm.document_scores[idx] = {
+        application_document_id: payload.application_document_id,
+        pontuacao: payload.pontuacao,
+    };
+}
 
-const saveScore = (): void => {
-    scoreForm.post(scoreRoutes.store(props.application.id).url);
-};
+function handleScoresUpdate(scores: Array<{ process_criteria_id: number; pontuacao: number }>): void {
+    scoreForm.scores = scores;
+}
+
+function handleObservacoesUpdate(value: string): void {
+    scoreForm.observacoes = value;
+}
+
+function saveDraft(): void {
+    scoreForm.post(scoreRoutes.store(props.application.id).url, { preserveScroll: true });
+}
+
+function finalize(): void {
+    scoreForm.post(scoreRoutes.store(props.application.id).url, { preserveScroll: true });
+}
 </script>
 
 <template>
-    <div class="p-3 md:p-6">
-        <div class="mx-auto flex w-full max-w-5xl flex-col gap-6">
-            <Heading
-                title="Avaliação de Candidato"
-                description="Valide documentos e registre pontuação por critério."
-                :icon="ClipboardCheck"
-            />
+    <div class="flex min-h-screen flex-col bg-slate-50/60">
+        <Head :title="`Avaliação – ${application.user.name}`" />
 
-            <Card class="rounded-xl shadow-md">
-                <template #title>Avaliação de Candidato</template>
-                <template #content>
-                    <p class="text-sm text-gray-600">
-                        Inscrição #{{ application.id }} - {{ application.status }}
-                    </p>
-                </template>
-            </Card>
+        <!-- ── Scrollable content ── -->
+        <div class="flex-1 px-3 pb-24 pt-4 sm:px-6 sm:pb-28 sm:pt-5 lg:px-8">
+            <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5">
 
-            <Card class="rounded-xl shadow-md">
-                <template #title>Validação de documentos</template>
-                <template #content>
-                    <DataTable :value="application.documents ?? []" striped-rows>
-                        <Column
-                            field="nome_arquivo"
-                            header="Documento"
-                            header-class="px-4 py-3"
-                            body-class="px-4 py-3"
-                        />
-                        <Column
-                            field="status"
-                            header="Status"
-                            header-class="px-4 py-3"
-                            body-class="px-4 py-3"
-                        />
-                        <Column
-                            header="Análise"
-                            header-class="px-4 py-3"
-                            body-class="px-4 py-3"
-                        >
-                            <template #body="{ data }">
-                                <Fluid>
-                                    <div class="flex flex-col gap-3">
-                                        <Select
-                                            v-model="decisionForm.status"
-                                            :options="decisionOptions"
-                                            option-label="label"
-                                            option-value="value"
-                                        />
-                                        <Textarea
-                                            v-model="decisionForm.motivo_recusa"
-                                            rows="2"
-                                            placeholder="Motivo da recusa (obrigatório ao recusar)"
-                                        />
-                                        <ButtonGroup>
-                                            <Button
-                                                :fluid="false"
-                                                size="small"
-                                                label="Salvar decisão"
-                                                @click="decideDocument(data.id)"
-                                            />
-                                        </ButtonGroup>
-                                    </div>
-                                </Fluid>
-                            </template>
-                        </Column>
-                    </DataTable>
-                </template>
-            </Card>
+                <!-- Page header -->
+                <div class="flex flex-col gap-2">
+                    <Link
+                        :href="application.selectionProcess
+                            ? processShow({ selectionProcess: application.selectionProcess.id }).url
+                            : processesIndex().url"
+                        class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-teal-600"
+                    >
+                        <ChevronLeft class="size-3.5" />
+                        Voltar para candidatos
+                    </Link>
 
-            <Card class="rounded-xl shadow-md">
-                <template #title>Pontuação por critério</template>
-                <template #content>
-                    <Fluid>
-                        <div class="flex flex-col gap-4">
-                            <div
-                                v-for="(criteria, index) in application
-                                    .selection_process?.criteria ?? []"
-                                :key="criteria.id"
-                                class="flex flex-col gap-2 rounded-xl border border-surface-200 p-4"
-                            >
-                                <p class="text-sm font-medium">{{ criteria.nome }}</p>
-                                <InputNumber
-                                    v-model="scoreForm.scores[index].pontuacao"
-                                    :min="0"
-                                    :max="criteria.pontuacao_max"
-                                    :max-fraction-digits="2"
-                                />
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                                <ClipboardCheck class="size-4.5" />
                             </div>
-
-                            <Select
-                                v-model="scoreForm.resultado"
-                                :options="resultOptions"
-                                option-label="label"
-                                option-value="value"
-                            />
-                            <Textarea
-                                v-model="scoreForm.observacoes"
-                                rows="3"
-                                placeholder="Observações do parecer"
-                            />
-                            <div class="flex justify-end">
-                                <Button
-                                    :fluid="false"
-                                    label="Salvar pontuação e parecer"
-                                    icon="pi pi-check"
-                                    size="small"
-                                    @click="saveScore"
-                                />
+                            <div>
+                                <h1 class="text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                                    Avaliação de Candidato
+                                </h1>
+                                <p class="text-xs text-slate-500">
+                                    Valide os documentos enviados e registre sua avaliação.
+                                </p>
                             </div>
                         </div>
-                    </Fluid>
-                </template>
-            </Card>
+
+                        <CandidateStatusBadge :status="application.status" size="md" />
+                    </div>
+                </div>
+
+                <!-- Candidate card -->
+                <CandidateHeroCard :application="application" />
+
+                <!-- Summary + filters -->
+                <EvaluationSummary
+                    :documents="allDocuments"
+                    :search="searchQuery"
+                    :status-filter="statusFilter"
+                    :category-filter="categoryFilter"
+                    :category-options="categoryOptions"
+                    @update:search="searchQuery = $event"
+                    @update:status-filter="statusFilter = $event"
+                    @update:category-filter="categoryFilter = $event"
+                />
+
+                <!-- Document sections -->
+                <DocumentSection
+                    v-for="section in visibleSections"
+                    :key="section.key"
+                    :section="section"
+                    :application-id="application.id"
+                    :active-status-filter="statusFilter"
+                    :active-search="searchQuery"
+                    :document-scores="scoreForm.document_scores"
+                    :title-group-score-current="titleGroupStatsForSection(section)?.current ?? null"
+                    :title-group-score-max="titleGroupStatsForSection(section)?.max ?? null"
+                    @open-observation="openObservation"
+                    @open-refuse="openRefuse"
+                    @patch-document-score="patchDocumentScore"
+                />
+
+                <!-- Score section -->
+                <CandidateScoreSection
+                    v-if="criteria.length > 0 || titulacaoMaxTotal > 0"
+                    :criteria="criteria"
+                    :scores="scoreForm.scores"
+                    :observacoes="scoreForm.observacoes"
+                    :title-scoring-current="documentScoresSum"
+                    :title-scoring-max="titulacaoMaxTotal"
+                    @update:scores="handleScoresUpdate"
+                    @update:observacoes="handleObservacoesUpdate"
+                />
+            </div>
         </div>
+
+        <!-- ── Sticky footer ── -->
+        <CandidateReviewActions
+            :processing="scoreForm.processing"
+            @save-draft="saveDraft"
+            @finalize="finalize"
+        />
+
+        <!-- ── Observation / refuse dialog ── -->
+        <ObservationDialog
+            :document="obsDocument"
+            :application-id="application.id"
+            :visible="obsDialogVisible"
+            :pending-status="obsPendingStatus"
+            @update:visible="obsDialogVisible = $event"
+            @saved="obsDialogVisible = false"
+        />
     </div>
 </template>

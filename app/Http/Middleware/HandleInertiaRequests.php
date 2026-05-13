@@ -44,8 +44,8 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'ui' => [
-                'settings' => __('ui.settings'),
-                'log_out' => __('ui.log_out'),
+                'settings' => __('ui.settings', [], 'pt_BR'),
+                'log_out' => __('ui.log_out', [], 'pt_BR'),
             ],
             'candidateProfileComplete' => $this->candidateProfileComplete($request),
         ];

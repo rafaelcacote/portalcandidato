@@ -28,7 +28,11 @@ withDefaults(
 const page = usePage<{ auth: Auth }>();
 const auth = computed(() => page.props.auth);
 
-const isAdmin = computed(() => auth.value?.roles?.includes('admin') ?? false);
+const usesStaffHeader = computed(() => {
+    const roles = auth.value?.roles ?? [];
+
+    return roles.includes('admin') || roles.includes('avaliador');
+});
 
 </script>
 
@@ -36,7 +40,7 @@ const isAdmin = computed(() => auth.value?.roles?.includes('admin') ?? false);
     <header
         class="flex h-16 shrink-0 items-center gap-3 border-b border-sidebar-border/40 bg-background/80 px-4 backdrop-blur-sm transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-5"
     >
-        <template v-if="isAdmin">
+        <template v-if="usesStaffHeader">
             <SidebarTrigger class="-ml-0.5 shrink-0" />
             <div class="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
                 <Button

@@ -33,6 +33,21 @@ export function cepDigitsOnly(value: string): string {
     return value.replace(/\D/g, '').slice(0, 8);
 }
 
+/** Formats 11-digit CPF as `000.000.000-00`; returns `-` when empty; raw value when not 11 digits. */
+export function formatCpfDisplay(value: string | null | undefined): string {
+    if (value == null || value === '') {
+        return '-';
+    }
+
+    const d = cpfDigitsOnly(value);
+
+    if (d.length !== 11) {
+        return value;
+    }
+
+    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
 export function formatCepDisplay(digits: string): string {
     const d = cepDigitsOnly(digits);
     if (d.length <= 5) {

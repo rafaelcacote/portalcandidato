@@ -41,8 +41,8 @@ test('candidate sees dashboard inertia props', function (): void {
         ->assertInertia(fn (Assert $page) => $page
             ->component('Candidate/Dashboard')
             ->has('ui', fn (Assert $ui) => $ui
-                ->where('settings', __('ui.settings'))
-                ->where('log_out', __('ui.log_out')))
+                ->where('settings', __('ui.settings', [], 'pt_BR'))
+                ->where('log_out', __('ui.log_out', [], 'pt_BR')))
             ->has('summary', fn (Assert $summary) => $summary
                 ->where('inscricoes_em_andamento', 0)
                 ->where('pendencias', 0)

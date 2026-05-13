@@ -9,6 +9,7 @@ use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Admin\Models\TipoDocumento;
 use App\Models\Modules\Admin\Models\TipoTitulo;
 use App\Modules\Admin\Services\SelectionProcessDocumentTemplateService;
+use App\Modules\Admin\Services\SelectionProcessTitleTemplateService;
 use App\Support\InertiaToast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
@@ -19,6 +20,7 @@ class SelectionProcessController extends Controller
 {
     public function __construct(
         private readonly SelectionProcessDocumentTemplateService $documentTemplateService,
+        private readonly SelectionProcessTitleTemplateService $titleTemplateService,
     ) {}
 
     public function index(): Response
@@ -37,6 +39,7 @@ class SelectionProcessController extends Controller
     {
         $selectionProcess = SelectionProcess::query()->create($request->validated());
         $this->documentTemplateService->syncTemplateDocuments($selectionProcess);
+        $this->titleTemplateService->syncTemplateTitleGroups($selectionProcess);
 
         InertiaToast::success('Processo seletivo criado com sucesso.');
 
@@ -83,6 +86,10 @@ class SelectionProcessController extends Controller
 
         if ($this->documentTemplateService->shouldResyncTemplateDocuments($selectionProcess, $previousTipo)) {
             $this->documentTemplateService->syncTemplateDocuments($selectionProcess);
+        }
+
+        if ($this->titleTemplateService->shouldResyncTemplateTitleGroups($selectionProcess, $previousTipo)) {
+            $this->titleTemplateService->syncTemplateTitleGroups($selectionProcess);
         }
 
         InertiaToast::success('Processo seletivo atualizado com sucesso.');

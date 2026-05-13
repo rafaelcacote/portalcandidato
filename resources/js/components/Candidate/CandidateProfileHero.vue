@@ -34,7 +34,7 @@ const displayEmail = computed(() => asText(props.user?.email));
 const cpfMasked = computed(() => maskCpf(props.user?.cpf));
 const lastUpdate = computed(() => formatRelative(props.user?.updated_at));
 const avatarSrc = computed<string | null>(() => {
-    const v = props.user?.avatar ?? props.user?.foto_path;
+    const v = props.user?.foto_url ?? props.user?.avatar ?? props.user?.foto_path;
 
     return typeof v === 'string' && v.trim() !== '' ? v : null;
 });

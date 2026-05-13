@@ -3,6 +3,7 @@
 use App\Models\Modules\Admin\Models\ProcessCriteria;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
+use App\Models\Modules\Evaluator\Models\ApplicationEvaluation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -47,10 +48,11 @@ test('evaluator can score candidate application', function () {
                     'pontuacao' => 20,
                 ],
             ],
+            'document_scores' => [],
             'resultado' => 'classificado',
         ])
         ->assertRedirect();
 
-    $evaluation = \App\Models\Modules\Evaluator\Models\ApplicationEvaluation::query()->firstOrFail();
+    $evaluation = ApplicationEvaluation::query()->firstOrFail();
     expect((float) $evaluation->pontuacao_total)->toBe(20.0);
 });

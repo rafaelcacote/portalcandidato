@@ -13,6 +13,7 @@ import Tooltip from 'primevue/tooltip';
 import { useConfirm } from 'primevue/useconfirm';
 import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
+import { cpfDigitsOnly, formatCpfDisplay } from '@/lib/brDocuments';
 import {
     create as createEvaluatorPage,
     destroy as destroyEvaluator,
@@ -46,14 +47,18 @@ const statusFilterOptions = [
 ];
 
 const filteredEvaluators = computed(() => {
+    const needle = searchTerm.value.trim().toLowerCase();
+    const needleDigits = needle.replace(/\D/g, '');
+
     return props.evaluators.filter((evaluator) => {
+        const cpfDigits = cpfDigitsOnly(evaluator.cpf ?? '');
+        const matchesCpfSearch =
+            needleDigits.length >= 3 && cpfDigits.includes(needleDigits);
+
         const matchesSearch =
-            evaluator.name
-                .toLowerCase()
-                .includes(searchTerm.value.toLowerCase()) ||
-            evaluator.email
-                .toLowerCase()
-                .includes(searchTerm.value.toLowerCase());
+            evaluator.name.toLowerCase().includes(needle) ||
+            evaluator.email.toLowerCase().includes(needle) ||
+            matchesCpfSearch;
         const matchesStatus =
             selectedStatus.value !== null
                 ? evaluator.ativo === selectedStatus.value
@@ -62,6 +67,15 @@ const filteredEvaluators = computed(() => {
         return matchesSearch && matchesStatus;
     });
 });
+
+/** Linha secundária sob o nome; só exibe com 11 dígitos para evitar ruído visual. */
+function evaluatorCpfSubtitle(cpf: string | null | undefined): string | null {
+    if (cpfDigitsOnly(cpf ?? '').length !== 11) {
+        return null;
+    }
+
+    return formatCpfDisplay(cpf);
+}
 
 const hasNoRecords = computed(() => props.evaluators.length === 0);
 
@@ -119,7 +133,7 @@ const confirmRemoveEvaluator = (evaluator: Evaluator): void => {
                     >
                         <InputText
                             v-model="searchTerm"
-                            placeholder="Buscar por nome ou e-mail"
+                            placeholder="Buscar por nome, e-mail ou CPF"
                         />
                         <Select
                             v-model="selectedStatus"
@@ -198,21 +212,36 @@ const confirmRemoveEvaluator = (evaluator: Evaluator): void => {
                         </template>
 
                         <Column
-                            field="name"
                             header="Nome"
                             header-class="px-4 py-3 min-w-0"
-                            body-class="px-4 py-3 min-w-0"
-                        />
+                            body-class="px-4 py-3 min-w-0 align-top"
+                        >
+                            <template #body="{ data }">
+                                <div class="flex min-w-0 flex-col gap-0.5 py-0.5">
+                                    <span
+                                        class="truncate text-sm font-medium leading-tight text-foreground"
+                                    >
+                                        {{ data.name }}
+                                    </span>
+                                    <span
+                                        v-if="evaluatorCpfSubtitle(data.cpf)"
+                                        class="truncate font-mono text-[11px] leading-snug tracking-wide text-muted-foreground/90"
+                                    >
+                                        {{ evaluatorCpfSubtitle(data.cpf) }}
+                                    </span>
+                                </div>
+                            </template>
+                        </Column>
                         <Column
                             field="email"
                             header="E-mail"
                             header-class="px-4 py-3 min-w-0"
-                            body-class="px-4 py-3 min-w-0"
+                            body-class="px-4 py-3 min-w-0 align-top"
                         />
                         <Column
                             header="Telefone"
                             header-class="px-4 py-3 whitespace-nowrap"
-                            body-class="px-4 py-3 whitespace-nowrap"
+                            body-class="px-4 py-3 whitespace-nowrap align-top"
                         >
                             <template #body="{ data }">
                                 {{ data.telefone ?? '-' }}
@@ -221,7 +250,7 @@ const confirmRemoveEvaluator = (evaluator: Evaluator): void => {
                         <Column
                             header="Processos"
                             header-class="px-4 py-3 text-center w-32 whitespace-nowrap"
-                            body-class="px-4 py-3 text-center w-32 whitespace-nowrap"
+                            body-class="px-4 py-3 text-center w-32 whitespace-nowrap align-top"
                         >
                             <template #body="{ data }">
                                 <Tag
@@ -233,7 +262,7 @@ const confirmRemoveEvaluator = (evaluator: Evaluator): void => {
                         <Column
                             header="Status"
                             header-class="px-4 py-3 w-28 whitespace-nowrap"
-                            body-class="px-4 py-3 w-28 whitespace-nowrap"
+                            body-class="px-4 py-3 w-28 whitespace-nowrap align-top"
                         >
                             <template #body="{ data }">
                                 <Tag
@@ -247,7 +276,7 @@ const confirmRemoveEvaluator = (evaluator: Evaluator): void => {
                         <Column
                             header="Ações"
                             header-class="px-4 py-3 text-end w-32 whitespace-nowrap"
-                            body-class="px-4 py-3 text-end w-32 whitespace-nowrap"
+                            body-class="px-4 py-3 text-end w-32 whitespace-nowrap align-top"
                         >
                             <template #body="{ data }">
                                 <div class="flex justify-end gap-1">

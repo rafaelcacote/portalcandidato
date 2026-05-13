@@ -9,10 +9,12 @@ use App\Models\Modules\Evaluator\Models\ApplicationEvaluation;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -46,6 +48,37 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
+
+    /**
+     * @var list<string>
+     */
+    protected $appends = [
+        'foto_url',
+    ];
+
+    /**
+     * Public URL for the candidate profile photo when stored on the public disk.
+     */
+    protected function fotoUrl(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            $path = $this->foto_path;
+            if ($path === null || trim((string) $path) === '') {
+                return null;
+            }
+
+            $path = (string) $path;
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return $path;
+            }
+
+            if (str_starts_with($path, 'private/')) {
+                return null;
+            }
+
+            return Storage::disk('public')->url(ltrim($path, '/'));
+        });
+    }
 
     /**
      * Get the attributes that should be cast.

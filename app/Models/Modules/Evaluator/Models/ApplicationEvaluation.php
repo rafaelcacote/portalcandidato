@@ -41,4 +41,9 @@ class ApplicationEvaluation extends Model
     {
         return $this->hasMany(ApplicationEvaluationScore::class);
     }
+
+    public function documentScores(): HasMany
+    {
+        return $this->hasMany(ApplicationEvaluationDocumentScore::class);
+    }
 }

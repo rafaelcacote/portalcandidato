@@ -41,12 +41,26 @@ import { index as adminProcessesIndex } from '@/routes/admin/processes';
 import { index as adminReportsIndex } from '@/routes/admin/reports';
 import { index as adminDocumentTypesIndex } from '@/routes/admin/support-tables/document-types';
 import { index as adminTitleTypesIndex } from '@/routes/admin/support-tables/title-types';
+import { dashboard as evaluatorDashboard } from '@/routes/evaluator';
+import { index as evaluatorProcessesIndex } from '@/routes/evaluator/processes';
 import type { NavItem, NavSection } from '@/types';
 import type { Auth } from '@/types/auth';
 
 const page = usePage<{ auth: Auth }>();
 
 const isAdmin = computed(() => page.props.auth?.roles?.includes('admin') ?? false);
+
+const isEvaluator = computed(() => page.props.auth?.roles?.includes('avaliador') ?? false);
+
+const usesStaffSidebar = computed(() => isAdmin.value || isEvaluator.value);
+
+const staffSidebarHomeUrl = computed(() =>
+    isAdmin.value ? adminDashboard.url() : evaluatorDashboard.url(),
+);
+
+const staffSidebarSubtitle = computed(() =>
+    isAdmin.value ? 'Painel administrativo' : 'Painel do avaliador',
+);
 
 const adminNavSections = computed<NavSection[]>(() => [
     {
@@ -86,6 +100,31 @@ const adminShortcutLinks = computed(() => [
     { title: 'Relatórios', href: adminReportsIndex.url(), comingSoon: true },
 ]);
 
+const staffShortcutLinks = computed(() => {
+    if (isAdmin.value) {
+        return adminShortcutLinks.value;
+    }
+
+    if (isEvaluator.value) {
+        return [
+            { title: 'Dashboard', href: evaluatorDashboard.url() },
+            { title: 'Processos atribuídos', href: evaluatorProcessesIndex().url },
+        ];
+    }
+
+    return [];
+});
+
+const evaluatorNavSections = computed<NavSection[]>(() => [
+    {
+        label: 'Principal',
+        items: [
+            { title: 'Dashboard', href: evaluatorDashboard.url(), icon: LayoutGrid },
+            { title: 'Processos Atribuídos', href: evaluatorProcessesIndex().url, icon: ClipboardCheck },
+        ],
+    },
+]);
+
 function showComingSoonShortcut(title: string): void {
     toast(title, {
         description:
@@ -101,10 +140,7 @@ const mainNavItems = computed<NavItem[]>(() => {
     }
 
     if (roles.includes('avaliador')) {
-        return [
-            { title: 'Dashboard', href: '/avaliador/dashboard', icon: LayoutGrid },
-            { title: 'Processos Atribuídos', href: '/avaliador/processes', icon: ClipboardCheck },
-        ];
+        return [];
     }
 
     if (roles.includes('candidato')) {
@@ -126,13 +162,13 @@ const mainNavItems = computed<NavItem[]>(() => {
         <SidebarHeader class="px-3 pb-2 pt-4">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <template v-if="isAdmin">
+                    <template v-if="usesStaffSidebar">
                         <SidebarMenuButton
                             size="lg"
                             as-child
                             class="h-auto rounded-xl px-2.5 py-2.5 transition-all hover:!bg-white/5"
                         >
-                            <Link :href="adminDashboard.url()" class="flex flex-col gap-1.5">
+                            <Link :href="staffSidebarHomeUrl" class="flex flex-col gap-1.5">
                                 <!-- Expanded: logos PROENSP + UEA -->
                                 <div
                                     class="flex min-w-0 flex-wrap items-center gap-2.5 group-data-[collapsible=icon]:hidden"
@@ -157,7 +193,7 @@ const mainNavItems = computed<NavItem[]>(() => {
                                 <span
                                     class="text-[0.58rem] font-bold uppercase tracking-[0.14em] text-slate-500 group-data-[collapsible=icon]:hidden"
                                 >
-                                    Painel administrativo
+                                    {{ staffSidebarSubtitle }}
                                 </span>
                             </Link>
                         </SidebarMenuButton>
@@ -173,16 +209,17 @@ const mainNavItems = computed<NavItem[]>(() => {
         </SidebarHeader>
 
         <!-- Divider -->
-        <div v-if="isAdmin" class="mx-3 h-px bg-white/5" />
+        <div v-if="usesStaffSidebar" class="mx-3 h-px bg-white/5" />
 
         <!-- ── Navigation ────────────────────────────────────────────────── -->
         <SidebarContent>
             <NavMain v-if="isAdmin" :sections="adminNavSections" />
+            <NavMain v-else-if="isEvaluator" :sections="evaluatorNavSections" />
             <NavMain v-else :items="mainNavItems" />
         </SidebarContent>
 
-        <!-- ── Footer (admin only) ───────────────────────────────────────── -->
-        <SidebarFooter v-if="isAdmin && page.props.auth?.user" class="px-3 pb-4 pt-2">
+        <!-- ── Footer (admin / avaliador) ───────────────────────────────── -->
+        <SidebarFooter v-if="usesStaffSidebar && page.props.auth?.user" class="px-3 pb-4 pt-2">
             <div class="mb-2 h-px w-full bg-white/5" />
 
             <!-- Quick shortcuts -->
@@ -204,7 +241,7 @@ const mainNavItems = computed<NavItem[]>(() => {
 
                 <CollapsibleContent>
                     <ul class="mt-1 space-y-px pb-1 pl-1">
-                        <li v-for="link in adminShortcutLinks" :key="link.title">
+                        <li v-for="link in staffShortcutLinks" :key="link.title">
                             <button
                                 v-if="link.comingSoon"
                                 type="button"

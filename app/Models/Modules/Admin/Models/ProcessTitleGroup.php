@@ -16,6 +16,7 @@ class ProcessTitleGroup extends Model
         'max_score',
         'order',
         'is_active',
+        'generated_by_template',
     ];
 
     protected function casts(): array
@@ -23,6 +24,7 @@ class ProcessTitleGroup extends Model
         return [
             'max_score' => 'decimal:2',
             'is_active' => 'boolean',
+            'generated_by_template' => 'boolean',
         ];
     }
 

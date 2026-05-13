@@ -15,6 +15,7 @@ export type CandidateProfileUser = {
     telefone_fixo?: string | null;
     data_nascimento?: string | null;
     foto_path?: string | null;
+    foto_url?: string | null;
     avatar?: string | null;
     identidade?: string | null;
     orgao_emissor?: string | null;

@@ -22,7 +22,7 @@ class DecideApplicationDocumentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'in:aprovado,recusado'],
+            'status' => ['required', 'in:aprovado,recusado,pendente'],
             'motivo_recusa' => ['required_if:status,recusado', 'nullable', 'string', 'max:1000'],
         ];
     }

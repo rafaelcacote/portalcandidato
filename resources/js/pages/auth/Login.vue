@@ -129,8 +129,8 @@ defineProps<{
                                 <Clock :size="18" stroke-width="2.25" />
                             </div>
                             <p class="text-[13px] leading-relaxed text-slate-600 sm:text-[15px]">
-                                <span class="font-semibold text-slate-900">Salvamento automático</span>
-                                — Seus dados são salvos automaticamente durante o preenchimento.
+                                <span class="font-semibold text-slate-900">Progresso claro</span>
+                                — Você acompanha onde parou a qualquer momento.
                             </p>
                         </li>
                     </ul>

@@ -29,11 +29,16 @@ class ScoringController extends Controller
             ],
         );
 
-        $scores = $request->validated()['scores'];
+        $scores = $request->validated('scores');
+        $documentScores = $request->validated('document_scores');
+
         $evaluation->scores()->delete();
         $evaluation->scores()->createMany($scores);
 
-        $total = $this->scoringCalculator->calculateEvaluationTotal($scores);
+        $evaluation->documentScores()->delete();
+        $evaluation->documentScores()->createMany($documentScores);
+
+        $total = $this->scoringCalculator->calculateEvaluationTotal($scores, $documentScores);
         $this->evaluationService->conclude(
             $evaluation,
             $request->input('resultado'),

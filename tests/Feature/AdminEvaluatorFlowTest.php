@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Support\SessionKey;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -281,10 +282,16 @@ test('admin can delete an evaluator', function () {
 test('admin can list evaluators', function () {
     $admin = adminUser();
 
-    $evaluator = User::factory()->create(['name' => 'Avaliador Listado']);
+    $evaluator = User::factory()->create([
+        'name' => 'Avaliador Listado',
+        'cpf' => '52998224725',
+    ]);
     $evaluator->assignRole('avaliador');
 
     $this->actingAs($admin)
         ->get(route('admin.evaluators.index'))
-        ->assertOk();
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Evaluators/Index')
+            ->where('evaluators.0.cpf', '52998224725'));
 });
