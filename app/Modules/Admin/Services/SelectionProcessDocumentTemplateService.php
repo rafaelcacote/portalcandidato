@@ -17,8 +17,6 @@ class SelectionProcessDocumentTemplateService
     private const DOCUMENT_CATALOG = [
         'comprovante_pagamento' => 'Comprovante de pagamento',
         'comprovante_isencao_taxa' => 'Comprovante de isenção de taxa',
-        'declaracao_pcd_anexo_ii' => 'Declaração de Pessoa com Deficiência (Anexo II do edital)',
-        'laudo_pcd_ou_carteira' => 'Laudo médico ou parecer multiprofissional / Carteira PcD',
         'documento_identidade_rg_cnh' => 'Carteira de Identidade (RG) ou CNH',
         'diploma_graduacao_enfermagem' => 'Diploma de graduação em Enfermagem',
         'diploma_mestrado_enfermagem' => 'Diploma de mestrado em Enfermagem',
@@ -41,8 +39,6 @@ class SelectionProcessDocumentTemplateService
         return [
             'comprovante_pagamento',
             'comprovante_isencao_taxa',
-            'declaracao_pcd_anexo_ii',
-            'laudo_pcd_ou_carteira',
             'documento_identidade_rg_cnh',
             $diplomaCodigo,
             'certidao_regularidade_coren',

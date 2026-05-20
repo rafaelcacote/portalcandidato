@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Form, Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     CheckCircle2,
     Inbox,
@@ -8,8 +7,8 @@ import {
     RefreshCw,
     ShieldCheck,
 } from 'lucide-vue-next';
+import { computed } from 'vue';
 import CandidateHeader from '@/components/Candidate/CandidateHeader.vue';
-import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -43,6 +42,10 @@ const displayEmail = computed(
 );
 
 const linkJustSent = computed(() => props.status === 'verification-link-sent');
+
+function handleLogout(): void {
+    router.flushAll();
+}
 </script>
 
 <template>
@@ -144,13 +147,16 @@ const linkJustSent = computed(() => props.status === 'verification-link-sent');
                 </Form>
 
                 <div class="border-t border-border/60 pt-4 text-center">
-                    <TextLink
-                        :href="logout()"
+                    <Link
+                        :href="logout.url()"
+                        method="post"
                         as="button"
-                        class="text-sm text-muted-foreground underline-offset-4 hover:text-foreground"
+                        class="text-sm text-muted-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:text-foreground hover:decoration-current dark:decoration-neutral-500"
+                        data-test="logout-use-other-email"
+                        @click="handleLogout"
                     >
                         Sair e usar outro e-mail
-                    </TextLink>
+                    </Link>
                 </div>
             </CardContent>
         </Card>

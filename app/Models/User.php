@@ -120,6 +120,31 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(ApplicationEvaluation::class, 'evaluator_id');
     }
 
+    /**
+     * Whether this account must confirm e-mail before using the portal.
+     * Administrators and evaluators are exempt; only candidates must verify.
+     */
+    public function mustVerifyEmailAddress(): bool
+    {
+        if ($this->hasAnyRole(['admin', 'avaliador'])) {
+            return false;
+        }
+
+        return $this->hasRole('candidato');
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasVerifiedEmail()
+    {
+        if (! $this->mustVerifyEmailAddress()) {
+            return true;
+        }
+
+        return ! is_null($this->email_verified_at);
+    }
+
     public function candidateProfileIsComplete(): bool
     {
         if (! $this->hasRole('candidato')) {

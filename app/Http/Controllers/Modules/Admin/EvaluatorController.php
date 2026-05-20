@@ -41,6 +41,7 @@ class EvaluatorController extends Controller
         $data = $request->validated();
         $data['password'] = Hash::make($data['password']);
         $data['ativo'] = $data['ativo'] ?? true;
+        $data['email_verified_at'] = now();
 
         $user = User::query()->create($data);
         $user->assignRole('avaliador');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Modules\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Modules\Admin\StoreProcessTitleItemRequest;
+use App\Http\Requests\Modules\Admin\UpdateProcessTitleItemRequest;
 use App\Models\Modules\Admin\Models\ProcessTitleGroup;
 use App\Models\Modules\Admin\Models\ProcessTitleItem;
 use App\Models\Modules\Admin\Models\SelectionProcess;
@@ -37,6 +38,36 @@ class ProcessTitleItemController extends Controller
         ]);
 
         InertiaToast::success('Item de título adicionado ao grupo.');
+
+        return back();
+    }
+
+    public function update(
+        UpdateProcessTitleItemRequest $request,
+        SelectionProcess $selectionProcess,
+        ProcessTitleGroup $titleGroup,
+        ProcessTitleItem $item
+    ): RedirectResponse {
+        abort_unless($titleGroup->selection_process_id === $selectionProcess->id, 404);
+        abort_unless($item->process_title_group_id === $titleGroup->id, 404);
+
+        $validated = $request->validated();
+
+        $item->update([
+            'code' => strtoupper(trim($validated['code'])),
+            'title' => $validated['title'],
+            'score_per_unit' => $validated['score_per_unit'],
+            'score_unit' => $validated['score_unit'],
+            'max_quantity' => $validated['max_quantity'] ?? null,
+            'period_rule' => $validated['period_rule'] ?? null,
+            'requires_attachment' => $validated['requires_attachment'] ?? true,
+            'accepted_formats' => $this->parseFormats($validated['accepted_formats'] ?? null),
+            'max_file_size_mb' => $validated['max_file_size_mb'] ?? 10,
+            'candidate_instructions' => $validated['candidate_instructions'] ?? null,
+            'order' => $validated['order'] ?? $item->order,
+        ]);
+
+        InertiaToast::success('Item de título atualizado com sucesso.');
 
         return back();
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Modules\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Modules\Admin\StoreProcessRequiredDocumentRequest;
+use App\Http\Requests\Modules\Admin\UpdateProcessRequiredDocumentRequest;
 use App\Models\Modules\Admin\Models\ProcessRequiredDocument;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Admin\Models\TipoDocumento;
@@ -30,6 +31,27 @@ class ProcessRequiredDocumentController extends Controller
         ]);
 
         InertiaToast::success('Documento exigido vinculado ao processo.');
+
+        return back();
+    }
+
+    public function update(
+        UpdateProcessRequiredDocumentRequest $request,
+        SelectionProcess $selectionProcess,
+        ProcessRequiredDocument $processRequiredDocument
+    ): RedirectResponse {
+        abort_unless($processRequiredDocument->selection_process_id === $selectionProcess->id, 404);
+
+        $validated = $request->validated();
+
+        $processRequiredDocument->update([
+            'descricao' => $validated['descricao'] ?? null,
+            'formatos_aceitos' => $this->parseOptions($validated['formatos_aceitos'] ?? null),
+            'tamanho_max_mb' => $validated['tamanho_max_mb'],
+            'obrigatorio' => $validated['obrigatorio'],
+        ]);
+
+        InertiaToast::success('Documento atualizado com sucesso.');
 
         return back();
     }

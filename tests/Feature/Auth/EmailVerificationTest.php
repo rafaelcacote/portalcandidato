@@ -12,11 +12,49 @@ beforeEach(function () {
 });
 
 test('email verification screen can be rendered', function () {
+    Role::findOrCreate('candidato', 'web');
+
     $user = User::factory()->unverified()->create();
+    $user->assignRole('candidato');
 
     $response = $this->actingAs($user)->get(route('verification.notice'));
 
     $response->assertOk();
+});
+
+test('unverified admin can access admin dashboard without email verification', function () {
+    Role::findOrCreate('admin', 'web');
+
+    $admin = User::factory()->unverified()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->get(route('admin.dashboard'))
+        ->assertSuccessful();
+});
+
+test('unverified evaluator can access evaluator dashboard without email verification', function () {
+    Role::findOrCreate('avaliador', 'web');
+
+    $evaluator = User::factory()->unverified()->create();
+    $evaluator->assignRole('avaliador');
+
+    $this->actingAs($evaluator)
+        ->get(route('evaluator.dashboard'))
+        ->assertSuccessful();
+});
+
+test('unverified user can logout from email verification screen', function () {
+    Role::findOrCreate('candidato', 'web');
+
+    $user = User::factory()->unverified()->create();
+    $user->assignRole('candidato');
+
+    $this->actingAs($user)
+        ->post(route('logout'))
+        ->assertRedirect(route('login'));
+
+    $this->assertGuest();
 });
 
 test('guest can verify email via signed link without being logged in first', function () {
@@ -63,7 +101,10 @@ test('email can be verified', function () {
 });
 
 test('email is not verified with invalid hash', function () {
+    Role::findOrCreate('candidato', 'web');
+
     $user = User::factory()->unverified()->create();
+    $user->assignRole('candidato');
 
     Event::fake();
 
@@ -80,7 +121,10 @@ test('email is not verified with invalid hash', function () {
 });
 
 test('email is not verified with invalid user id', function () {
+    Role::findOrCreate('candidato', 'web');
+
     $user = User::factory()->unverified()->create();
+    $user->assignRole('candidato');
 
     Event::fake();
 

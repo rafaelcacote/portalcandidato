@@ -53,6 +53,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             ->name('processes.edital.destroy');
         Route::post('processes/{selectionProcess}/required-documents', [ProcessRequiredDocumentController::class, 'store'])
             ->name('processes.required-documents.store');
+        Route::put('processes/{selectionProcess}/required-documents/{processRequiredDocument}', [ProcessRequiredDocumentController::class, 'update'])
+            ->name('processes.required-documents.update');
         Route::delete('processes/{selectionProcess}/required-documents/{processRequiredDocument}', [ProcessRequiredDocumentController::class, 'destroy'])
             ->name('processes.required-documents.destroy');
         Route::post('processes/{selectionProcess}/required-titulos', [ProcessRequiredTituloController::class, 'store'])
@@ -61,10 +63,14 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             ->name('processes.required-titulos.destroy');
         Route::post('processes/{selectionProcess}/title-groups', [ProcessTitleGroupController::class, 'store'])
             ->name('processes.title-groups.store');
+        Route::put('processes/{selectionProcess}/title-groups/{titleGroup}', [ProcessTitleGroupController::class, 'update'])
+            ->name('processes.title-groups.update');
         Route::delete('processes/{selectionProcess}/title-groups/{titleGroup}', [ProcessTitleGroupController::class, 'destroy'])
             ->name('processes.title-groups.destroy');
         Route::post('processes/{selectionProcess}/title-groups/{titleGroup}/items', [ProcessTitleItemController::class, 'store'])
             ->name('processes.title-groups.items.store');
+        Route::put('processes/{selectionProcess}/title-groups/{titleGroup}/items/{item}', [ProcessTitleItemController::class, 'update'])
+            ->name('processes.title-groups.items.update');
         Route::delete('processes/{selectionProcess}/title-groups/{titleGroup}/items/{item}', [ProcessTitleItemController::class, 'destroy'])
             ->name('processes.title-groups.items.destroy');
         Route::post('processes/{selectionProcess}/criteria', [ProcessCriteriaController::class, 'store'])

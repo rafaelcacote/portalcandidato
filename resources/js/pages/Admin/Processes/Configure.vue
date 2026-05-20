@@ -35,14 +35,17 @@ import {
 import {
     destroy as destroyRequiredDocument,
     store as storeRequiredDocument,
+    update as updateRequiredDocument,
 } from '@/routes/admin/processes/required-documents';
 import {
     destroy as destroyTitleGroup,
     store as storeTitleGroup,
+    update as updateTitleGroup,
 } from '@/routes/admin/processes/title-groups';
 import {
     destroy as destroyTitleItem,
     store as storeTitleItem,
+    update as updateTitleItem,
 } from '@/routes/admin/processes/title-groups/items';
 
 type ProcessTitleItem = {
@@ -212,6 +215,49 @@ const confirmRemoveRequiredDocument = (doc: {
     });
 };
 
+const editingDocumentId = ref<number | null>(null);
+const editDocumentForm = useForm({
+    descricao: '' as string,
+    formatos_aceitos: 'pdf,jpg,png',
+    tamanho_max_mb: 10,
+    obrigatorio: true,
+});
+
+const openEditDocument = (doc: {
+    id: number;
+    descricao?: string | null;
+    formatos_aceitos?: string[] | null;
+    tamanho_max_mb: number;
+    obrigatorio: boolean;
+}): void => {
+    editingDocumentId.value = doc.id;
+    editDocumentForm.descricao = doc.descricao ?? '';
+    editDocumentForm.formatos_aceitos =
+        doc.formatos_aceitos?.join(',') ?? 'pdf,jpg,png';
+    editDocumentForm.tamanho_max_mb = doc.tamanho_max_mb;
+    editDocumentForm.obrigatorio = doc.obrigatorio;
+};
+
+const cancelEditDocument = (): void => {
+    editingDocumentId.value = null;
+    editDocumentForm.reset();
+};
+
+const updateDocumentAction = (docId: number): void => {
+    editDocumentForm.put(
+        updateRequiredDocument({
+            selectionProcess: props.selectionProcess.id,
+            processRequiredDocument: docId,
+        }).url,
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                editingDocumentId.value = null;
+            },
+        },
+    );
+};
+
 /* ─── Títulos (grupos + itens) ────────────────────────────── */
 
 const titleGroupForm = useForm({
@@ -339,6 +385,99 @@ const confirmRemoveTitleItem = (
             );
         },
     });
+};
+
+const editingGroupId = ref<number | null>(null);
+const editGroupForm = useForm({
+    code: '',
+    name: '',
+    description: '',
+    max_score: 0 as number,
+    order: 0,
+});
+
+const openEditGroup = (group: ProcessTitleGroup): void => {
+    editingGroupId.value = group.id;
+    editGroupForm.code = group.code;
+    editGroupForm.name = group.name;
+    editGroupForm.description = group.description ?? '';
+    editGroupForm.max_score = Number(group.max_score);
+    editGroupForm.order = group.order;
+};
+
+const cancelEditGroup = (): void => {
+    editingGroupId.value = null;
+    editGroupForm.reset();
+};
+
+const updateGroupAction = (groupId: number): void => {
+    editGroupForm.put(
+        updateTitleGroup({
+            selectionProcess: props.selectionProcess.id,
+            titleGroup: groupId,
+        }).url,
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                editingGroupId.value = null;
+            },
+        },
+    );
+};
+
+const editingItemId = ref<number | null>(null);
+const editItemForm = useForm({
+    code: '',
+    title: '',
+    score_per_unit: 0 as number,
+    score_unit: '',
+    max_quantity: null as number | null,
+    period_rule: '',
+    requires_attachment: true,
+    accepted_formats: 'pdf,jpg,png',
+    max_file_size_mb: 10,
+    candidate_instructions: '',
+    order: 0,
+});
+
+const openEditItem = (item: ProcessTitleItem): void => {
+    editingItemId.value = item.id;
+    editItemForm.code = item.code;
+    editItemForm.title = item.title;
+    editItemForm.score_per_unit = Number(item.score_per_unit);
+    editItemForm.score_unit = item.score_unit;
+    editItemForm.max_quantity = item.max_quantity ?? null;
+    editItemForm.period_rule = item.period_rule ?? '';
+    editItemForm.requires_attachment = item.requires_attachment;
+    editItemForm.accepted_formats =
+        item.accepted_formats?.join(',') ?? 'pdf,jpg,png';
+    editItemForm.max_file_size_mb = item.max_file_size_mb;
+    editItemForm.candidate_instructions = item.candidate_instructions ?? '';
+    editItemForm.order = item.order;
+};
+
+const cancelEditItem = (): void => {
+    editingItemId.value = null;
+    editItemForm.reset();
+};
+
+const updateItemAction = (
+    groupId: number,
+    itemId: number,
+): void => {
+    editItemForm.put(
+        updateTitleItem({
+            selectionProcess: props.selectionProcess.id,
+            titleGroup: groupId,
+            item: itemId,
+        }).url,
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                editingItemId.value = null;
+            },
+        },
+    );
 };
 
 /* ─── Critérios ───────────────────────────────────────────── */
@@ -1140,69 +1279,223 @@ const completionDoneCount = computed(
 
                         <!-- Lista de documentos -->
                         <div class="overflow-hidden rounded-xl border">
-                            <div
+                            <template
                                 v-for="(doc, index) in props.selectionProcess
                                     .required_documents ?? []"
                                 :key="doc.id"
-                                class="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
-                                :class="index > 0 ? 'border-t' : ''"
                             >
+                                <!-- Modo visualização -->
                                 <div
-                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+                                    v-if="editingDocumentId !== doc.id"
+                                    class="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
+                                    :class="index > 0 ? 'border-t' : ''"
                                 >
-                                    <FileText
-                                        :size="14"
-                                        class="text-primary"
-                                    />
-                                </div>
-                                <div class="min-w-0 flex-1">
                                     <div
-                                        class="flex flex-wrap items-center gap-1.5"
+                                        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
                                     >
-                                        <p class="truncate text-sm font-medium">
-                                            {{
-                                                doc.tipo_documento?.descricao ??
-                                                'Não informado'
-                                            }}
-                                        </p>
-                                        <Tag
-                                            v-if="doc.gerado_por_template"
-                                            value="Padrão"
-                                            severity="secondary"
-                                            class="text-xs"
+                                        <FileText
+                                            :size="14"
+                                            class="text-primary"
                                         />
                                     </div>
-                                    <p class="text-xs text-muted-foreground">
-                                        {{
-                                            formatosToList(doc.formatos_aceitos)
-                                                .map((f) => f.toUpperCase())
-                                                .join(', ') || '—'
-                                        }}
-                                        · {{ doc.tamanho_max_mb }} MB
-                                    </p>
+                                    <div class="min-w-0 flex-1">
+                                        <div
+                                            class="flex flex-wrap items-center gap-1.5"
+                                        >
+                                            <p
+                                                class="truncate text-sm font-medium"
+                                            >
+                                                {{
+                                                    doc.tipo_documento
+                                                        ?.descricao ??
+                                                    'Não informado'
+                                                }}
+                                            </p>
+                                            <Tag
+                                                v-if="doc.gerado_por_template"
+                                                value="Padrão"
+                                                severity="secondary"
+                                                class="text-xs"
+                                            />
+                                        </div>
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            {{
+                                                formatosToList(
+                                                    doc.formatos_aceitos,
+                                                )
+                                                    .map((f) => f.toUpperCase())
+                                                    .join(', ') || '—'
+                                            }}
+                                            · {{ doc.tamanho_max_mb }} MB
+                                        </p>
+                                    </div>
+                                    <Tag
+                                        :value="
+                                            doc.obrigatorio
+                                                ? 'Obrigatório'
+                                                : 'Opcional'
+                                        "
+                                        :severity="
+                                            doc.obrigatorio
+                                                ? 'success'
+                                                : 'secondary'
+                                        "
+                                        class="shrink-0 text-xs"
+                                    />
+                                    <Button
+                                        v-tooltip.left="'Editar documento'"
+                                        rounded
+                                        text
+                                        severity="secondary"
+                                        icon="pi pi-pencil"
+                                        size="small"
+                                        aria-label="Editar documento"
+                                        @click="openEditDocument(doc)"
+                                    />
+                                    <Button
+                                        v-tooltip.left="'Remover documento'"
+                                        rounded
+                                        text
+                                        severity="danger"
+                                        icon="pi pi-trash"
+                                        size="small"
+                                        aria-label="Remover documento"
+                                        @click="
+                                            confirmRemoveRequiredDocument(doc)
+                                        "
+                                    />
                                 </div>
-                                <Tag
-                                    :value="
-                                        doc.obrigatorio
-                                            ? 'Obrigatório'
-                                            : 'Opcional'
-                                    "
-                                    :severity="
-                                        doc.obrigatorio ? 'success' : 'secondary'
-                                    "
-                                    class="shrink-0 text-xs"
-                                />
-                                <Button
-                                    v-tooltip.left="'Remover documento'"
-                                    rounded
-                                    text
-                                    severity="danger"
-                                    icon="pi pi-trash"
-                                    size="small"
-                                    aria-label="Remover documento"
-                                    @click="confirmRemoveRequiredDocument(doc)"
-                                />
-                            </div>
+
+                                <!-- Modo edição inline -->
+                                <div
+                                    v-else
+                                    class="border-t bg-muted/10 p-4"
+                                    :class="index === 0 ? '!border-t-0' : ''"
+                                >
+                                    <p
+                                        class="mb-3 text-sm font-semibold text-primary"
+                                    >
+                                        Editando:
+                                        {{
+                                            doc.tipo_documento?.descricao ??
+                                            'Documento'
+                                        }}
+                                    </p>
+                                    <Fluid>
+                                        <form
+                                            class="flex flex-col gap-3"
+                                            @submit.prevent="
+                                                updateDocumentAction(doc.id)
+                                            "
+                                        >
+                                            <div
+                                                class="grid grid-cols-1 gap-3 md:grid-cols-[1fr_200px]"
+                                            >
+                                                <label
+                                                    class="flex flex-col gap-1.5"
+                                                >
+                                                    <span class="text-sm"
+                                                        >Formatos aceitos</span
+                                                    >
+                                                    <InputText
+                                                        v-model="
+                                                            editDocumentForm.formatos_aceitos
+                                                        "
+                                                        placeholder="pdf, jpg, png"
+                                                    />
+                                                    <small
+                                                        class="text-xs text-muted-foreground"
+                                                        >Separados por
+                                                        vírgula.</small
+                                                    >
+                                                </label>
+                                                <label
+                                                    class="flex flex-col gap-1.5"
+                                                >
+                                                    <span class="text-sm"
+                                                        >Tamanho máximo</span
+                                                    >
+                                                    <InputNumber
+                                                        v-model="
+                                                            editDocumentForm.tamanho_max_mb
+                                                        "
+                                                        :min="1"
+                                                        :max="100"
+                                                        suffix=" MB"
+                                                        show-buttons
+                                                        fluid
+                                                    />
+                                                </label>
+                                            </div>
+                                            <label
+                                                class="flex flex-col gap-1.5"
+                                            >
+                                                <span class="text-sm"
+                                                    >Observação para o
+                                                    candidato</span
+                                                >
+                                                <Textarea
+                                                    v-model="
+                                                        editDocumentForm.descricao
+                                                    "
+                                                    rows="2"
+                                                    placeholder="Instruções específicas (opcional)"
+                                                />
+                                            </label>
+                                            <div
+                                                class="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3"
+                                            >
+                                                <div
+                                                    class="flex items-center gap-3"
+                                                >
+                                                    <ToggleSwitch
+                                                        v-model="
+                                                            editDocumentForm.obrigatorio
+                                                        "
+                                                    />
+                                                    <span
+                                                        class="text-sm font-medium"
+                                                    >
+                                                        {{
+                                                            editDocumentForm.obrigatorio
+                                                                ? 'Documento obrigatório'
+                                                                : 'Documento opcional'
+                                                        }}
+                                                    </span>
+                                                </div>
+                                                <div
+                                                    class="flex items-center gap-2"
+                                                >
+                                                    <Button
+                                                        :fluid="false"
+                                                        type="button"
+                                                        size="small"
+                                                        icon="pi pi-times"
+                                                        label="Cancelar"
+                                                        severity="secondary"
+                                                        outlined
+                                                        @click="
+                                                            cancelEditDocument
+                                                        "
+                                                    />
+                                                    <Button
+                                                        :fluid="false"
+                                                        type="submit"
+                                                        size="small"
+                                                        icon="pi pi-check"
+                                                        label="Salvar"
+                                                        :loading="
+                                                            editDocumentForm.processing
+                                                        "
+                                                    />
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </Fluid>
+                                </div>
+                            </template>
                             <div
                                 v-if="!requiredDocumentsCount"
                                 class="flex flex-col items-center justify-center gap-2 py-12 text-center"
@@ -1466,8 +1759,160 @@ const completionDoneCount = computed(
                                 :key="group.id"
                                 class="overflow-hidden rounded-xl border"
                             >
+                                <!-- Modo edição do grupo (inline) -->
+                                <div
+                                    v-if="editingGroupId === group.id"
+                                    class="bg-muted/10 p-4"
+                                >
+                                    <p
+                                        class="mb-3 text-sm font-semibold text-amber-700 dark:text-amber-400"
+                                    >
+                                        Editando grupo {{ group.code }}
+                                    </p>
+                                    <Fluid>
+                                        <form
+                                            class="flex flex-col gap-3"
+                                            @submit.prevent="
+                                                updateGroupAction(group.id)
+                                            "
+                                        >
+                                            <div
+                                                class="grid grid-cols-1 gap-3 md:grid-cols-[80px_1fr_160px]"
+                                            >
+                                                <label
+                                                    class="flex flex-col gap-1.5"
+                                                >
+                                                    <span class="text-sm"
+                                                        >Código
+                                                        <span
+                                                            class="text-red-600"
+                                                            >*</span
+                                                        ></span
+                                                    >
+                                                    <InputText
+                                                        v-model="
+                                                            editGroupForm.code
+                                                        "
+                                                        placeholder="A"
+                                                        :invalid="
+                                                            Boolean(
+                                                                editGroupForm
+                                                                    .errors
+                                                                    .code,
+                                                            )
+                                                        "
+                                                    />
+                                                    <small
+                                                        v-if="
+                                                            editGroupForm.errors
+                                                                .code
+                                                        "
+                                                        class="text-red-600"
+                                                        >{{
+                                                            editGroupForm.errors
+                                                                .code
+                                                        }}</small
+                                                    >
+                                                </label>
+                                                <label
+                                                    class="flex flex-col gap-1.5"
+                                                >
+                                                    <span class="text-sm"
+                                                        >Nome do grupo
+                                                        <span
+                                                            class="text-red-600"
+                                                            >*</span
+                                                        ></span
+                                                    >
+                                                    <InputText
+                                                        v-model="
+                                                            editGroupForm.name
+                                                        "
+                                                        :invalid="
+                                                            Boolean(
+                                                                editGroupForm
+                                                                    .errors
+                                                                    .name,
+                                                            )
+                                                        "
+                                                    />
+                                                    <small
+                                                        v-if="
+                                                            editGroupForm.errors
+                                                                .name
+                                                        "
+                                                        class="text-red-600"
+                                                        >{{
+                                                            editGroupForm.errors
+                                                                .name
+                                                        }}</small
+                                                    >
+                                                </label>
+                                                <label
+                                                    class="flex flex-col gap-1.5"
+                                                >
+                                                    <span class="text-sm"
+                                                        >Pontuação máxima
+                                                        <span
+                                                            class="text-red-600"
+                                                            >*</span
+                                                        ></span
+                                                    >
+                                                    <InputNumber
+                                                        v-model="
+                                                            editGroupForm.max_score
+                                                        "
+                                                        :min="0"
+                                                        :max="9999.99"
+                                                        :min-fraction-digits="1"
+                                                        :max-fraction-digits="2"
+                                                        placeholder="0,0"
+                                                        fluid
+                                                    />
+                                                </label>
+                                            </div>
+                                            <label
+                                                class="flex flex-col gap-1.5"
+                                            >
+                                                <span class="text-sm"
+                                                    >Regras/Observações</span
+                                                >
+                                                <Textarea
+                                                    v-model="
+                                                        editGroupForm.description
+                                                    "
+                                                    rows="2"
+                                                />
+                                            </label>
+                                            <div class="flex justify-end gap-2">
+                                                <Button
+                                                    :fluid="false"
+                                                    type="button"
+                                                    size="small"
+                                                    icon="pi pi-times"
+                                                    label="Cancelar"
+                                                    severity="secondary"
+                                                    outlined
+                                                    @click="cancelEditGroup"
+                                                />
+                                                <Button
+                                                    :fluid="false"
+                                                    type="submit"
+                                                    size="small"
+                                                    icon="pi pi-check"
+                                                    label="Salvar"
+                                                    :loading="
+                                                        editGroupForm.processing
+                                                    "
+                                                />
+                                            </div>
+                                        </form>
+                                    </Fluid>
+                                </div>
+
                                 <!-- Cabeçalho do grupo (clicável) -->
                                 <button
+                                    v-else
                                     type="button"
                                     class="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/30"
                                     @click="toggleGroup(group.id)"
@@ -1493,6 +1938,15 @@ const completionDoneCount = computed(
                                             :value="`${group.items?.length ?? 0} ${(group.items?.length ?? 0) === 1 ? 'item' : 'itens'}`"
                                             severity="secondary"
                                             class="text-xs"
+                                        />
+                                        <Button
+                                            v-tooltip.left="'Editar grupo'"
+                                            rounded
+                                            text
+                                            severity="secondary"
+                                            icon="pi pi-pencil"
+                                            size="small"
+                                            @click.stop="openEditGroup(group)"
                                         />
                                         <Button
                                             v-tooltip.left="'Remover grupo'"
@@ -1534,78 +1988,294 @@ const completionDoneCount = computed(
                                     </div>
 
                                     <!-- Itens do grupo -->
-                                    <div
+                                    <template
                                         v-for="(item, idx) in group.items ??
                                         []"
                                         :key="item.id"
-                                        class="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/20"
-                                        :class="idx > 0 ? 'border-t' : ''"
                                     >
-                                        <span
-                                            class="flex shrink-0 items-center justify-center rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400"
+                                        <!-- Modo edição do item (inline) -->
+                                        <div
+                                            v-if="editingItemId === item.id"
+                                            class="border-t bg-muted/10 p-4"
+                                            :class="idx === 0 ? '!border-t-0' : ''"
                                         >
-                                            {{ item.code }}
-                                        </span>
-                                        <div class="min-w-0 flex-1">
                                             <p
-                                                class="text-sm font-medium leading-snug"
+                                                class="mb-3 text-sm font-semibold text-amber-700 dark:text-amber-400"
                                             >
-                                                {{ item.title }}
+                                                Editando item {{ item.code }}
                                             </p>
-                                            <div
-                                                class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
-                                            >
-                                                <span
-                                                    class="font-semibold text-amber-700 dark:text-amber-400"
-                                                    >{{
-                                                        formatScore(
-                                                            item.score_per_unit,
+                                            <Fluid>
+                                                <form
+                                                    class="flex flex-col gap-3"
+                                                    @submit.prevent="
+                                                        updateItemAction(
+                                                            group.id,
+                                                            item.id,
                                                         )
-                                                    }}
-                                                    pt
-                                                    {{
-                                                        item.score_unit
-                                                    }}</span
+                                                    "
                                                 >
-                                                <span
-                                                    v-if="item.max_quantity"
-                                                    >· máx
-                                                    {{ item.max_quantity }}
-                                                    unidades</span
+                                                    <div
+                                                        class="grid grid-cols-1 gap-3 md:grid-cols-[100px_1fr]"
+                                                    >
+                                                        <label
+                                                            class="flex flex-col gap-1.5"
+                                                        >
+                                                            <span
+                                                                class="text-sm"
+                                                                >Código
+                                                                <span
+                                                                    class="text-red-600"
+                                                                    >*</span
+                                                                ></span
+                                                            >
+                                                            <InputText
+                                                                v-model="
+                                                                    editItemForm.code
+                                                                "
+                                                                :invalid="
+                                                                    Boolean(
+                                                                        editItemForm
+                                                                            .errors
+                                                                            .code,
+                                                                    )
+                                                                "
+                                                            />
+                                                        </label>
+                                                        <label
+                                                            class="flex flex-col gap-1.5"
+                                                        >
+                                                            <span
+                                                                class="text-sm"
+                                                                >Título/Descrição
+                                                                <span
+                                                                    class="text-red-600"
+                                                                    >*</span
+                                                                ></span
+                                                            >
+                                                            <InputText
+                                                                v-model="
+                                                                    editItemForm.title
+                                                                "
+                                                                :invalid="
+                                                                    Boolean(
+                                                                        editItemForm
+                                                                            .errors
+                                                                            .title,
+                                                                    )
+                                                                "
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                    <div
+                                                        class="grid grid-cols-1 gap-3 md:grid-cols-3"
+                                                    >
+                                                        <label
+                                                            class="flex flex-col gap-1.5"
+                                                        >
+                                                            <span
+                                                                class="text-sm"
+                                                                >Pontos/unidade
+                                                                <span
+                                                                    class="text-red-600"
+                                                                    >*</span
+                                                                ></span
+                                                            >
+                                                            <InputNumber
+                                                                v-model="
+                                                                    editItemForm.score_per_unit
+                                                                "
+                                                                :min="0"
+                                                                :max="9999.99"
+                                                                :min-fraction-digits="1"
+                                                                :max-fraction-digits="2"
+                                                                fluid
+                                                            />
+                                                        </label>
+                                                        <label
+                                                            class="flex flex-col gap-1.5"
+                                                        >
+                                                            <span
+                                                                class="text-sm"
+                                                                >Unidade
+                                                                <span
+                                                                    class="text-red-600"
+                                                                    >*</span
+                                                                ></span
+                                                            >
+                                                            <InputText
+                                                                v-model="
+                                                                    editItemForm.score_unit
+                                                                "
+                                                                placeholder="por título"
+                                                            />
+                                                        </label>
+                                                        <label
+                                                            class="flex flex-col gap-1.5"
+                                                        >
+                                                            <span
+                                                                class="text-sm"
+                                                                >Qtd. máxima</span
+                                                            >
+                                                            <InputNumber
+                                                                v-model="
+                                                                    editItemForm.max_quantity
+                                                                "
+                                                                :min="1"
+                                                                :max="9999"
+                                                                fluid
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                    <label
+                                                        class="flex flex-col gap-1.5"
+                                                    >
+                                                        <span class="text-sm"
+                                                            >Regra de
+                                                            período</span
+                                                        >
+                                                        <InputText
+                                                            v-model="
+                                                                editItemForm.period_rule
+                                                            "
+                                                            placeholder="Ex.: últimos 5 anos"
+                                                        />
+                                                    </label>
+                                                    <div
+                                                        class="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3"
+                                                    >
+                                                        <div
+                                                            class="flex items-center gap-3"
+                                                        >
+                                                            <ToggleSwitch
+                                                                v-model="
+                                                                    editItemForm.requires_attachment
+                                                                "
+                                                            />
+                                                            <span
+                                                                class="text-sm font-medium"
+                                                                >Exige
+                                                                comprovante</span
+                                                            >
+                                                        </div>
+                                                        <div
+                                                            class="flex items-center gap-2"
+                                                        >
+                                                            <Button
+                                                                :fluid="false"
+                                                                type="button"
+                                                                size="small"
+                                                                icon="pi pi-times"
+                                                                label="Cancelar"
+                                                                severity="secondary"
+                                                                outlined
+                                                                @click="
+                                                                    cancelEditItem
+                                                                "
+                                                            />
+                                                            <Button
+                                                                :fluid="false"
+                                                                type="submit"
+                                                                size="small"
+                                                                icon="pi pi-check"
+                                                                label="Salvar"
+                                                                :loading="
+                                                                    editItemForm.processing
+                                                                "
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </Fluid>
+                                        </div>
+
+                                        <!-- Modo visualização do item -->
+                                        <div
+                                            v-else
+                                            class="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/20"
+                                            :class="idx > 0 ? 'border-t' : ''"
+                                        >
+                                            <span
+                                                class="flex shrink-0 items-center justify-center rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400"
+                                            >
+                                                {{ item.code }}
+                                            </span>
+                                            <div class="min-w-0 flex-1">
+                                                <p
+                                                    class="text-sm font-medium leading-snug"
                                                 >
-                                                <span v-if="item.period_rule"
-                                                    >·
-                                                    {{
-                                                        item.period_rule
-                                                    }}</span
+                                                    {{ item.title }}
+                                                </p>
+                                                <div
+                                                    class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
                                                 >
+                                                    <span
+                                                        class="font-semibold text-amber-700 dark:text-amber-400"
+                                                        >{{
+                                                            formatScore(
+                                                                item.score_per_unit,
+                                                            )
+                                                        }}
+                                                        pt
+                                                        {{
+                                                            item.score_unit
+                                                        }}</span
+                                                    >
+                                                    <span
+                                                        v-if="item.max_quantity"
+                                                        >· máx
+                                                        {{ item.max_quantity }}
+                                                        unidades</span
+                                                    >
+                                                    <span
+                                                        v-if="item.period_rule"
+                                                        >·
+                                                        {{
+                                                            item.period_rule
+                                                        }}</span
+                                                    >
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="flex shrink-0 items-center gap-1"
+                                            >
+                                                <Tag
+                                                    v-if="
+                                                        item.requires_attachment
+                                                    "
+                                                    value="Comprovante"
+                                                    severity="info"
+                                                    class="text-xs"
+                                                />
+                                                <Button
+                                                    v-tooltip.left="
+                                                        'Editar item'
+                                                    "
+                                                    rounded
+                                                    text
+                                                    severity="secondary"
+                                                    icon="pi pi-pencil"
+                                                    size="small"
+                                                    @click="openEditItem(item)"
+                                                />
+                                                <Button
+                                                    v-tooltip.left="
+                                                        'Remover item'
+                                                    "
+                                                    rounded
+                                                    text
+                                                    severity="danger"
+                                                    icon="pi pi-trash"
+                                                    size="small"
+                                                    @click="
+                                                        confirmRemoveTitleItem(
+                                                            group,
+                                                            item,
+                                                        )
+                                                    "
+                                                />
                                             </div>
                                         </div>
-                                        <div
-                                            class="flex shrink-0 items-center gap-1"
-                                        >
-                                            <Tag
-                                                v-if="item.requires_attachment"
-                                                value="Comprovante"
-                                                severity="info"
-                                                class="text-xs"
-                                            />
-                                            <Button
-                                                v-tooltip.left="'Remover item'"
-                                                rounded
-                                                text
-                                                severity="danger"
-                                                icon="pi pi-trash"
-                                                size="small"
-                                                @click="
-                                                    confirmRemoveTitleItem(
-                                                        group,
-                                                        item,
-                                                    )
-                                                "
-                                            />
-                                        </div>
-                                    </div>
+                                    </template>
 
                                     <!-- Estado vazio dos itens -->
                                     <div

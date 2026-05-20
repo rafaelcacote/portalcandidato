@@ -40,13 +40,13 @@ test('admin can create and update a selection process', function () {
 
     $process = SelectionProcess::query()->firstOrFail();
 
-    expect(ProcessRequiredDocument::query()->where('selection_process_id', $process->id)->count())->toBe(11);
+    expect(ProcessRequiredDocument::query()->where('selection_process_id', $process->id)->count())->toBe(9);
     expect(
         ProcessRequiredDocument::query()
             ->where('selection_process_id', $process->id)
             ->where('gerado_por_template', true)
             ->count(),
-    )->toBe(11);
+    )->toBe(9);
 
     $this->actingAs($admin)
         ->put(route('admin.processes.update', $process), [
@@ -378,6 +378,143 @@ test('document type store requires descricao and title type store requires descr
             'calculo' => 'invalido',
         ])
         ->assertSessionHasErrors('calculo');
+});
+
+test('admin can update a required document', function () {
+    Role::findOrCreate('admin', 'web');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS Update Doc',
+        'descricao' => 'Descrição',
+        'status' => 'rascunho',
+        'tipo_programa' => 'mestrado',
+    ]);
+    $tipoDocumento = TipoDocumento::query()->create([
+        'descricao' => 'RG',
+        'status' => true,
+    ]);
+    $doc = $process->requiredDocuments()->create([
+        'tipo_documento_id' => $tipoDocumento->id,
+        'nome' => $tipoDocumento->descricao,
+        'tamanho_max_mb' => 10,
+        'obrigatorio' => true,
+    ]);
+
+    $this->actingAs($admin)
+        ->put(route('admin.processes.required-documents.update', [
+            'selectionProcess' => $process->id,
+            'processRequiredDocument' => $doc->id,
+        ]), [
+            'descricao' => 'Versão atualizada',
+            'formatos_aceitos' => 'pdf',
+            'tamanho_max_mb' => 20,
+            'obrigatorio' => false,
+        ])
+        ->assertRedirect();
+
+    $doc->refresh();
+
+    expect($doc->descricao)->toBe('Versão atualizada')
+        ->and($doc->tamanho_max_mb)->toBe(20)
+        ->and($doc->obrigatorio)->toBeFalse();
+});
+
+test('admin can update a title group', function () {
+    Role::findOrCreate('admin', 'web');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS Update Group',
+        'descricao' => 'Descrição',
+        'status' => 'rascunho',
+        'tipo_programa' => 'mestrado',
+    ]);
+    $group = $process->titleGroups()->create([
+        'code' => 'A',
+        'name' => 'Grupo Original',
+        'max_score' => 10,
+        'order' => 0,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin)
+        ->put(route('admin.processes.title-groups.update', [
+            'selectionProcess' => $process->id,
+            'titleGroup' => $group->id,
+        ]), [
+            'code' => 'A',
+            'name' => 'Grupo Atualizado',
+            'description' => 'Nova descrição',
+            'max_score' => 20,
+            'order' => 1,
+        ])
+        ->assertRedirect();
+
+    $group->refresh();
+
+    expect($group->name)->toBe('Grupo Atualizado')
+        ->and((float) $group->max_score)->toBe(20.0)
+        ->and($group->description)->toBe('Nova descrição');
+});
+
+test('admin can update a title item', function () {
+    Role::findOrCreate('admin', 'web');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS Update Item',
+        'descricao' => 'Descrição',
+        'status' => 'rascunho',
+        'tipo_programa' => 'mestrado',
+    ]);
+    $group = $process->titleGroups()->create([
+        'code' => 'A',
+        'name' => 'Grupo',
+        'max_score' => 10,
+        'order' => 0,
+        'is_active' => true,
+    ]);
+    $item = $group->items()->create([
+        'code' => 'A.1',
+        'title' => 'Item Original',
+        'score_per_unit' => 1.0,
+        'score_unit' => 'por título',
+        'requires_attachment' => true,
+        'max_file_size_mb' => 10,
+        'order' => 0,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin)
+        ->put(route('admin.processes.title-groups.items.update', [
+            'selectionProcess' => $process->id,
+            'titleGroup' => $group->id,
+            'item' => $item->id,
+        ]), [
+            'code' => 'A.1',
+            'title' => 'Item Atualizado',
+            'score_per_unit' => 2.5,
+            'score_unit' => 'por ano',
+            'max_quantity' => 3,
+            'period_rule' => 'últimos 5 anos',
+            'requires_attachment' => false,
+            'accepted_formats' => 'pdf',
+            'max_file_size_mb' => 5,
+            'candidate_instructions' => 'Instruções atualizadas',
+            'order' => 0,
+        ])
+        ->assertRedirect();
+
+    $item->refresh();
+
+    expect($item->title)->toBe('Item Atualizado')
+        ->and((float) $item->score_per_unit)->toBe(2.5)
+        ->and($item->score_unit)->toBe('por ano')
+        ->and($item->max_quantity)->toBe(3);
 });
 
 test('admin can open document and title type create and edit screens', function () {

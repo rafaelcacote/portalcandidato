@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -90,6 +91,8 @@ test('new candidates can register and are redirected to email verification', fun
 });
 
 test('unverified candidates cannot access candidate dashboard', function () {
+    Role::findOrCreate('candidato', 'web');
+
     $user = User::factory()->unverified()->create();
     $user->assignRole('candidato');
 
