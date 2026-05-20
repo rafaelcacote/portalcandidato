@@ -91,6 +91,41 @@ class CandidateDashboardController extends Controller
             ? $request->user()->unreadNotifications()->count()
             : 0;
 
+        $highlightApplication = null;
+
+        if ($pendenciasInscricao !== []) {
+            $first = $pendenciasInscricao[0];
+            $highlightApplication = [
+                'id' => $first['id'],
+                'process_title' => $first['process_title'],
+                'status' => ApplicationStatus::Pendencia->value,
+                'numero_protocolo' => $first['numero_protocolo'],
+                'kind' => 'pendencia',
+                'detail' => null,
+            ];
+        } elseif ($documentosRecusados !== []) {
+            $first = $documentosRecusados[0];
+            $highlightApplication = [
+                'id' => $first['application_id'],
+                'process_title' => $first['process_title'],
+                'status' => ApplicationStatus::Pendencia->value,
+                'numero_protocolo' => null,
+                'kind' => 'documento_recusado',
+                'detail' => $first['motivo_recusa'],
+            ];
+        } elseif ($inscricoesEmAndamento !== []) {
+            $first = collect($inscricoesEmAndamento)->firstWhere('status', ApplicationStatus::Rascunho->value)
+                ?? $inscricoesEmAndamento[0];
+            $highlightApplication = [
+                'id' => $first['id'],
+                'process_title' => $first['process_title'],
+                'status' => $first['status'],
+                'numero_protocolo' => $first['numero_protocolo'],
+                'kind' => 'rascunho',
+                'detail' => null,
+            ];
+        }
+
         return Inertia::render('Candidate/Dashboard', [
             'summary' => [
                 'inscricoes_em_andamento' => $inscricoesEmAndamentoCount,
@@ -100,6 +135,7 @@ class CandidateDashboardController extends Controller
             'inscricoes_em_andamento' => $inscricoesEmAndamento,
             'pendencias_inscricao' => $pendenciasInscricao,
             'documentos_recusados' => $documentosRecusados,
+            'highlight_application' => $highlightApplication,
         ]);
     }
 }

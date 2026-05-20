@@ -25,12 +25,17 @@ const showLoginArtBackdrop = computed(
     () =>
         props.backdrop === 'login-fundo' ||
         page.component === 'auth/Login' ||
-        page.component === 'auth/VerifyEmail',
+        page.component === 'auth/VerifyEmail' ||
+        page.component === 'auth/ForgotPassword' ||
+        page.component === 'auth/ResetPassword',
 );
 
 /** Telas curtas com arte de fundo: menos respiro no topo (evita faixa vazia antes do conteúdo). */
 const isCompactLoginBackdrop = computed(
-    () => page.component === 'auth/VerifyEmail',
+    () =>
+        page.component === 'auth/VerifyEmail' ||
+        page.component === 'auth/ForgotPassword' ||
+        page.component === 'auth/ResetPassword',
 );
 </script>
 

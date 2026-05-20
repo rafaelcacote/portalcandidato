@@ -41,6 +41,10 @@ import { index as adminProcessesIndex } from '@/routes/admin/processes';
 import { index as adminReportsIndex } from '@/routes/admin/reports';
 import { index as adminDocumentTypesIndex } from '@/routes/admin/support-tables/document-types';
 import { index as adminTitleTypesIndex } from '@/routes/admin/support-tables/title-types';
+import { dashboard as candidateDashboard } from '@/routes/candidate';
+import { index as candidateApplicationsIndex } from '@/routes/candidate/applications';
+import { index as candidateDocumentsIndex } from '@/routes/candidate/documents';
+import { index as candidateProcessesIndex } from '@/routes/candidate/processes';
 import { dashboard as evaluatorDashboard } from '@/routes/evaluator';
 import { index as evaluatorProcessesIndex } from '@/routes/evaluator/processes';
 import type { NavItem, NavSection } from '@/types';
@@ -48,19 +52,54 @@ import type { Auth } from '@/types/auth';
 
 const page = usePage<{ auth: Auth }>();
 
+const userAvatarUrl = computed(
+    () =>
+        page.props.auth?.user?.avatar
+        ?? (page.props.auth?.user as { foto_url?: string | null } | undefined)?.foto_url
+        ?? null,
+);
+
 const isAdmin = computed(() => page.props.auth?.roles?.includes('admin') ?? false);
 
 const isEvaluator = computed(() => page.props.auth?.roles?.includes('avaliador') ?? false);
 
-const usesStaffSidebar = computed(() => isAdmin.value || isEvaluator.value);
+const isCandidate = computed(() => page.props.auth?.roles?.includes('candidato') ?? false);
 
-const staffSidebarHomeUrl = computed(() =>
-    isAdmin.value ? adminDashboard.url() : evaluatorDashboard.url(),
+const usesRoleSidebar = computed(
+    () => isAdmin.value || isEvaluator.value || isCandidate.value,
 );
 
-const staffSidebarSubtitle = computed(() =>
-    isAdmin.value ? 'Painel administrativo' : 'Painel do avaliador',
-);
+const roleSidebarHomeUrl = computed(() => {
+    if (isAdmin.value) {
+        return adminDashboard.url();
+    }
+
+    if (isEvaluator.value) {
+        return evaluatorDashboard.url();
+    }
+
+    if (isCandidate.value) {
+        return candidateDashboard.url();
+    }
+
+    return dashboard();
+});
+
+const roleSidebarSubtitle = computed(() => {
+    if (isAdmin.value) {
+        return 'Painel administrativo';
+    }
+
+    if (isEvaluator.value) {
+        return 'Painel do avaliador';
+    }
+
+    if (isCandidate.value) {
+        return 'Painel do candidato';
+    }
+
+    return '';
+});
 
 const adminNavSections = computed<NavSection[]>(() => [
     {
@@ -100,7 +139,30 @@ const adminShortcutLinks = computed(() => [
     { title: 'Relatórios', href: adminReportsIndex.url(), comingSoon: true },
 ]);
 
-const staffShortcutLinks = computed(() => {
+const candidateNavSections = computed<NavSection[]>(() => [
+    {
+        label: 'Principal',
+        items: [
+            { title: 'Dashboard', href: candidateDashboard.url(), icon: LayoutGrid },
+            { title: 'Processos abertos', href: candidateProcessesIndex.url(), icon: FileText },
+            {
+                title: 'Minhas inscrições',
+                href: candidateApplicationsIndex.url(),
+                icon: ClipboardCheck,
+            },
+            { title: 'Meus documentos', href: candidateDocumentsIndex.url(), icon: FolderOpen },
+        ],
+    },
+]);
+
+const candidateShortcutLinks = computed(() => [
+    { title: 'Dashboard', href: candidateDashboard.url() },
+    { title: 'Processos abertos', href: candidateProcessesIndex.url() },
+    { title: 'Minhas inscrições', href: candidateApplicationsIndex.url() },
+    { title: 'Meus documentos', href: candidateDocumentsIndex.url() },
+]);
+
+const roleShortcutLinks = computed(() => {
     if (isAdmin.value) {
         return adminShortcutLinks.value;
     }
@@ -110,6 +172,10 @@ const staffShortcutLinks = computed(() => {
             { title: 'Dashboard', href: evaluatorDashboard.url() },
             { title: 'Processos atribuídos', href: evaluatorProcessesIndex().url },
         ];
+    }
+
+    if (isCandidate.value) {
+        return candidateShortcutLinks.value;
     }
 
     return [];
@@ -144,12 +210,7 @@ const mainNavItems = computed<NavItem[]>(() => {
     }
 
     if (roles.includes('candidato')) {
-        return [
-            { title: 'Dashboard', href: '/candidato/dashboard', icon: LayoutGrid },
-            { title: 'Processos Abertos', href: '/candidato/processes', icon: FileText },
-            { title: 'Minhas Inscrições', href: '/candidato/applications', icon: ClipboardCheck },
-            { title: 'Meus Documentos', href: '/candidato/documents', icon: FolderOpen },
-        ];
+        return [];
     }
 
     return [{ title: 'Dashboard', href: dashboard(), icon: LayoutGrid }];
@@ -162,13 +223,13 @@ const mainNavItems = computed<NavItem[]>(() => {
         <SidebarHeader class="px-3 pb-2 pt-4">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <template v-if="usesStaffSidebar">
+                    <template v-if="usesRoleSidebar">
                         <SidebarMenuButton
                             size="lg"
                             as-child
                             class="h-auto rounded-xl px-2.5 py-2.5 transition-all hover:!bg-white/5"
                         >
-                            <Link :href="staffSidebarHomeUrl" class="flex flex-col gap-1.5">
+                            <Link :href="roleSidebarHomeUrl" class="flex flex-col gap-1.5">
                                 <!-- Expanded: logos PROENSP + UEA -->
                                 <div
                                     class="flex min-w-0 flex-wrap items-center gap-2.5 group-data-[collapsible=icon]:hidden"
@@ -193,7 +254,7 @@ const mainNavItems = computed<NavItem[]>(() => {
                                 <span
                                     class="text-[0.58rem] font-bold uppercase tracking-[0.14em] text-slate-500 group-data-[collapsible=icon]:hidden"
                                 >
-                                    {{ staffSidebarSubtitle }}
+                                    {{ roleSidebarSubtitle }}
                                 </span>
                             </Link>
                         </SidebarMenuButton>
@@ -209,17 +270,18 @@ const mainNavItems = computed<NavItem[]>(() => {
         </SidebarHeader>
 
         <!-- Divider -->
-        <div v-if="usesStaffSidebar" class="mx-3 h-px bg-white/5" />
+        <div v-if="usesRoleSidebar" class="mx-3 h-px bg-white/5" />
 
         <!-- ── Navigation ────────────────────────────────────────────────── -->
         <SidebarContent>
             <NavMain v-if="isAdmin" :sections="adminNavSections" />
             <NavMain v-else-if="isEvaluator" :sections="evaluatorNavSections" />
+            <NavMain v-else-if="isCandidate" :sections="candidateNavSections" />
             <NavMain v-else :items="mainNavItems" />
         </SidebarContent>
 
-        <!-- ── Footer (admin / avaliador) ───────────────────────────────── -->
-        <SidebarFooter v-if="usesStaffSidebar && page.props.auth?.user" class="px-3 pb-4 pt-2">
+        <!-- ── Footer (admin / avaliador / candidato) ───────────────────── -->
+        <SidebarFooter v-if="usesRoleSidebar && page.props.auth?.user" class="px-3 pb-4 pt-2">
             <div class="mb-2 h-px w-full bg-white/5" />
 
             <!-- Quick shortcuts -->
@@ -241,7 +303,7 @@ const mainNavItems = computed<NavItem[]>(() => {
 
                 <CollapsibleContent>
                     <ul class="mt-1 space-y-px pb-1 pl-1">
-                        <li v-for="link in staffShortcutLinks" :key="link.title">
+                        <li v-for="link in roleShortcutLinks" :key="link.title">
                             <button
                                 v-if="link.comingSoon"
                                 type="button"
@@ -270,8 +332,8 @@ const mainNavItems = computed<NavItem[]>(() => {
             >
                 <Avatar class="size-8 shrink-0 rounded-lg ring-1 ring-white/10">
                     <AvatarImage
-                        v-if="page.props.auth.user.avatar"
-                        :src="page.props.auth.user.avatar"
+                        v-if="userAvatarUrl"
+                        :src="userAvatarUrl"
                         :alt="page.props.auth.user.name"
                     />
                     <AvatarFallback

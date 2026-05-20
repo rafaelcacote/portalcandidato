@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -59,6 +60,13 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Public URL for the candidate profile photo when stored on the public disk.
      */
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? Str::lower(trim($value)) : null,
+        );
+    }
+
     protected function fotoUrl(): Attribute
     {
         return Attribute::get(function (): ?string {

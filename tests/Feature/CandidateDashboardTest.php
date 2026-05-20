@@ -50,7 +50,8 @@ test('candidate sees dashboard inertia props', function (): void {
             )
             ->has('inscricoes_em_andamento', 0)
             ->has('pendencias_inscricao', 0)
-            ->has('documentos_recusados', 0));
+            ->has('documentos_recusados', 0)
+            ->where('highlight_application', null));
 });
 
 test('dashboard summary counts applications and rejected documents', function (): void {

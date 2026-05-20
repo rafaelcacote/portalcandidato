@@ -2,6 +2,7 @@
 
 namespace App\Http\Responses;
 
+use App\Support\RedirectsUsersByRole;
 use Illuminate\Http\RedirectResponse;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
 
@@ -15,18 +16,6 @@ class LoginResponse implements LoginResponseContract
             return redirect()->route('verification.notice');
         }
 
-        if ($user?->hasRole('admin')) {
-            return redirect()->intended(route('admin.dashboard'));
-        }
-
-        if ($user?->hasRole('avaliador')) {
-            return redirect()->intended(route('evaluator.dashboard'));
-        }
-
-        if ($user?->hasRole('candidato')) {
-            return redirect()->intended(route('candidate.dashboard'));
-        }
-
-        return redirect()->intended(config('fortify.home'));
+        return RedirectsUsersByRole::redirect($request);
     }
 }

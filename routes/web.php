@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Auth\RegisterCpfAvailabilityController;
+use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\SelectionProcessEditalDownloadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -19,8 +21,12 @@ Route::middleware('throttle:40,1')
     ->get('register/check-cpf', RegisterCpfAvailabilityController::class)
     ->name('register.check-cpf');
 
+Route::get('email/verify/{id}/{hash}', VerifyEmailController::class)
+    ->middleware(['web', 'signed', 'throttle:6,1'])
+    ->name('verification.verify');
+
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardRedirectController::class)->name('dashboard');
     Route::get('processos-seletivos/{selectionProcess}/edital', [SelectionProcessEditalDownloadController::class, 'show'])
         ->name('selection-processes.edital.show');
 });

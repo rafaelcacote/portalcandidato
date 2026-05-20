@@ -8,6 +8,7 @@ use App\Rules\Cpf;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 use Spatie\Permission\Models\Role;
 
@@ -80,9 +81,12 @@ class CreateNewUser implements CreatesNewUsers
         $cpf = Cpf::normalizeToDigits($input['cpf'] ?? '');
         $cepRaw = isset($input['cep']) ? preg_replace('/\D/', '', (string) $input['cep']) : '';
 
+        $email = isset($input['email']) ? Str::lower(trim((string) $input['email'])) : null;
+
         return array_merge($input, [
             'cpf' => $cpf,
             'cep' => $cepRaw,
+            'email' => $email,
         ]);
     }
 }

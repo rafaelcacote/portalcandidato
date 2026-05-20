@@ -5,6 +5,7 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 use Laravel\Fortify\Features;
+use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
     $this->skipUnlessFortifyHas(Features::emailVerification());
@@ -18,8 +19,33 @@ test('email verification screen can be rendered', function () {
     $response->assertOk();
 });
 
-test('email can be verified', function () {
+test('guest can verify email via signed link without being logged in first', function () {
+    Role::findOrCreate('candidato', 'web');
+
     $user = User::factory()->unverified()->create();
+    $user->assignRole('candidato');
+
+    Event::fake();
+
+    $verificationUrl = URL::temporarySignedRoute(
+        'verification.verify',
+        now()->addMinutes(60),
+        ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())],
+    );
+
+    $this->get($verificationUrl)
+        ->assertRedirect(route('candidate.dashboard', absolute: false).'?verified=1');
+
+    Event::assertDispatched(Verified::class);
+    expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
+    $this->assertAuthenticatedAs($user);
+});
+
+test('email can be verified', function () {
+    Role::findOrCreate('candidato', 'web');
+
+    $user = User::factory()->unverified()->create();
+    $user->assignRole('candidato');
 
     Event::fake();
 
@@ -33,7 +59,7 @@ test('email can be verified', function () {
 
     Event::assertDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
-    $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
+    $response->assertRedirect(route('candidate.dashboard', absolute: false).'?verified=1');
 });
 
 test('email is not verified with invalid hash', function () {
@@ -71,7 +97,10 @@ test('email is not verified with invalid user id', function () {
 });
 
 test('verified user is redirected to dashboard from verification prompt', function () {
+    Role::findOrCreate('candidato', 'web');
+
     $user = User::factory()->create();
+    $user->assignRole('candidato');
 
     Event::fake();
 
@@ -82,7 +111,10 @@ test('verified user is redirected to dashboard from verification prompt', functi
 });
 
 test('already verified user visiting verification link is redirected without firing event again', function () {
+    Role::findOrCreate('candidato', 'web');
+
     $user = User::factory()->create();
+    $user->assignRole('candidato');
 
     Event::fake();
 
@@ -93,7 +125,7 @@ test('already verified user visiting verification link is redirected without fir
     );
 
     $this->actingAs($user)->get($verificationUrl)
-        ->assertRedirect(route('dashboard', absolute: false).'?verified=1');
+        ->assertRedirect(route('candidate.dashboard', absolute: false).'?verified=1');
 
     Event::assertNotDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();

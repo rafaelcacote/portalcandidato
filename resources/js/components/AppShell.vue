@@ -17,10 +17,14 @@ withDefaults(defineProps<Props>(), {
 const page = usePage<{ auth: Auth; sidebarOpen?: boolean }>();
 const isOpen = page.props.sidebarOpen;
 
-const usesStaffShell = computed(() => {
+const usesRoleShell = computed(() => {
     const roles = page.props.auth?.roles ?? [];
 
-    return roles.includes('admin') || roles.includes('avaliador');
+    return (
+        roles.includes('admin')
+        || roles.includes('avaliador')
+        || roles.includes('candidato')
+    );
 });
 </script>
 
@@ -31,7 +35,7 @@ const usesStaffShell = computed(() => {
     <SidebarProvider
         v-else
         :default-open="isOpen"
-        :class="cn(usesStaffShell && 'admin-app-shell')"
+        :class="cn(usesRoleShell && 'admin-app-shell')"
     >
         <slot />
     </SidebarProvider>
