@@ -11,6 +11,7 @@ import EvaluationSummary from '@/components/Evaluator/EvaluationSummary.vue';
 import ObservationDialog from '@/components/Evaluator/ObservationDialog.vue';
 import { buildEvaluatorDocumentSections } from '@/components/Evaluator/evaluatorDocumentGrouping';
 import type { EvaluatorApplicationDocument, EvaluatorDocumentSection } from '@/components/Evaluator/evaluatorDocumentTypes';
+import { maxPointsForTitleDocumentRow } from '@/components/Evaluator/evaluatorTitleScoring';
 import { home } from '@/routes';
 import { dashboard } from '@/routes/evaluator';
 import { index as processesIndex, show as processShow } from '@/routes/evaluator/processes';
@@ -102,9 +103,17 @@ function buildInitialDocumentScores(): Array<{ application_document_id: number; 
     const eval0 = props.application.evaluations?.[0];
     return docs.map((doc) => {
         const existing = eval0?.document_scores?.find((s) => s.application_document_id === doc.id);
+        if (existing != null) {
+            return {
+                application_document_id: doc.id,
+                pontuacao: Number(existing.pontuacao ?? 0),
+            };
+        }
+        const auto =
+            doc.status === 'aprovado' ? (maxPointsForTitleDocumentRow(doc) ?? 0) : 0;
         return {
             application_document_id: doc.id,
-            pontuacao: Number(existing?.pontuacao ?? 0),
+            pontuacao: auto,
         };
     });
 }

@@ -7,6 +7,7 @@ use App\Http\Requests\Modules\Evaluator\DecideApplicationDocumentRequest;
 use App\Mail\DocumentoRecusado;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\Modules\Candidate\Models\ApplicationDocument;
+use App\Modules\Evaluator\Services\DocumentValidationScoringService;
 use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response as HttpResponse;
@@ -18,6 +19,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CandidateReviewController extends Controller
 {
+    public function __construct(
+        private readonly DocumentValidationScoringService $documentValidationScoringService,
+    ) {}
+
     public function show(Application $application): Response
     {
         $application->load([
@@ -60,6 +65,13 @@ class CandidateReviewController extends Controller
             $application->update(['status' => ApplicationStatus::Pendencia->value]);
             Mail::to($application->user)->queue(new DocumentoRecusado($applicationDocument));
         }
+
+        $this->documentValidationScoringService->applyDocumentDecision(
+            $application,
+            $applicationDocument->fresh(),
+            $applicationDocument->status,
+            (int) auth()->id(),
+        );
 
         return back()->with('success', 'Documento validado.');
     }

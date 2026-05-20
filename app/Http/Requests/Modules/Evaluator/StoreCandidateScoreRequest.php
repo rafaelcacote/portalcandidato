@@ -6,6 +6,7 @@ use App\Models\Modules\Admin\Models\ProcessCriteria;
 use App\Models\Modules\Admin\Models\ProcessTitleGroup;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\Modules\Candidate\Models\ApplicationDocument;
+use App\Modules\Evaluator\Services\TitleDocumentScoring;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Validator;
@@ -123,7 +124,7 @@ class StoreCandidateScoreRequest extends FormRequest
                 continue;
             }
 
-            $rowMax = $this->maxPointsForTitleDocumentRow($doc);
+            $rowMax = resolve(TitleDocumentScoring::class)->maxPointsForRow($doc);
             $value = (float) ($row['pontuacao'] ?? 0);
             if ($value > $rowMax + 0.0001) {
                 $v->errors()->add(
@@ -159,21 +160,5 @@ class StoreCandidateScoreRequest extends FormRequest
                 );
             }
         }
-    }
-
-    private function maxPointsForTitleDocumentRow(ApplicationDocument $doc): float
-    {
-        $item = $doc->titleItem;
-        if ($item === null) {
-            return 0.0;
-        }
-
-        $perUnit = (float) $item->score_per_unit;
-        $qty = max(1, (int) ($doc->quantidade ?? 1));
-        if ($item->max_quantity !== null) {
-            $qty = min($qty, (int) $item->max_quantity);
-        }
-
-        return round($perUnit * $qty, 2);
     }
 }

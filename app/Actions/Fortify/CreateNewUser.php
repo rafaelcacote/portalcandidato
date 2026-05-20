@@ -29,8 +29,8 @@ class CreateNewUser implements CreatesNewUsers
             'email.unique' => 'Este e-mail já está cadastrado.',
         ])->validate();
 
-        /** @var UploadedFile|null $foto */
-        $foto = $input['foto'] ?? null;
+        /** @var UploadedFile $foto */
+        $foto = $input['foto'];
 
         $attributes = Arr::only($input, [
             'name',
@@ -65,10 +65,8 @@ class CreateNewUser implements CreatesNewUsers
 
         $user->assignRole('candidato');
 
-        if ($foto instanceof UploadedFile) {
-            $path = $foto->store('candidate-photos/'.$user->id, 'public');
-            $user->forceFill(['foto_path' => $path])->save();
-        }
+        $path = $foto->store('candidate-photos/'.$user->id, 'public');
+        $user->forceFill(['foto_path' => $path])->save();
 
         return $user;
     }

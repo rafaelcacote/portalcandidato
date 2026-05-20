@@ -40,7 +40,7 @@ trait CandidateRegistrationValidationRules
             'pais' => ['required', 'string', 'max:120'],
             'telefone' => ['required', 'string', 'max:25'],
             'telefone_fixo' => ['nullable', 'string', 'max:25'],
-            'foto' => ['nullable', 'image', 'max:5120'],
+            'foto' => ['required', 'image', 'max:5120'],
         ];
     }
 }

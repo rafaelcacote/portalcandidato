@@ -9,6 +9,6 @@ class RegisterResponse implements RegisterResponseContract
 {
     public function toResponse($request): RedirectResponse
     {
-        return redirect()->intended(route('candidate.dashboard'));
+        return redirect()->route('verification.notice');
     }
 }

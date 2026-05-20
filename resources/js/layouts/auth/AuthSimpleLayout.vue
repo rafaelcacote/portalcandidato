@@ -22,7 +22,15 @@ const props = withDefaults(
 
 /** Arte de login: prop explícita ou deteção da página (defineOptions nem sempre injeta props extra no layout). */
 const showLoginArtBackdrop = computed(
-    () => props.backdrop === 'login-fundo' || page.component === 'auth/Login',
+    () =>
+        props.backdrop === 'login-fundo' ||
+        page.component === 'auth/Login' ||
+        page.component === 'auth/VerifyEmail',
+);
+
+/** Telas curtas com arte de fundo: menos respiro no topo (evita faixa vazia antes do conteúdo). */
+const isCompactLoginBackdrop = computed(
+    () => page.component === 'auth/VerifyEmail',
 );
 </script>
 
@@ -31,7 +39,9 @@ const showLoginArtBackdrop = computed(
         :class="[
             'relative flex min-h-dvh flex-col items-center justify-start overflow-x-hidden sm:px-6 md:px-8',
             showLoginArtBackdrop
-                ? 'pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-[max(5.5rem,env(safe-area-inset-top,0px))] sm:px-6 sm:pb-16 sm:pt-24 md:pt-28 lg:px-8 lg:pb-16 lg:pt-36'
+                ? isCompactLoginBackdrop
+                    ? 'pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(2rem,env(safe-area-inset-bottom,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] sm:px-6 sm:pb-12 sm:pt-7 md:pt-8 lg:px-8 lg:pb-12 lg:pt-10'
+                    : 'pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-[max(5.5rem,env(safe-area-inset-top,0px))] sm:px-6 sm:pb-16 sm:pt-24 md:pt-28 lg:px-8 lg:pb-16 lg:pt-36'
                 : 'px-4 pb-12 pt-6 md:pb-16 md:pt-8',
             showLoginArtBackdrop
                 ? 'bg-[#eef6f7] dark:bg-slate-950'

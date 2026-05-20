@@ -2,7 +2,7 @@
 import { Head, useForm } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import type { HTMLAttributes } from 'vue';
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import {
     BookUser,
     Camera,
@@ -51,7 +51,7 @@ const selectClass: HTMLAttributes['class'] = cn(
     'disabled:cursor-not-allowed disabled:opacity-50',
 );
 
-const OPTIONAL_FIELDS = new Set(['telefone_fixo', 'foto']);
+const OPTIONAL_FIELDS = new Set(['telefone_fixo']);
 
 const form = useForm({
     name: '',
@@ -85,6 +85,16 @@ const submitAttempted = ref(false);
 const cpfCheckStatus = ref<'idle' | 'loading' | 'available' | 'taken' | 'invalid'>('idle');
 const cepLookupLoading = ref(false);
 const cepLookupMessage = ref<string | null>(null);
+const fotoPreviewUrl = ref<string | null>(null);
+
+function revokeFotoPreview(): void {
+    if (fotoPreviewUrl.value !== null) {
+        URL.revokeObjectURL(fotoPreviewUrl.value);
+        fotoPreviewUrl.value = null;
+    }
+}
+
+onUnmounted(revokeFotoPreview);
 
 function touch(name: string): void {
     blurTouched.value = { ...blurTouched.value, [name]: true };
@@ -156,7 +166,14 @@ function selectInvalidClass(name: string): string {
 
 function onFotoChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    form.foto = input.files?.[0] ?? null;
+    const file = input.files?.[0] ?? null;
+    revokeFotoPreview();
+    form.foto = file;
+    form.clearErrors('foto');
+    if (file !== null) {
+        fotoPreviewUrl.value = URL.createObjectURL(file);
+    }
+    touch('foto');
 }
 
 function onCpfInput(value: string | number): void {
@@ -328,7 +345,21 @@ const cpfHint = computed((): string | null => {
                             >
                                 <Camera :size="18" />
                             </div>
-                            <Label for="foto" class="leading-none">Sua foto</Label>
+                            <Label for="foto" class="leading-none">Sua foto *</Label>
+                        </div>
+                        <div
+                            v-if="fotoPreviewUrl"
+                            class="flex items-center gap-4 rounded-lg border border-border/60 bg-muted/20 p-3"
+                        >
+                            <img
+                                :src="fotoPreviewUrl"
+                                alt="Pré-visualização da foto"
+                                class="size-24 shrink-0 rounded-lg border border-border object-cover shadow-sm"
+                            />
+                            <p class="text-sm text-muted-foreground">
+                                Pré-visualização da foto selecionada. Você pode escolher outro
+                                arquivo abaixo, se preferir.
+                            </p>
                         </div>
                         <input
                             id="foto"
@@ -338,13 +369,16 @@ const cpfHint = computed((): string | null => {
                             :class="
                                 cn(
                                     selectClass,
+                                    inputInvalidClass('foto'),
                                     'py-2 file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-foreground',
                                 )
                             "
+                            :aria-invalid="fieldInvalid('foto')"
                             @change="onFotoChange"
+                            @blur="touch('foto')"
                         />
                         <p class="text-xs text-muted-foreground">
-                            JPG, PNG ou WebP · máximo 5&nbsp;MB.
+                            Obrigatório · JPG, PNG ou WebP · máximo 5&nbsp;MB.
                         </p>
                         <InputError :message="form.errors.foto" />
                     </div>

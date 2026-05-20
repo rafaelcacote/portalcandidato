@@ -6,6 +6,8 @@ use App\Http\Responses\LoginResponse;
 use App\Http\Responses\LogoutResponse;
 use App\Http\Responses\RegisterResponse;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -32,6 +34,21 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureEmailVerification();
+    }
+
+    protected function configureEmailVerification(): void
+    {
+        VerifyEmail::toMailUsing(function (object $notifiable, string $url): MailMessage {
+            return (new MailMessage)
+                ->subject('Confirme seu e-mail — '.config('app.name'))
+                ->greeting('Olá!')
+                ->line('Obrigado por se cadastrar no '.config('app.name').'.')
+                ->line('Para confirmar que este endereço de e-mail é seu e liberar o acesso ao portal, clique no botão abaixo.')
+                ->action('Confirmar e-mail', $url)
+                ->line('Se você não criou uma conta, ignore este e-mail.')
+                ->salutation('Atenciosamente, equipe '.config('app.name'));
+        });
     }
 
     /**

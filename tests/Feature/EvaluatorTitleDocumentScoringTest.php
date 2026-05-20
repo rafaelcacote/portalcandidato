@@ -234,3 +234,147 @@ test('evaluator cannot exceed group max_score across title documents', function 
         ])
         ->assertSessionHasErrors('document_scores');
 });
+
+test('approving a title document automatically scores the candidate', function (): void {
+    Role::findOrCreate('candidato', 'web');
+    Role::findOrCreate('avaliador', 'web');
+
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    $evaluator = User::factory()->create(['email_verified_at' => now()]);
+    $evaluator->assignRole('avaliador');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS auto score',
+        'descricao' => 'D',
+        'status' => 'ativo',
+    ]);
+
+    $group = ProcessTitleGroup::query()->create([
+        'selection_process_id' => $process->id,
+        'code' => 'A',
+        'name' => 'Titulação',
+        'max_score' => 5.0,
+        'is_active' => true,
+    ]);
+
+    $item = ProcessTitleItem::query()->create([
+        'process_title_group_id' => $group->id,
+        'code' => 'A.1',
+        'title' => 'Especialização',
+        'score_per_unit' => 2.5,
+        'score_unit' => 'por título',
+        'max_quantity' => null,
+        'requires_attachment' => true,
+        'max_file_size_mb' => 10,
+        'is_active' => true,
+    ]);
+
+    $application = Application::query()->create([
+        'user_id' => $candidate->id,
+        'selection_process_id' => $process->id,
+        'status' => 'em_analise',
+    ]);
+
+    $document = ApplicationDocument::query()->create([
+        'application_id' => $application->id,
+        'process_required_document_id' => null,
+        'process_title_item_id' => $item->id,
+        'quantidade' => 1,
+        'caminho' => 'private/test/doc.pdf',
+        'nome_arquivo' => 'doc.pdf',
+        'mime' => 'application/pdf',
+        'status' => 'enviado',
+    ]);
+
+    $this->actingAs($evaluator)
+        ->post(route('evaluator.candidates.documents.decision', [$application, $document]), [
+            'status' => 'aprovado',
+        ])
+        ->assertRedirect();
+
+    $evaluation = ApplicationEvaluation::query()->firstOrFail();
+    expect((float) $evaluation->pontuacao_total)->toBe(2.5)
+        ->and(ApplicationEvaluationDocumentScore::query()->where('pontuacao', 2.5)->exists())->toBeTrue();
+
+    $document->refresh();
+    expect($document->status)->toBe('aprovado');
+});
+
+test('rejecting a title document removes its score', function (): void {
+    Role::findOrCreate('candidato', 'web');
+    Role::findOrCreate('avaliador', 'web');
+
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    $evaluator = User::factory()->create(['email_verified_at' => now()]);
+    $evaluator->assignRole('avaliador');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS',
+        'descricao' => 'D',
+        'status' => 'ativo',
+    ]);
+
+    $group = ProcessTitleGroup::query()->create([
+        'selection_process_id' => $process->id,
+        'code' => 'A',
+        'name' => 'Titulação',
+        'max_score' => 5.0,
+        'is_active' => true,
+    ]);
+
+    $item = ProcessTitleItem::query()->create([
+        'process_title_group_id' => $group->id,
+        'code' => 'A.1',
+        'title' => 'Curso',
+        'score_per_unit' => 2.0,
+        'score_unit' => 'por título',
+        'requires_attachment' => true,
+        'max_file_size_mb' => 10,
+        'is_active' => true,
+    ]);
+
+    $application = Application::query()->create([
+        'user_id' => $candidate->id,
+        'selection_process_id' => $process->id,
+        'status' => 'em_analise',
+    ]);
+
+    $document = ApplicationDocument::query()->create([
+        'application_id' => $application->id,
+        'process_required_document_id' => null,
+        'process_title_item_id' => $item->id,
+        'quantidade' => 1,
+        'caminho' => 'private/test/doc.pdf',
+        'nome_arquivo' => 'doc.pdf',
+        'mime' => 'application/pdf',
+        'status' => 'aprovado',
+    ]);
+
+    ApplicationEvaluation::query()->create([
+        'application_id' => $application->id,
+        'evaluator_id' => $evaluator->id,
+        'status' => 'em_analise',
+        'pontuacao_total' => 2.0,
+    ]);
+
+    ApplicationEvaluationDocumentScore::query()->create([
+        'application_evaluation_id' => ApplicationEvaluation::query()->firstOrFail()->id,
+        'application_document_id' => $document->id,
+        'pontuacao' => 2.0,
+    ]);
+
+    $this->actingAs($evaluator)
+        ->post(route('evaluator.candidates.documents.decision', [$application, $document]), [
+            'status' => 'recusado',
+            'motivo_recusa' => 'Documento ilegível',
+        ])
+        ->assertRedirect();
+
+    $evaluation = ApplicationEvaluation::query()->firstOrFail();
+    expect((float) $evaluation->pontuacao_total)->toBe(0.0)
+        ->and((float) ApplicationEvaluationDocumentScore::query()->firstOrFail()->pontuacao)->toBe(0.0);
+});
