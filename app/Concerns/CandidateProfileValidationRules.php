@@ -2,28 +2,21 @@
 
 namespace App\Concerns;
 
-use App\Models\User;
-use App\Rules\Cpf;
 use App\Support\BrazilianStates;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
-trait CandidateRegistrationValidationRules
+trait CandidateProfileValidationRules
 {
     /**
      * @return array<string, array<int, ValidationRule|array<mixed>|string>>
      */
-    protected function candidateRegistrationRules(): array
+    protected function candidateProfileRules(): array
     {
         $ufs = BrazilianStates::abbreviations();
 
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class), 'confirmed'],
-            'password' => ['required', 'string', Password::defaults(), 'confirmed'],
             'data_nascimento' => ['required', 'date', 'before:today'],
-            'cpf' => ['required', 'string', 'size:11', new Cpf, Rule::unique(User::class, 'cpf')],
             'identidade' => ['required', 'string', 'max:32'],
             'orgao_emissor' => ['required', 'string', 'max:50'],
             'identidade_uf' => ['required', 'string', 'size:2', Rule::in($ufs)],
@@ -40,7 +33,7 @@ trait CandidateRegistrationValidationRules
             'pais' => ['required', 'string', 'max:120'],
             'telefone' => ['required', 'string', 'max:25'],
             'telefone_fixo' => ['nullable', 'string', 'max:25'],
-            'foto' => ['required', 'image', 'max:5120'],
+            'foto' => ['nullable', 'image', 'max:5120'],
         ];
     }
 }

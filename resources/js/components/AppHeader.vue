@@ -28,6 +28,7 @@ import {
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
+import { useUserAvatar } from '@/composables/useUserAvatar';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 
@@ -41,6 +42,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const page = usePage();
 const auth = computed(() => page.props.auth);
+const { avatarUrl, hasAvatar } = useUserAvatar(() => auth.value?.user);
 const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
 
 const activeItemStyles =
@@ -171,8 +173,8 @@ const mainNavItems: NavItem[] = [
                                     class="size-8 overflow-hidden rounded-full"
                                 >
                                     <AvatarImage
-                                        v-if="auth.user.avatar"
-                                        :src="auth.user.avatar"
+                                        v-if="hasAvatar"
+                                        :src="avatarUrl!"
                                         :alt="auth.user.name"
                                     />
                                     <AvatarFallback

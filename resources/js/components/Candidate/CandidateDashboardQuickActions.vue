@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ArrowRight, ClipboardList, FolderOpen, Search } from 'lucide-vue-next';
+import { ArrowRight, ClipboardList, FolderOpen, Search, UserCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 import {
     index as applicationsIndex,
 } from '@/routes/candidate/applications';
 import { index as documentsIndex } from '@/routes/candidate/documents';
 import { index as processesIndex } from '@/routes/candidate/processes';
+import { edit as profileEdit } from '@/routes/profile';
 
 const actions = computed(() => [
     {
@@ -41,6 +42,17 @@ const actions = computed(() => [
         arrowColor: 'text-violet-500',
         borderColor: 'border-violet-100',
         accentBar: 'bg-violet-500',
+    },
+    {
+        title: 'Meu perfil',
+        description: 'Visualize e edite seus dados pessoais, documento e endereço.',
+        href: profileEdit().url,
+        icon: UserCircle,
+        bgClass: 'bg-amber-50 group-hover:bg-amber-100/60',
+        iconColor: 'text-amber-800',
+        arrowColor: 'text-amber-600',
+        borderColor: 'border-amber-100',
+        accentBar: 'bg-amber-500',
     },
 ]);
 </script>

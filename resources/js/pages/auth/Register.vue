@@ -1,20 +1,23 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import type { HTMLAttributes } from 'vue';
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
+import type { Component, HTMLAttributes } from 'vue';
+import { computed, nextTick, onUnmounted, reactive, ref, watch } from 'vue';
 import {
     BookUser,
     Camera,
+    CheckCircle2,
+    FileText,
     Loader2,
     Mail,
     MapPin,
+    UploadCloud,
 } from 'lucide-vue-next';
+import Button from 'primevue/button';
 import CandidateHeader from '@/components/Candidate/CandidateHeader.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
-import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -25,7 +28,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Spinner } from '@/components/ui/spinner';
 import { cepDigitsOnly, cpfDigitsOnly, formatCepDisplay, isValidCpfDigits } from '@/lib/brDocuments';
 import { cn } from '@/lib/utils';
 import { login } from '@/routes';
@@ -53,9 +55,101 @@ const selectClass: HTMLAttributes['class'] = cn(
 
 const OPTIONAL_FIELDS = new Set(['telefone_fixo']);
 
+// ── Step management ─────────────────────────────────────────────────────────
+
+type StepId = 1 | 2 | 3 | 4 | 5;
+
+type StepDef = {
+    id: StepId;
+    label: string;
+    icon: Component;
+    description: string;
+};
+
+const steps: StepDef[] = [
+    { id: 1, label: 'Foto', icon: Camera, description: 'Sua identificação visual' },
+    { id: 2, label: 'Dados pessoais', icon: BookUser, description: 'Informações civis' },
+    { id: 3, label: 'Documento', icon: FileText, description: 'RG e órgão emissor' },
+    { id: 4, label: 'Endereço', icon: MapPin, description: 'Residência atual' },
+    { id: 5, label: 'Acesso', icon: Mail, description: 'Contato e senha' },
+];
+
+const activeStep = ref<StepId>(1);
+const completedSteps = reactive(new Set<StepId>());
+
+const stepFieldsMap: Record<StepId, string[]> = {
+    1: ['foto'],
+    2: ['name', 'data_nascimento', 'cpf', 'naturalidade', 'nacionalidade', 'sexo'],
+    3: ['identidade', 'orgao_emissor', 'identidade_uf', 'identidade_data_emissao'],
+    4: ['cep', 'endereco', 'endereco_numero', 'bairro', 'cidade', 'endereco_uf', 'pais'],
+    5: ['telefone', 'email', 'email_confirmation', 'password', 'password_confirmation'],
+};
+
+function touchStepFields(stepId: StepId): void {
+    for (const field of stepFieldsMap[stepId]) {
+        touch(field);
+    }
+}
+
+function isStepFieldsValid(stepId: StepId): boolean {
+    return stepFieldsMap[stepId].every((f) => !fieldInvalid(f));
+}
+
+function canNavigateToStep(stepId: StepId): boolean {
+    return stepId <= activeStep.value || completedSteps.has(stepId);
+}
+
+function goToStep(stepId: StepId): void {
+    if (canNavigateToStep(stepId)) {
+        activeStep.value = stepId;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+function nextStep(): void {
+    const current = activeStep.value;
+    touchStepFields(current);
+    if (current === 2 && (cpfCheckStatus.value === 'taken' || cpfCheckStatus.value === 'invalid')) {
+        return;
+    }
+    if (!isStepFieldsValid(current)) {
+        return;
+    }
+    completedSteps.add(current);
+    if (current < 5) {
+        activeStep.value = (current + 1) as StepId;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+function prevStep(): void {
+    if (activeStep.value > 1) {
+        activeStep.value = (activeStep.value - 1) as StepId;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+function stepCircleClass(stepId: StepId): string {
+    const base =
+        'flex size-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold transition-all duration-200';
+    if (completedSteps.has(stepId)) {
+        return `${base} bg-emerald-50 border border-emerald-200/80 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-800/60 dark:text-emerald-400`;
+    }
+    if (activeStep.value === stepId) {
+        return `${base} bg-primary text-primary-foreground shadow-sm ring-4 ring-primary/15 scale-105`;
+    }
+    return `${base} bg-muted/40 border border-border/60 text-muted-foreground`;
+}
+
+const progressPercent = computed(() => ((activeStep.value - 1) / 4) * 100);
+const currentStepDef = computed(() => steps.find((s) => s.id === activeStep.value)!);
+
+// ── Form data ────────────────────────────────────────────────────────────────
+
 const form = useForm({
     name: '',
     email: '',
+    email_confirmation: '',
     password: '',
     password_confirmation: '',
     data_nascimento: '',
@@ -334,512 +428,723 @@ const cpfHint = computed((): string | null => {
 
         <CandidateHeader class="mb-5 sm:mb-6" />
 
-        <form class="flex flex-col gap-6" @submit.prevent="submit">
-            <!-- Foto -->
-            <Card class="overflow-hidden border-border/80 shadow-sm transition-shadow hover:shadow-md">
-                <CardContent class="space-y-1 pt-2">
-                    <div class="grid gap-2">
-                        <div class="flex items-center gap-2">
-                            <div
-                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
-                            >
-                                <Camera :size="18" />
-                            </div>
-                            <Label for="foto" class="leading-none">Sua foto *</Label>
-                        </div>
-                        <div
-                            v-if="fotoPreviewUrl"
-                            class="flex items-center gap-4 rounded-lg border border-border/60 bg-muted/20 p-3"
-                        >
-                            <img
-                                :src="fotoPreviewUrl"
-                                alt="Pré-visualização da foto"
-                                class="size-24 shrink-0 rounded-lg border border-border object-cover shadow-sm"
-                            />
-                            <p class="text-sm text-muted-foreground">
-                                Pré-visualização da foto selecionada. Você pode escolher outro
-                                arquivo abaixo, se preferir.
-                            </p>
-                        </div>
-                        <input
-                            id="foto"
-                            type="file"
-                            name="foto"
-                            accept="image/jpeg,image/png,image/webp"
-                            :class="
-                                cn(
-                                    selectClass,
-                                    inputInvalidClass('foto'),
-                                    'py-2 file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-foreground',
-                                )
-                            "
-                            :aria-invalid="fieldInvalid('foto')"
-                            @change="onFotoChange"
-                            @blur="touch('foto')"
+        <!-- ── Indicador de etapas ──────────────────────────────────────────── -->
+        <div class="mb-6 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+            <div class="flex">
+                <button
+                    v-for="step in steps"
+                    :key="step.id"
+                    type="button"
+                    class="group flex flex-1 flex-col items-center gap-1.5 border-r border-border/40 px-2 py-3 transition-colors last:border-r-0 sm:gap-2 sm:py-4"
+                    :class="[
+                        canNavigateToStep(step.id) ? 'cursor-pointer hover:bg-muted/30' : 'cursor-default',
+                        activeStep === step.id ? 'bg-primary/[0.03]' : '',
+                    ]"
+                    :disabled="!canNavigateToStep(step.id)"
+                    :aria-current="activeStep === step.id ? 'step' : undefined"
+                    @click="canNavigateToStep(step.id) && goToStep(step.id)"
+                >
+                    <div :class="stepCircleClass(step.id)">
+                        <CheckCircle2
+                            v-if="completedSteps.has(step.id)"
+                            :size="18"
+                            aria-hidden="true"
                         />
-                        <p class="text-xs text-muted-foreground">
-                            Obrigatório · JPG, PNG ou WebP · máximo 5&nbsp;MB.
-                        </p>
-                        <InputError :message="form.errors.foto" />
+                        <component
+                            :is="step.icon"
+                            v-else-if="activeStep !== step.id"
+                            :size="16"
+                            class="opacity-70"
+                            aria-hidden="true"
+                        />
+                        <span v-else>{{ step.id }}</span>
                     </div>
-                </CardContent>
-            </Card>
+                    <span
+                        class="hidden text-[10px] font-semibold leading-none sm:block"
+                        :class="{
+                            'text-foreground': activeStep === step.id,
+                            'text-emerald-700 dark:text-emerald-400': completedSteps.has(step.id) && activeStep !== step.id,
+                            'text-muted-foreground': activeStep !== step.id && !completedSteps.has(step.id),
+                        }"
+                    >
+                        {{ step.label }}
+                    </span>
+                </button>
+            </div>
 
-            <!-- Dados pessoais -->
-            <Card class="overflow-hidden border-border/80 shadow-sm transition-shadow hover:shadow-md">
-                <CardHeader class="space-y-1 border-b border-border/60 bg-muted/30 pb-4">
-                    <div class="flex items-center gap-2">
-                        <div
-                            class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"
-                        >
-                            <BookUser :size="18" />
+            <!-- Barra de progresso -->
+            <div class="h-1 bg-muted/40">
+                <div
+                    class="h-full bg-primary transition-all duration-500 ease-in-out"
+                    :style="{ width: `${progressPercent}%` }"
+                    role="progressbar"
+                    :aria-valuenow="activeStep"
+                    aria-valuemin="1"
+                    aria-valuemax="5"
+                />
+            </div>
+
+            <!-- Info da etapa atual -->
+            <div class="flex items-center justify-between gap-2 px-4 py-2">
+                <div class="flex items-center gap-2">
+                    <component
+                        :is="currentStepDef.icon"
+                        :size="14"
+                        class="shrink-0 text-primary"
+                        aria-hidden="true"
+                    />
+                    <span class="text-xs font-semibold text-foreground">
+                        {{ currentStepDef.label }}
+                    </span>
+                    <span class="hidden text-xs text-muted-foreground sm:inline">
+                        · {{ currentStepDef.description }}
+                    </span>
+                </div>
+                <span class="text-xs tabular-nums text-muted-foreground">
+                    {{ activeStep }}&nbsp;/&nbsp;5
+                </span>
+            </div>
+        </div>
+
+        <!-- ── Formulário ──────────────────────────────────────────────────── -->
+        <form class="flex flex-col gap-6" @submit.prevent="submit">
+
+            <!-- Etapa 1 · Foto de perfil ─────────────────────────────────── -->
+            <template v-if="activeStep === 1">
+                <Card class="overflow-hidden border-border/80 shadow-sm">
+                    <CardHeader class="border-b border-border/60 bg-muted/30 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                            >
+                                <Camera :size="20" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-base">Foto de perfil</CardTitle>
+                                <CardDescription class="text-xs sm:text-sm">
+                                    Sua foto é obrigatória e será usada para identificação na inscrição.
+                                </CardDescription>
+                            </div>
                         </div>
-                        <div>
-                            <CardTitle class="text-base">Dados pessoais</CardTitle>
-                            <CardDescription class="text-xs sm:text-sm">
-                                Identidade e informações civis conforme documento oficial.
-                            </CardDescription>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent class="space-y-5 pt-5">
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div class="grid gap-2 sm:col-span-2">
-                            <Label for="name">Nome completo *</Label>
-                            <Input
-                                id="name"
-                                v-model="form.name"
-                                type="text"
-                                autocomplete="name"
-                                name="name"
-                                :class="inputInvalidClass('name')"
-                                :aria-invalid="fieldInvalid('name')"
-                                @blur="touch('name')"
-                            />
-                            <InputError :message="form.errors.name" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="data_nascimento">Data de nascimento *</Label>
-                            <Input
-                                id="data_nascimento"
-                                v-model="form.data_nascimento"
-                                type="date"
-                                name="data_nascimento"
-                                :class="inputInvalidClass('data_nascimento')"
-                                :aria-invalid="fieldInvalid('data_nascimento')"
-                                @blur="touch('data_nascimento')"
-                            />
-                            <InputError :message="form.errors.data_nascimento" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="cpf">CPF *</Label>
-                            <div class="relative">
-                                <Input
-                                    id="cpf"
-                                    :model-value="form.cpf"
-                                    type="text"
-                                    inputmode="numeric"
-                                    autocomplete="off"
-                                    name="cpf"
-                                    maxlength="11"
-                                    placeholder="Somente números (11 dígitos)"
-                                    :class="cn('pr-10 tabular-nums', inputInvalidClass('cpf'))"
-                                    :aria-invalid="fieldInvalid('cpf')"
-                                    @update:model-value="onCpfInput"
-                                    @blur="touch('cpf')"
+                    </CardHeader>
+                    <CardContent class="pt-5">
+                        <div class="grid gap-4">
+                            <!-- Pré-visualização quando uma foto já foi selecionada -->
+                            <div
+                                v-if="fotoPreviewUrl"
+                                class="flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/20"
+                            >
+                                <img
+                                    :src="fotoPreviewUrl"
+                                    alt="Pré-visualização da foto"
+                                    class="size-24 shrink-0 rounded-xl border border-border/60 object-cover shadow-sm"
                                 />
-                                <div
-                                    class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-                                >
-                                    <Loader2
-                                        v-if="cpfCheckStatus === 'loading'"
-                                        :size="16"
-                                        class="animate-spin"
-                                    />
+                                <div class="min-w-0 flex-1">
+                                    <p
+                                        class="flex items-center gap-1.5 text-sm font-semibold text-emerald-800 dark:text-emerald-300"
+                                    >
+                                        <CheckCircle2 :size="15" aria-hidden="true" />
+                                        Foto selecionada com sucesso
+                                    </p>
+                                    <p class="mt-0.5 text-xs text-muted-foreground">
+                                        Verifique a imagem antes de continuar. Ela será usada na sua ficha de inscrição.
+                                    </p>
+                                    <label
+                                        for="foto"
+                                        class="mt-2.5 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
+                                    >
+                                        <UploadCloud :size="13" aria-hidden="true" />
+                                        Trocar foto
+                                    </label>
                                 </div>
                             </div>
-                            <p
-                                v-if="cpfHint"
-                                class="text-xs"
+
+                            <!-- Área de upload quando nenhuma foto foi selecionada -->
+                            <label
+                                v-else
+                                for="foto"
+                                class="flex cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed p-10 text-center transition-colors"
                                 :class="
-                                    cpfCheckStatus === 'available'
-                                        ? 'text-green-600 dark:text-green-400'
-                                        : cpfCheckStatus === 'taken' || cpfCheckStatus === 'invalid'
-                                          ? 'text-destructive'
-                                          : 'text-muted-foreground'
+                                    fieldInvalid('foto')
+                                        ? 'border-destructive bg-destructive/[0.03]'
+                                        : 'border-border/60 hover:border-primary/50 hover:bg-primary/[0.02]'
                                 "
                             >
-                                {{ cpfHint }}
-                            </p>
-                            <InputError :message="form.errors.cpf" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="identidade">Identidade (RG) *</Label>
-                            <Input
-                                id="identidade"
-                                v-model="form.identidade"
-                                type="text"
-                                name="identidade"
-                                :class="inputInvalidClass('identidade')"
-                                :aria-invalid="fieldInvalid('identidade')"
-                                @blur="touch('identidade')"
-                            />
-                            <InputError :message="form.errors.identidade" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="orgao_emissor">Órgão emissor *</Label>
-                            <Input
-                                id="orgao_emissor"
-                                v-model="form.orgao_emissor"
-                                type="text"
-                                name="orgao_emissor"
-                                :class="inputInvalidClass('orgao_emissor')"
-                                :aria-invalid="fieldInvalid('orgao_emissor')"
-                                @blur="touch('orgao_emissor')"
-                            />
-                            <InputError :message="form.errors.orgao_emissor" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="identidade_uf">UF (identidade) *</Label>
-                            <select
-                                id="identidade_uf"
-                                v-model="form.identidade_uf"
-                                name="identidade_uf"
-                                :class="cn(selectClass, selectInvalidClass('identidade_uf'))"
-                                :aria-invalid="fieldInvalid('identidade_uf')"
-                                @blur="touch('identidade_uf')"
-                            >
-                                <option disabled value="">Selecione</option>
-                                <option v-for="uf in props.ufs" :key="`id-${uf}`" :value="uf">
-                                    {{ uf }}
-                                </option>
-                            </select>
-                            <InputError :message="form.errors.identidade_uf" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="identidade_data_emissao">Data de emissão (RG) *</Label>
-                            <Input
-                                id="identidade_data_emissao"
-                                v-model="form.identidade_data_emissao"
-                                type="date"
-                                name="identidade_data_emissao"
-                                :class="inputInvalidClass('identidade_data_emissao')"
-                                :aria-invalid="fieldInvalid('identidade_data_emissao')"
-                                @blur="touch('identidade_data_emissao')"
-                            />
-                            <InputError :message="form.errors.identidade_data_emissao" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="naturalidade">Naturalidade *</Label>
-                            <Input
-                                id="naturalidade"
-                                v-model="form.naturalidade"
-                                type="text"
-                                name="naturalidade"
-                                :class="inputInvalidClass('naturalidade')"
-                                :aria-invalid="fieldInvalid('naturalidade')"
-                                @blur="touch('naturalidade')"
-                            />
-                            <InputError :message="form.errors.naturalidade" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="nacionalidade">Nacionalidade *</Label>
-                            <Input
-                                id="nacionalidade"
-                                v-model="form.nacionalidade"
-                                type="text"
-                                name="nacionalidade"
-                                :class="inputInvalidClass('nacionalidade')"
-                                :aria-invalid="fieldInvalid('nacionalidade')"
-                                @blur="touch('nacionalidade')"
-                            />
-                            <InputError :message="form.errors.nacionalidade" />
-                        </div>
-                        <div class="grid gap-2 sm:col-span-2">
-                            <Label for="sexo">Sexo *</Label>
-                            <select
-                                id="sexo"
-                                v-model="form.sexo"
-                                name="sexo"
-                                :class="cn(selectClass, selectInvalidClass('sexo'))"
-                                :aria-invalid="fieldInvalid('sexo')"
-                                @blur="touch('sexo')"
-                            >
-                                <option disabled value="">Selecione</option>
-                                <option value="masculino">Masculino</option>
-                                <option value="feminino">Feminino</option>
-                                <option value="outro">Outro</option>
-                                <option value="prefiro_nao_informar">Prefiro não informar</option>
-                            </select>
-                            <InputError :message="form.errors.sexo" />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                                <div
+                                    class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary"
+                                >
+                                    <Camera :size="30" aria-hidden="true" />
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-foreground">
+                                        Clique para selecionar sua foto
+                                    </p>
+                                    <p class="mt-1 text-xs text-muted-foreground">
+                                        JPG, PNG ou WebP · máximo 5&nbsp;MB
+                                    </p>
+                                </div>
+                                <div
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm"
+                                >
+                                    <UploadCloud :size="13" aria-hidden="true" />
+                                    Selecionar foto
+                                </div>
+                            </label>
 
-            <!-- Endereço — CEP primeiro -->
-            <Card class="overflow-hidden border-border/80 shadow-sm transition-shadow hover:shadow-md">
-                <CardHeader class="space-y-1 border-b border-border/60 bg-muted/30 pb-4">
-                    <div class="flex items-center gap-2">
-                        <div
-                            class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"
-                        >
-                            <MapPin :size="18" />
+                            <input
+                                id="foto"
+                                type="file"
+                                name="foto"
+                                accept="image/jpeg,image/png,image/webp"
+                                class="sr-only"
+                                :aria-invalid="fieldInvalid('foto')"
+                                @change="onFotoChange"
+                                @blur="touch('foto')"
+                            />
+                            <InputError :message="form.errors.foto" />
+                            <p
+                                v-if="fieldInvalid('foto') && !form.errors.foto"
+                                class="text-xs text-destructive"
+                            >
+                                A foto de perfil é obrigatória para o cadastro.
+                            </p>
                         </div>
-                        <div>
-                            <CardTitle class="text-base">Endereço residencial</CardTitle>
-                            <CardDescription class="text-xs sm:text-sm">
-                                Digite o CEP primeiro — buscamos logradouro, bairro, cidade e UF
-                                automaticamente.
-                            </CardDescription>
+                    </CardContent>
+                </Card>
+            </template>
+
+            <!-- Etapa 2 · Dados pessoais ─────────────────────────────────── -->
+            <template v-else-if="activeStep === 2">
+                <Card class="overflow-hidden border-border/80 shadow-sm">
+                    <CardHeader class="border-b border-border/60 bg-muted/30 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                            >
+                                <BookUser :size="20" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-base">Dados pessoais</CardTitle>
+                                <CardDescription class="text-xs sm:text-sm">
+                                    Identidade e informações civis conforme documento oficial.
+                                </CardDescription>
+                            </div>
                         </div>
-                    </div>
-                </CardHeader>
-                <CardContent class="space-y-5 pt-5">
-                    <div
-                        class="rounded-xl border border-dashed border-primary/25 bg-primary/[0.03] p-4 sm:p-5"
-                    >
-                        <div class="grid gap-2">
-                            <Label for="cep">CEP *</Label>
-                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                                <div class="relative min-w-0 flex-1">
+                    </CardHeader>
+                    <CardContent class="space-y-5 pt-5">
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid gap-2 sm:col-span-2">
+                                <Label for="name">Nome completo *</Label>
+                                <Input
+                                    id="name"
+                                    v-model="form.name"
+                                    type="text"
+                                    autocomplete="name"
+                                    name="name"
+                                    :class="inputInvalidClass('name')"
+                                    :aria-invalid="fieldInvalid('name')"
+                                    @blur="touch('name')"
+                                />
+                                <InputError :message="form.errors.name" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="data_nascimento">Data de nascimento *</Label>
+                                <Input
+                                    id="data_nascimento"
+                                    v-model="form.data_nascimento"
+                                    type="date"
+                                    name="data_nascimento"
+                                    :class="inputInvalidClass('data_nascimento')"
+                                    :aria-invalid="fieldInvalid('data_nascimento')"
+                                    @blur="touch('data_nascimento')"
+                                />
+                                <InputError :message="form.errors.data_nascimento" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="cpf">CPF *</Label>
+                                <div class="relative">
                                     <Input
-                                        id="cep"
-                                        :model-value="formatCepDisplay(form.cep)"
+                                        id="cpf"
+                                        :model-value="form.cpf"
                                         type="text"
                                         inputmode="numeric"
-                                        name="cep"
-                                        maxlength="9"
-                                        placeholder="00000-000"
-                                        autocomplete="postal-code"
-                                        :class="cn('pr-10 font-mono tabular-nums', inputInvalidClass('cep'))"
-                                        :aria-invalid="fieldInvalid('cep')"
-                                        @update:model-value="onCepInput"
-                                        @blur="touch('cep')"
+                                        autocomplete="off"
+                                        name="cpf"
+                                        maxlength="11"
+                                        placeholder="Somente números (11 dígitos)"
+                                        :class="cn('pr-10 tabular-nums', inputInvalidClass('cpf'))"
+                                        :aria-invalid="fieldInvalid('cpf')"
+                                        @update:model-value="onCpfInput"
+                                        @blur="touch('cpf')"
                                     />
                                     <div
                                         class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
                                     >
                                         <Loader2
-                                            v-if="cepLookupLoading"
+                                            v-if="cpfCheckStatus === 'loading'"
                                             :size="16"
                                             class="animate-spin"
                                         />
                                     </div>
                                 </div>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    class="h-9 w-full shrink-0 sm:w-auto"
-                                    :disabled="cepDigitsOnly(form.cep).length !== 8 || cepLookupLoading"
-                                    @click="lookupCep"
+                                <p
+                                    v-if="cpfHint"
+                                    class="text-xs"
+                                    :class="{
+                                        'text-green-600 dark:text-green-400': cpfCheckStatus === 'available',
+                                        'text-destructive': cpfCheckStatus === 'taken' || cpfCheckStatus === 'invalid',
+                                        'text-muted-foreground': cpfCheckStatus === 'loading',
+                                    }"
                                 >
-                                    Buscar CEP
-                                </Button>
+                                    {{ cpfHint }}
+                                </p>
+                                <InputError :message="form.errors.cpf" />
                             </div>
-                            <p class="text-xs text-muted-foreground">
-                                Ao completar 8 dígitos, o endereço é buscado automaticamente.
-                            </p>
-                            <p
-                                v-if="cepLookupMessage"
-                                class="text-xs font-medium text-primary"
+                            <div class="grid gap-2">
+                                <Label for="naturalidade">Naturalidade *</Label>
+                                <Input
+                                    id="naturalidade"
+                                    v-model="form.naturalidade"
+                                    type="text"
+                                    name="naturalidade"
+                                    :class="inputInvalidClass('naturalidade')"
+                                    :aria-invalid="fieldInvalid('naturalidade')"
+                                    @blur="touch('naturalidade')"
+                                />
+                                <InputError :message="form.errors.naturalidade" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="nacionalidade">Nacionalidade *</Label>
+                                <Input
+                                    id="nacionalidade"
+                                    v-model="form.nacionalidade"
+                                    type="text"
+                                    name="nacionalidade"
+                                    :class="inputInvalidClass('nacionalidade')"
+                                    :aria-invalid="fieldInvalid('nacionalidade')"
+                                    @blur="touch('nacionalidade')"
+                                />
+                                <InputError :message="form.errors.nacionalidade" />
+                            </div>
+                            <div class="grid gap-2 sm:col-span-2">
+                                <Label for="sexo">Sexo *</Label>
+                                <select
+                                    id="sexo"
+                                    v-model="form.sexo"
+                                    name="sexo"
+                                    :class="cn(selectClass, selectInvalidClass('sexo'))"
+                                    :aria-invalid="fieldInvalid('sexo')"
+                                    @blur="touch('sexo')"
+                                >
+                                    <option disabled value="">Selecione</option>
+                                    <option value="masculino">Masculino</option>
+                                    <option value="feminino">Feminino</option>
+                                    <option value="outro">Outro</option>
+                                    <option value="prefiro_nao_informar">Prefiro não informar</option>
+                                </select>
+                                <InputError :message="form.errors.sexo" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </template>
+
+            <!-- Etapa 3 · Documento de identificação ─────────────────────── -->
+            <template v-else-if="activeStep === 3">
+                <Card class="overflow-hidden border-border/80 shadow-sm">
+                    <CardHeader class="border-b border-border/60 bg-muted/30 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
                             >
-                                {{ cepLookupMessage }}
-                            </p>
-                            <InputError :message="form.errors.cep" />
+                                <FileText :size="20" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-base">Documento de identificação</CardTitle>
+                                <CardDescription class="text-xs sm:text-sm">
+                                    Dados do RG ou documento oficial equivalente.
+                                </CardDescription>
+                            </div>
                         </div>
-                    </div>
+                    </CardHeader>
+                    <CardContent class="space-y-5 pt-5">
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid gap-2">
+                                <Label for="identidade">Identidade (RG) *</Label>
+                                <Input
+                                    id="identidade"
+                                    v-model="form.identidade"
+                                    type="text"
+                                    name="identidade"
+                                    :class="inputInvalidClass('identidade')"
+                                    :aria-invalid="fieldInvalid('identidade')"
+                                    @blur="touch('identidade')"
+                                />
+                                <InputError :message="form.errors.identidade" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="orgao_emissor">Órgão emissor *</Label>
+                                <Input
+                                    id="orgao_emissor"
+                                    v-model="form.orgao_emissor"
+                                    type="text"
+                                    name="orgao_emissor"
+                                    :class="inputInvalidClass('orgao_emissor')"
+                                    :aria-invalid="fieldInvalid('orgao_emissor')"
+                                    @blur="touch('orgao_emissor')"
+                                />
+                                <InputError :message="form.errors.orgao_emissor" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="identidade_uf">UF (identidade) *</Label>
+                                <select
+                                    id="identidade_uf"
+                                    v-model="form.identidade_uf"
+                                    name="identidade_uf"
+                                    :class="cn(selectClass, selectInvalidClass('identidade_uf'))"
+                                    :aria-invalid="fieldInvalid('identidade_uf')"
+                                    @blur="touch('identidade_uf')"
+                                >
+                                    <option disabled value="">Selecione</option>
+                                    <option v-for="uf in props.ufs" :key="`id-${uf}`" :value="uf">
+                                        {{ uf }}
+                                    </option>
+                                </select>
+                                <InputError :message="form.errors.identidade_uf" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="identidade_data_emissao">Data de emissão (RG) *</Label>
+                                <Input
+                                    id="identidade_data_emissao"
+                                    v-model="form.identidade_data_emissao"
+                                    type="date"
+                                    name="identidade_data_emissao"
+                                    :class="inputInvalidClass('identidade_data_emissao')"
+                                    :aria-invalid="fieldInvalid('identidade_data_emissao')"
+                                    @blur="touch('identidade_data_emissao')"
+                                />
+                                <InputError :message="form.errors.identidade_data_emissao" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </template>
 
-                    <Separator />
-
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div class="grid gap-2 sm:col-span-2">
-                            <Label for="endereco">Endereço (logradouro) *</Label>
-                            <Input
-                                id="endereco"
-                                v-model="form.endereco"
-                                type="text"
-                                name="endereco"
-                                autocomplete="street-address"
-                                :class="inputInvalidClass('endereco')"
-                                :aria-invalid="fieldInvalid('endereco')"
-                                @blur="touch('endereco')"
-                            />
-                            <InputError :message="form.errors.endereco" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="endereco_numero">Número *</Label>
-                            <Input
-                                id="endereco_numero"
-                                v-model="form.endereco_numero"
-                                type="text"
-                                name="endereco_numero"
-                                :class="inputInvalidClass('endereco_numero')"
-                                :aria-invalid="fieldInvalid('endereco_numero')"
-                                @blur="touch('endereco_numero')"
-                            />
-                            <InputError :message="form.errors.endereco_numero" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="bairro">Bairro *</Label>
-                            <Input
-                                id="bairro"
-                                v-model="form.bairro"
-                                type="text"
-                                name="bairro"
-                                :class="inputInvalidClass('bairro')"
-                                :aria-invalid="fieldInvalid('bairro')"
-                                @blur="touch('bairro')"
-                            />
-                            <InputError :message="form.errors.bairro" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="cidade">Cidade *</Label>
-                            <Input
-                                id="cidade"
-                                v-model="form.cidade"
-                                type="text"
-                                name="cidade"
-                                :class="inputInvalidClass('cidade')"
-                                :aria-invalid="fieldInvalid('cidade')"
-                                @blur="touch('cidade')"
-                            />
-                            <InputError :message="form.errors.cidade" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="endereco_uf">UF *</Label>
-                            <select
-                                id="endereco_uf"
-                                v-model="form.endereco_uf"
-                                name="endereco_uf"
-                                :class="cn(selectClass, selectInvalidClass('endereco_uf'))"
-                                :aria-invalid="fieldInvalid('endereco_uf')"
-                                @blur="touch('endereco_uf')"
+            <!-- Etapa 4 · Endereço residencial ──────────────────────────── -->
+            <template v-else-if="activeStep === 4">
+                <Card class="overflow-hidden border-border/80 shadow-sm">
+                    <CardHeader class="border-b border-border/60 bg-muted/30 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
                             >
-                                <option disabled value="">Selecione</option>
-                                <option v-for="uf in props.ufs" :key="`ed-${uf}`" :value="uf">
-                                    {{ uf }}
-                                </option>
-                            </select>
-                            <InputError :message="form.errors.endereco_uf" />
+                                <MapPin :size="20" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-base">Endereço residencial</CardTitle>
+                                <CardDescription class="text-xs sm:text-sm">
+                                    Digite o CEP primeiro — buscamos logradouro, bairro, cidade e UF
+                                    automaticamente.
+                                </CardDescription>
+                            </div>
                         </div>
-                        <div class="grid gap-2 sm:col-span-2">
-                            <Label for="pais">País *</Label>
-                            <Input
-                                id="pais"
-                                v-model="form.pais"
-                                type="text"
-                                name="pais"
-                                :class="inputInvalidClass('pais')"
-                                :aria-invalid="fieldInvalid('pais')"
-                                @blur="touch('pais')"
-                            />
-                            <InputError :message="form.errors.pais" />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <!-- Contato -->
-            <Card class="overflow-hidden border-border/80 shadow-sm transition-shadow hover:shadow-md">
-                <CardHeader class="space-y-1 border-b border-border/60 bg-muted/30 pb-4">
-                    <div class="flex items-center gap-2">
+                    </CardHeader>
+                    <CardContent class="space-y-5 pt-5">
                         <div
-                            class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                            class="rounded-xl border border-dashed border-primary/25 bg-primary/[0.03] p-4 sm:p-5"
                         >
-                            <Mail :size="18" />
-                        </div>
-                        <div>
-                            <CardTitle class="text-base">Contato e acesso</CardTitle>
-                            <CardDescription class="text-xs sm:text-sm">
-                                E-mail para login e senha forte para proteger sua conta.
-                            </CardDescription>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent class="space-y-5 pt-5">
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div class="grid gap-2">
-                            <Label for="telefone_fixo">Telefone fixo</Label>
-                            <Input
-                                id="telefone_fixo"
-                                v-model="form.telefone_fixo"
-                                type="text"
-                                name="telefone_fixo"
-                                @blur="touch('telefone_fixo')"
-                            />
-                            <InputError :message="form.errors.telefone_fixo" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="telefone">Celular *</Label>
-                            <Input
-                                id="telefone"
-                                v-model="form.telefone"
-                                type="text"
-                                name="telefone"
-                                autocomplete="tel"
-                                :class="inputInvalidClass('telefone')"
-                                :aria-invalid="fieldInvalid('telefone')"
-                                @blur="touch('telefone')"
-                            />
-                            <InputError :message="form.errors.telefone" />
-                        </div>
-                        <div class="grid gap-2 sm:col-span-2">
-                            <Label for="email">E-mail *</Label>
-                            <Input
-                                id="email"
-                                v-model="form.email"
-                                type="email"
-                                autocomplete="email"
-                                name="email"
-                                :class="inputInvalidClass('email')"
-                                :aria-invalid="fieldInvalid('email')"
-                                @blur="touch('email')"
-                            />
-                            <InputError :message="form.errors.email" />
-                        </div>
-                        <div class="grid gap-2 sm:col-span-2">
-                            <div class="flex items-center gap-2">
-                                <Shield :size="14" class="shrink-0 text-muted-foreground" />
-                                <Label for="password">Senha *</Label>
+                            <div class="grid gap-2">
+                                <Label for="cep">CEP *</Label>
+                                <div
+                                    class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3"
+                                >
+                                    <div class="relative min-w-0 flex-1">
+                                        <Input
+                                            id="cep"
+                                            :model-value="formatCepDisplay(form.cep)"
+                                            type="text"
+                                            inputmode="numeric"
+                                            name="cep"
+                                            maxlength="9"
+                                            placeholder="00000-000"
+                                            autocomplete="postal-code"
+                                            :class="
+                                                cn(
+                                                    'pr-10 font-mono tabular-nums',
+                                                    inputInvalidClass('cep'),
+                                                )
+                                            "
+                                            :aria-invalid="fieldInvalid('cep')"
+                                            @update:model-value="onCepInput"
+                                            @blur="touch('cep')"
+                                        />
+                                        <div
+                                            class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                                        >
+                                            <Loader2
+                                                v-if="cepLookupLoading"
+                                                :size="16"
+                                                class="animate-spin"
+                                            />
+                                        </div>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        label="Buscar CEP"
+                                        severity="secondary"
+                                        outlined
+                                        size="small"
+                                        class="h-9 w-full shrink-0 sm:w-auto"
+                                        :disabled="
+                                            cepDigitsOnly(form.cep).length !== 8 || cepLookupLoading
+                                        "
+                                        @click="lookupCep"
+                                    />
+                                </div>
+                                <p class="text-xs text-muted-foreground">
+                                    Ao completar 8 dígitos, o endereço é buscado automaticamente.
+                                </p>
+                                <p
+                                    v-if="cepLookupMessage"
+                                    class="text-xs font-medium text-primary"
+                                >
+                                    {{ cepLookupMessage }}
+                                </p>
+                                <InputError :message="form.errors.cep" />
                             </div>
-                            <PasswordInput
-                                id="password"
-                                v-model="form.password"
-                                autocomplete="new-password"
-                                name="password"
-                                :class="inputInvalidClass('password')"
-                                :aria-invalid="fieldInvalid('password')"
-                                @blur="touch('password')"
-                            />
-                            <InputError :message="form.errors.password" />
                         </div>
-                        <div class="grid gap-2 sm:col-span-2">
-                            <Label for="password_confirmation">Confirmar senha *</Label>
-                            <PasswordInput
-                                id="password_confirmation"
-                                v-model="form.password_confirmation"
-                                autocomplete="new-password"
-                                name="password_confirmation"
-                                :class="inputInvalidClass('password_confirmation')"
-                                :aria-invalid="fieldInvalid('password_confirmation')"
-                                @blur="touch('password_confirmation')"
-                            />
-                            <InputError :message="form.errors.password_confirmation" />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
 
-            <Button
-                type="submit"
-                class="h-11 w-full rounded-lg border border-[#39b4b9]/25 bg-[#39b4b9] text-base font-semibold text-white shadow-md transition-transform hover:bg-[#2ea0a6] active:scale-[0.99] focus-visible:border-[#39b4b9]/40 focus-visible:ring-[#39b4b9]/35 dark:border-[#39b4b9]/40 dark:bg-[#39b4b9] dark:hover:bg-[#4dc8cd]"
-                :disabled="form.processing"
-                data-test="register-user-button"
-            >
-                <Spinner v-if="form.processing" />
-                Criar conta
-            </Button>
+                        <Separator />
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid gap-2 sm:col-span-2">
+                                <Label for="endereco">Endereço (logradouro) *</Label>
+                                <Input
+                                    id="endereco"
+                                    v-model="form.endereco"
+                                    type="text"
+                                    name="endereco"
+                                    autocomplete="street-address"
+                                    :class="inputInvalidClass('endereco')"
+                                    :aria-invalid="fieldInvalid('endereco')"
+                                    @blur="touch('endereco')"
+                                />
+                                <InputError :message="form.errors.endereco" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="endereco_numero">Número *</Label>
+                                <Input
+                                    id="endereco_numero"
+                                    v-model="form.endereco_numero"
+                                    type="text"
+                                    name="endereco_numero"
+                                    :class="inputInvalidClass('endereco_numero')"
+                                    :aria-invalid="fieldInvalid('endereco_numero')"
+                                    @blur="touch('endereco_numero')"
+                                />
+                                <InputError :message="form.errors.endereco_numero" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="bairro">Bairro *</Label>
+                                <Input
+                                    id="bairro"
+                                    v-model="form.bairro"
+                                    type="text"
+                                    name="bairro"
+                                    :class="inputInvalidClass('bairro')"
+                                    :aria-invalid="fieldInvalid('bairro')"
+                                    @blur="touch('bairro')"
+                                />
+                                <InputError :message="form.errors.bairro" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="cidade">Cidade *</Label>
+                                <Input
+                                    id="cidade"
+                                    v-model="form.cidade"
+                                    type="text"
+                                    name="cidade"
+                                    :class="inputInvalidClass('cidade')"
+                                    :aria-invalid="fieldInvalid('cidade')"
+                                    @blur="touch('cidade')"
+                                />
+                                <InputError :message="form.errors.cidade" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="endereco_uf">UF *</Label>
+                                <select
+                                    id="endereco_uf"
+                                    v-model="form.endereco_uf"
+                                    name="endereco_uf"
+                                    :class="cn(selectClass, selectInvalidClass('endereco_uf'))"
+                                    :aria-invalid="fieldInvalid('endereco_uf')"
+                                    @blur="touch('endereco_uf')"
+                                >
+                                    <option disabled value="">Selecione</option>
+                                    <option v-for="uf in props.ufs" :key="`ed-${uf}`" :value="uf">
+                                        {{ uf }}
+                                    </option>
+                                </select>
+                                <InputError :message="form.errors.endereco_uf" />
+                            </div>
+                            <div class="grid gap-2 sm:col-span-2">
+                                <Label for="pais">País *</Label>
+                                <Input
+                                    id="pais"
+                                    v-model="form.pais"
+                                    type="text"
+                                    name="pais"
+                                    :class="inputInvalidClass('pais')"
+                                    :aria-invalid="fieldInvalid('pais')"
+                                    @blur="touch('pais')"
+                                />
+                                <InputError :message="form.errors.pais" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </template>
+
+            <!-- Etapa 5 · Contato e acesso ──────────────────────────────── -->
+            <template v-else-if="activeStep === 5">
+                <Card class="overflow-hidden border-border/80 shadow-sm">
+                    <CardHeader class="border-b border-border/60 bg-muted/30 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                            >
+                                <Mail :size="20" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-base">Contato e acesso</CardTitle>
+                                <CardDescription class="text-xs sm:text-sm">
+                                    Informe seu telefone, e-mail de login e crie uma senha segura.
+                                </CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent class="space-y-5 pt-5">
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid gap-2">
+                                <Label for="telefone_fixo">Telefone fixo</Label>
+                                <Input
+                                    id="telefone_fixo"
+                                    v-model="form.telefone_fixo"
+                                    type="text"
+                                    name="telefone_fixo"
+                                    @blur="touch('telefone_fixo')"
+                                />
+                                <InputError :message="form.errors.telefone_fixo" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="telefone">Celular *</Label>
+                                <Input
+                                    id="telefone"
+                                    v-model="form.telefone"
+                                    type="text"
+                                    name="telefone"
+                                    autocomplete="tel"
+                                    :class="inputInvalidClass('telefone')"
+                                    :aria-invalid="fieldInvalid('telefone')"
+                                    @blur="touch('telefone')"
+                                />
+                                <InputError :message="form.errors.telefone" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="email">E-mail *</Label>
+                                <Input
+                                    id="email"
+                                    v-model="form.email"
+                                    type="email"
+                                    autocomplete="email"
+                                    name="email"
+                                    :class="inputInvalidClass('email')"
+                                    :aria-invalid="fieldInvalid('email')"
+                                    @blur="touch('email')"
+                                />
+                                <InputError :message="form.errors.email" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="email_confirmation">Confirmar e-mail *</Label>
+                                <Input
+                                    id="email_confirmation"
+                                    v-model="form.email_confirmation"
+                                    type="email"
+                                    autocomplete="email"
+                                    name="email_confirmation"
+                                    :class="inputInvalidClass('email_confirmation')"
+                                    :aria-invalid="fieldInvalid('email_confirmation')"
+                                    @blur="touch('email_confirmation')"
+                                />
+                                <InputError :message="form.errors.email_confirmation" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="password">Senha *</Label>
+                                <PasswordInput
+                                    id="password"
+                                    v-model="form.password"
+                                    autocomplete="new-password"
+                                    name="password"
+                                    :class="inputInvalidClass('password')"
+                                    :aria-invalid="fieldInvalid('password')"
+                                    @blur="touch('password')"
+                                />
+                                <InputError :message="form.errors.password" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="password_confirmation">Confirmar senha *</Label>
+                                <PasswordInput
+                                    id="password_confirmation"
+                                    v-model="form.password_confirmation"
+                                    autocomplete="new-password"
+                                    name="password_confirmation"
+                                    :class="inputInvalidClass('password_confirmation')"
+                                    :aria-invalid="fieldInvalid('password_confirmation')"
+                                    @blur="touch('password_confirmation')"
+                                />
+                                <InputError :message="form.errors.password_confirmation" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </template>
+
+            <!-- ── Botões de navegação ──────────────────────────────────────── -->
+            <div class="flex items-center justify-between gap-4">
+                <Button
+                    v-if="activeStep > 1"
+                    type="button"
+                    label="Voltar"
+                    icon="pi pi-arrow-left"
+                    severity="secondary"
+                    outlined
+                    size="small"
+                    :disabled="form.processing"
+                    @click="prevStep"
+                />
+                <div class="ml-auto flex items-center gap-3">
+                    <Button
+                        v-if="activeStep < 5"
+                        type="button"
+                        label="Próximo"
+                        icon="pi pi-arrow-right"
+                        icon-pos="right"
+                        size="small"
+                        :disabled="form.processing"
+                        @click="nextStep"
+                    />
+                    <Button
+                        v-else
+                        type="submit"
+                        label="Criar conta"
+                        icon="pi pi-check"
+                        icon-pos="right"
+                        size="small"
+                        :loading="form.processing"
+                        data-test="register-user-button"
+                    />
+                </div>
+            </div>
 
             <div class="text-center text-sm text-muted-foreground">
                 Já tem conta?

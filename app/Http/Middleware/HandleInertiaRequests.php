@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
+use App\Support\UserPhotoUrl;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -39,7 +41,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $this->serializeAuthUser($request->user()),
                 'roles' => $request->user()?->getRoleNames()->values()->all(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
@@ -59,5 +61,22 @@ class HandleInertiaRequests extends Middleware
         }
 
         return $user->candidateProfileIsComplete();
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function serializeAuthUser(?User $user): ?array
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        $photoUrl = UserPhotoUrl::resolve($user, true);
+
+        return array_merge($user->toArray(), [
+            'avatar' => $photoUrl,
+            'foto_url' => $photoUrl,
+        ]);
     }
 }

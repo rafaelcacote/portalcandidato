@@ -8,6 +8,7 @@ use App\Mail\DocumentoRecusado;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\Modules\Candidate\Models\ApplicationDocument;
 use App\Modules\Evaluator\Services\DocumentValidationScoringService;
+use App\Modules\Evaluator\Support\CandidatePhotoUrl;
 use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response as HttpResponse;
@@ -34,9 +35,38 @@ class CandidateReviewController extends Controller
             'evaluations' => fn ($q) => $q->where('evaluator_id', auth()->id())->with(['scores', 'documentScores']),
         ]);
 
+        if ($application->user !== null) {
+            $application->user->setAttribute(
+                'photo_url',
+                CandidatePhotoUrl::forApplication($application),
+            );
+        }
+
         return Inertia::render('Evaluator/Candidates/Show', [
             'application' => $application,
         ]);
+    }
+
+    public function viewPhoto(Application $application): StreamedResponse|HttpResponse
+    {
+        $application->loadMissing('user');
+
+        $path = $application->user?->foto_path;
+        abort_if($path === null || trim((string) $path) === '', 404);
+
+        $path = (string) $path;
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return redirect()->away($path);
+        }
+
+        foreach (['public', (string) config('filesystems.default', 'local')] as $disk) {
+            if (Storage::disk($disk)->exists($path)) {
+                return Storage::disk($disk)->response($path);
+            }
+        }
+
+        abort(404);
     }
 
     public function viewDocument(Application $application, ApplicationDocument $applicationDocument): StreamedResponse|HttpResponse
@@ -66,13 +96,20 @@ class CandidateReviewController extends Controller
             Mail::to($application->user)->queue(new DocumentoRecusado($applicationDocument));
         }
 
-        $this->documentValidationScoringService->applyDocumentDecision(
+        $pointsApplied = $this->documentValidationScoringService->applyDocumentDecision(
             $application,
             $applicationDocument->fresh(),
             $applicationDocument->status,
             (int) auth()->id(),
         );
 
-        return back()->with('success', 'Documento validado.');
+        $message = 'Documento validado.';
+        if ($pointsApplied !== null) {
+            $message = $applicationDocument->status === 'aprovado'
+                ? sprintf('Documento aprovado. %.2f pontos somados à pontuação do candidato.', $pointsApplied)
+                : 'Documento recusado. A pontuação deste título foi zerada.';
+        }
+
+        return back()->with('success', $message);
     }
 }

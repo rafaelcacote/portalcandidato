@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ChevronLeft, ClipboardCheck } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import CandidateHeroCard from '@/components/Evaluator/CandidateHeroCard.vue';
 import CandidateReviewActions from '@/components/Evaluator/CandidateReviewActions.vue';
 import CandidateScoreSection from '@/components/Evaluator/CandidateScoreSection.vue';
@@ -11,7 +11,7 @@ import EvaluationSummary from '@/components/Evaluator/EvaluationSummary.vue';
 import ObservationDialog from '@/components/Evaluator/ObservationDialog.vue';
 import { buildEvaluatorDocumentSections } from '@/components/Evaluator/evaluatorDocumentGrouping';
 import type { EvaluatorApplicationDocument, EvaluatorDocumentSection } from '@/components/Evaluator/evaluatorDocumentTypes';
-import { maxPointsForTitleDocumentRow } from '@/components/Evaluator/evaluatorTitleScoring';
+import { resolvePointsForApprovedTitleDocument } from '@/components/Evaluator/evaluatorTitleScoring';
 import { home } from '@/routes';
 import { dashboard } from '@/routes/evaluator';
 import { index as processesIndex, show as processShow } from '@/routes/evaluator/processes';
@@ -33,7 +33,15 @@ const props = defineProps<{
         status: string;
         numero_protocolo: string | null;
         created_at: string;
-        user: { id: number; name: string; email: string; cpf?: string | null; foto_url?: string | null };
+        user: {
+            id: number;
+            name: string;
+            email: string;
+            cpf?: string | null;
+            telefone?: string | null;
+            foto_url?: string | null;
+            photo_url?: string | null;
+        };
         selectionProcess?: {
             id: number;
             titulo: string;
@@ -101,21 +109,35 @@ function buildInitialDocumentScores(): Array<{ application_document_id: number; 
         (d) => d.process_title_item_id != null && d.process_title_item_id > 0,
     );
     const eval0 = props.application.evaluations?.[0];
-    return docs.map((doc) => {
+    const scores: Array<{ application_document_id: number; pontuacao: number }> = [];
+
+    for (const doc of docs) {
         const existing = eval0?.document_scores?.find((s) => s.application_document_id === doc.id);
         if (existing != null) {
-            return {
+            scores.push({
                 application_document_id: doc.id,
                 pontuacao: Number(existing.pontuacao ?? 0),
-            };
+            });
+            continue;
         }
-        const auto =
-            doc.status === 'aprovado' ? (maxPointsForTitleDocumentRow(doc) ?? 0) : 0;
-        return {
-            application_document_id: doc.id,
-            pontuacao: auto,
-        };
-    });
+        if (doc.status === 'aprovado') {
+            scores.push({
+                application_document_id: doc.id,
+                pontuacao: resolvePointsForApprovedTitleDocument(doc, scores, docs),
+            });
+        } else {
+            scores.push({
+                application_document_id: doc.id,
+                pontuacao: 0,
+            });
+        }
+    }
+
+    return scores;
+}
+
+function syncDocumentScoresFromProps(): void {
+    scoreForm.document_scores = buildInitialDocumentScores();
 }
 
 // ── Score form ───────────────────────────────────────────────────────────────
@@ -161,6 +183,27 @@ const documentScoresSum = computed(() =>
     scoreForm.document_scores.reduce((a, s) => a + Number(s.pontuacao), 0),
 );
 
+const displayedPontuacaoTotal = computed(() => {
+    const saved = existingEvaluation.value?.pontuacao_total;
+    if (saved != null && saved !== '') {
+        return Number(saved);
+    }
+    const criteriaPart = scoreForm.scores.reduce((a, s) => a + Number(s.pontuacao ?? 0), 0);
+    return criteriaPart + documentScoresSum.value;
+});
+
+watch(
+    () => [
+        props.application.evaluations?.[0]?.document_scores,
+        props.application.evaluations?.[0]?.pontuacao_total,
+        (props.application.documents ?? []).map((d) => `${d.id}:${d.status}`).join('|'),
+    ],
+    () => {
+        syncDocumentScoresFromProps();
+    },
+    { deep: true },
+);
+
 function titleGroupStatsForSection(
     section: EvaluatorDocumentSection,
 ): { current: number; max: number } | undefined {
@@ -189,6 +232,20 @@ function patchDocumentScore(payload: { application_document_id: number; pontuaca
         application_document_id: payload.application_document_id,
         pontuacao: payload.pontuacao,
     };
+}
+
+function applyAutoScoreForDocument(documentId: number, status: string): void {
+    const doc = allDocuments.value.find((d) => d.id === documentId);
+    if (doc == null || !doc.process_title_item_id) {
+        return;
+    }
+
+    const points =
+        status === 'aprovado'
+            ? resolvePointsForApprovedTitleDocument(doc, scoreForm.document_scores, allDocuments.value)
+            : 0;
+
+    patchDocumentScore({ application_document_id: documentId, pontuacao: points });
 }
 
 function handleScoresUpdate(scores: Array<{ process_criteria_id: number; pontuacao: number }>): void {
@@ -257,6 +314,7 @@ function finalize(): void {
                     :status-filter="statusFilter"
                     :category-filter="categoryFilter"
                     :category-options="categoryOptions"
+                    :pontuacao-total="displayedPontuacaoTotal"
                     @update:search="searchQuery = $event"
                     @update:status-filter="statusFilter = $event"
                     @update:category-filter="categoryFilter = $event"
@@ -276,6 +334,7 @@ function finalize(): void {
                     @open-observation="openObservation"
                     @open-refuse="openRefuse"
                     @patch-document-score="patchDocumentScore"
+                    @document-decision-saved="applyAutoScoreForDocument"
                 />
 
                 <!-- Score section -->
@@ -306,7 +365,12 @@ function finalize(): void {
             :visible="obsDialogVisible"
             :pending-status="obsPendingStatus"
             @update:visible="obsDialogVisible = $event"
-            @saved="obsDialogVisible = false"
+            @saved="
+                (docId, status) => {
+                    applyAutoScoreForDocument(docId, status);
+                    obsDialogVisible = false;
+                }
+            "
         />
     </div>
 </template>

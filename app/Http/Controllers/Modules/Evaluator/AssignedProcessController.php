@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modules\Evaluator;
 use App\Http\Controllers\Controller;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
+use App\Modules\Evaluator\Support\CandidatePhotoUrl;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -49,6 +50,15 @@ class AssignedProcessController extends Controller
             ->latest()
             ->paginate(20)
             ->withQueryString();
+
+        $candidates->getCollection()->each(function (Application $application): void {
+            if ($application->user !== null) {
+                $application->user->setAttribute(
+                    'photo_url',
+                    CandidatePhotoUrl::forApplication($application),
+                );
+            }
+        });
 
         $selectionProcess->load('criteria');
 

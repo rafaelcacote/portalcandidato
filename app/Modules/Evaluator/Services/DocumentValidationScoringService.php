@@ -15,20 +15,23 @@ class DocumentValidationScoringService
         private readonly EvaluationService $evaluationService,
     ) {}
 
+    /**
+     * @return float|null Pontos aplicados ao documento de titulação, ou null se não for título.
+     */
     public function applyDocumentDecision(
         Application $application,
         ApplicationDocument $applicationDocument,
         string $status,
         int $evaluatorId,
-    ): void {
+    ): ?float {
         if ($applicationDocument->process_title_item_id === null) {
-            return;
+            return null;
         }
 
         $applicationDocument->loadMissing('titleItem.titleGroup');
 
         if ($applicationDocument->titleItem === null) {
-            return;
+            return null;
         }
 
         $evaluation = ApplicationEvaluation::query()->firstOrCreate(
@@ -53,6 +56,8 @@ class DocumentValidationScoringService
         );
 
         $this->syncEvaluationTotal($evaluation);
+
+        return $points;
     }
 
     private function syncEvaluationTotal(ApplicationEvaluation $evaluation): void

@@ -18,7 +18,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     'update:visible': [value: boolean];
-    saved: [];
+    saved: [documentId: number, status: string];
 }>();
 
 const isRefusal = computed(() => props.pendingStatus === 'recusado' || props.document?.status === 'recusado');
@@ -65,8 +65,10 @@ function save(): void {
         {
             preserveScroll: true,
             onSuccess: () => {
+                const status = form.status;
+                const docId = props.document!.id;
                 emit('update:visible', false);
-                emit('saved');
+                emit('saved', docId, status);
             },
         },
     );

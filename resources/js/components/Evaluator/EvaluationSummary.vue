@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, Clock, FileText, Search, XCircle } from 'lucide-vue-next';
+import { CheckCircle2, Clock, FileText, Search, Trophy, XCircle } from 'lucide-vue-next';
 import Select from 'primevue/select';
 import { computed } from 'vue';
 import type { EvaluatorApplicationDocument } from '@/components/Evaluator/evaluatorDocumentTypes';
@@ -10,6 +10,7 @@ const props = defineProps<{
     statusFilter: string;
     categoryFilter: string;
     categoryOptions: Array<{ label: string; value: string }>;
+    pontuacaoTotal?: number | null;
 }>();
 
 const emit = defineEmits<{
@@ -79,6 +80,22 @@ const statusOptions = [
                     <span class="text-sm font-bold tabular-nums text-red-600">{{ stats.refused }}</span>
                     <span class="text-xs text-slate-400">Recusados</span>
                 </div>
+
+                <template v-if="pontuacaoTotal != null">
+                    <div class="h-8 w-px bg-slate-200" />
+
+                    <div class="flex items-center gap-2">
+                        <div class="flex size-8 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                            <Trophy class="size-4" />
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-400">Pontuação do candidato</p>
+                            <p class="text-lg font-bold tabular-nums leading-tight text-violet-700">
+                                {{ Number(pontuacaoTotal).toFixed(2) }}
+                            </p>
+                        </div>
+                    </div>
+                </template>
             </div>
         </div>
 

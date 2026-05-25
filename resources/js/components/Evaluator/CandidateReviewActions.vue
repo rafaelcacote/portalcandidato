@@ -15,7 +15,7 @@ const emit = defineEmits<{
     <div class="sticky bottom-0 z-20 border-t border-slate-200/80 bg-white/95 backdrop-blur-sm">
         <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 sm:px-6">
             <p class="text-xs text-slate-400">
-                Todas as alterações são salvas automaticamente.
+                Aprovar ou recusar títulos atualiza a pontuação automaticamente. Critérios e observações exigem salvar.
             </p>
             <div class="flex items-center gap-3">
                 <button

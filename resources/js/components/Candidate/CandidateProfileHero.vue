@@ -13,9 +13,9 @@ import { computed } from 'vue';
 import {
     asText,
     formatRelative,
-    maskCpf
-    
+    maskCpf,
 } from '@/components/Candidate/profileTypes';
+import { resolveUserAvatarUrl } from '@/composables/useUserAvatar';
 import type {CandidateProfileUser} from '@/components/Candidate/profileTypes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/composables/useInitials';
@@ -33,11 +33,7 @@ const displayName = computed(() => asText(props.user?.name) ?? 'Candidato(a)');
 const displayEmail = computed(() => asText(props.user?.email));
 const cpfMasked = computed(() => maskCpf(props.user?.cpf));
 const lastUpdate = computed(() => formatRelative(props.user?.updated_at));
-const avatarSrc = computed<string | null>(() => {
-    const v = props.user?.foto_url ?? props.user?.avatar ?? props.user?.foto_path;
-
-    return typeof v === 'string' && v.trim() !== '' ? v : null;
-});
+const avatarSrc = computed<string | null>(() => resolveUserAvatarUrl(props.user));
 const initials = computed(() => getInitials(displayName.value));
 const isEmailVerified = computed(() => Boolean(asText(props.user?.email_verified_at)));
 </script>

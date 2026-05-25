@@ -14,6 +14,7 @@ Route::middleware(['auth', 'verified', 'role:avaliador'])
         Route::get('processes', [AssignedProcessController::class, 'index'])->name('processes.index');
         Route::get('processes/{selectionProcess}', [AssignedProcessController::class, 'show'])->name('processes.show');
         Route::get('candidates/{application}', [CandidateReviewController::class, 'show'])->name('candidates.show');
+        Route::get('candidates/{application}/photo', [CandidateReviewController::class, 'viewPhoto'])->name('candidates.photo');
         Route::get('candidates/{application}/documents/{applicationDocument}/view', [CandidateReviewController::class, 'viewDocument'])->name('candidates.documents.view');
         Route::post('candidates/{application}/documents/{applicationDocument}/decision', [CandidateReviewController::class, 'decideDocument'])->name('candidates.documents.decision');
         Route::post('candidates/{application}/score', [ScoringController::class, 'store'])->name('candidates.score.store');

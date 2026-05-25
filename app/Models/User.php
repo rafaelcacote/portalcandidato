@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Modules\Admin\Models\ProcessEvaluatorAssignment;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\Modules\Evaluator\Models\ApplicationEvaluation;
+use App\Support\UserPhotoUrl;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,7 +15,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
@@ -69,23 +69,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected function fotoUrl(): Attribute
     {
-        return Attribute::get(function (): ?string {
-            $path = $this->foto_path;
-            if ($path === null || trim((string) $path) === '') {
-                return null;
-            }
-
-            $path = (string) $path;
-            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-                return $path;
-            }
-
-            if (str_starts_with($path, 'private/')) {
-                return null;
-            }
-
-            return Storage::disk('public')->url(ltrim($path, '/'));
-        });
+        return Attribute::get(fn (): ?string => UserPhotoUrl::resolve($this));
     }
 
     /**

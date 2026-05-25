@@ -11,6 +11,7 @@ import {
     User,
 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
+import CandidateAvatar from '@/components/Evaluator/CandidateAvatar.vue';
 import { home } from '@/routes';
 import { dashboard } from '@/routes/evaluator';
 import { show as candidateShow } from '@/routes/evaluator/candidates';
@@ -40,7 +41,14 @@ const props = defineProps<{
             id: number;
             status: string;
             numero_protocolo: string | null;
-            user: { id: number; name: string; email: string; cpf?: string | null };
+            user: {
+                id: number;
+                name: string;
+                email: string;
+                cpf?: string | null;
+                foto_url?: string | null;
+                photo_url?: string | null;
+            };
             evaluations: Array<{ id: number; resultado: string | null; pontuacao_total: number | null }>;
         }>;
         meta?: {
@@ -125,13 +133,10 @@ function hasBeenEvaluated(
     return evaluations.some((e) => e.resultado !== null);
 }
 
-function getInitials(name: string): string {
-    return name
-        .split(' ')
-        .slice(0, 2)
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase();
+function candidatePhotoUrl(
+    candidate: (typeof props.candidates.data)[number],
+): string | null {
+    return candidate.user.photo_url ?? candidate.user.foto_url ?? null;
 }
 
 function formatDate(dateStr: string | null): string {
@@ -243,10 +248,11 @@ function formatDate(dateStr: string | null): string {
                         :key="candidate.id"
                         class="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-slate-50/70"
                     >
-                        <!-- Avatar -->
-                        <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-100 to-indigo-100 text-sm font-bold text-violet-700">
-                            {{ getInitials(candidate.user.name) }}
-                        </div>
+                        <CandidateAvatar
+                            :name="candidate.user.name"
+                            :photo-url="candidatePhotoUrl(candidate)"
+                            size="sm"
+                        />
 
                         <!-- Info -->
                         <div class="min-w-0 flex-1">

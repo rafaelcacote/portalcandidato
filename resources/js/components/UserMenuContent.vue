@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { LogOut, Settings } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { KeyRound, LogOut, Settings } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import ChangePasswordDialog from '@/components/ChangePasswordDialog.vue';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -25,6 +26,7 @@ defineProps<Props>();
 
 const page = usePage();
 const ui = computed(() => page.props.ui);
+const passwordDialogOpen = ref(false);
 </script>
 
 <template>
@@ -41,6 +43,14 @@ const ui = computed(() => page.props.ui);
                 {{ ui.settings }}
             </Link>
         </DropdownMenuItem>
+        <DropdownMenuItem
+            class="cursor-pointer"
+            data-test="change-password-menu-item"
+            @select.prevent="passwordDialogOpen = true"
+        >
+            <KeyRound class="mr-2 h-4 w-4" />
+            Alterar senha
+        </DropdownMenuItem>
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
     <DropdownMenuItem :as-child="true">
@@ -55,4 +65,6 @@ const ui = computed(() => page.props.ui);
             {{ ui.log_out }}
         </Link>
     </DropdownMenuItem>
+
+    <ChangePasswordDialog v-model:open="passwordDialogOpen" />
 </template>

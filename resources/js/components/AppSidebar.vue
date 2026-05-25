@@ -9,6 +9,7 @@ import {
     MoreHorizontal,
     Settings2,
     Sparkles,
+    UserCircle,
     Users,
     Zap,
 } from 'lucide-vue-next';
@@ -34,6 +35,7 @@ import {
 } from '@/components/ui/sidebar';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
+import { useUserAvatar } from '@/composables/useUserAvatar';
 import { dashboard } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminEvaluatorsIndex } from '@/routes/admin/evaluators';
@@ -45,6 +47,7 @@ import { dashboard as candidateDashboard } from '@/routes/candidate';
 import { index as candidateApplicationsIndex } from '@/routes/candidate/applications';
 import { index as candidateDocumentsIndex } from '@/routes/candidate/documents';
 import { index as candidateProcessesIndex } from '@/routes/candidate/processes';
+import { edit as profileEdit } from '@/routes/profile';
 import { dashboard as evaluatorDashboard } from '@/routes/evaluator';
 import { index as evaluatorProcessesIndex } from '@/routes/evaluator/processes';
 import type { NavItem, NavSection } from '@/types';
@@ -52,11 +55,8 @@ import type { Auth } from '@/types/auth';
 
 const page = usePage<{ auth: Auth }>();
 
-const userAvatarUrl = computed(
-    () =>
-        page.props.auth?.user?.avatar
-        ?? (page.props.auth?.user as { foto_url?: string | null } | undefined)?.foto_url
-        ?? null,
+const { avatarUrl: userAvatarUrl, hasAvatar: hasUserAvatar } = useUserAvatar(
+    () => page.props.auth?.user,
 );
 
 const isAdmin = computed(() => page.props.auth?.roles?.includes('admin') ?? false);
@@ -151,6 +151,7 @@ const candidateNavSections = computed<NavSection[]>(() => [
                 icon: ClipboardCheck,
             },
             { title: 'Meus documentos', href: candidateDocumentsIndex.url(), icon: FolderOpen },
+            { title: 'Meu perfil', href: profileEdit().url, icon: UserCircle },
         ],
     },
 ]);
@@ -160,6 +161,7 @@ const candidateShortcutLinks = computed(() => [
     { title: 'Processos abertos', href: candidateProcessesIndex.url() },
     { title: 'Minhas inscrições', href: candidateApplicationsIndex.url() },
     { title: 'Meus documentos', href: candidateDocumentsIndex.url() },
+    { title: 'Meu perfil', href: profileEdit().url },
 ]);
 
 const roleShortcutLinks = computed(() => {
@@ -332,8 +334,8 @@ const mainNavItems = computed<NavItem[]>(() => {
             >
                 <Avatar class="size-8 shrink-0 rounded-lg ring-1 ring-white/10">
                     <AvatarImage
-                        v-if="userAvatarUrl"
-                        :src="userAvatarUrl"
+                        v-if="hasUserAvatar"
+                        :src="userAvatarUrl!"
                         :alt="page.props.auth.user.name"
                     />
                     <AvatarFallback

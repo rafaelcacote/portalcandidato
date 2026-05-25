@@ -21,6 +21,7 @@ const emit = defineEmits<{
     'open-observation': [doc: EvaluatorApplicationDocument];
     'open-refuse': [doc: EvaluatorApplicationDocument];
     'patch-document-score': [payload: { application_document_id: number; pontuacao: number }];
+    'document-decision-saved': [documentId: number, status: string];
 }>();
 
 const expanded = ref(false);
@@ -159,6 +160,7 @@ const sectionStats = computed(() => {
                             @open-observation="emit('open-observation', $event)"
                             @open-refuse="emit('open-refuse', $event)"
                             @patch-document-score="emit('patch-document-score', $event)"
+                            @document-decision-saved="(id, status) => emit('document-decision-saved', id, status)"
                         />
                     </tbody>
                 </table>

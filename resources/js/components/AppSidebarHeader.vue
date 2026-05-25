@@ -13,6 +13,7 @@ import {
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
+import { useUserAvatar } from '@/composables/useUserAvatar';
 import type { BreadcrumbItem } from '@/types';
 import type { Auth } from '@/types/auth';
 
@@ -27,6 +28,7 @@ withDefaults(
 
 const page = usePage<{ auth: Auth }>();
 const auth = computed(() => page.props.auth);
+const { avatarUrl, hasAvatar } = useUserAvatar(() => auth.value?.user);
 
 const usesStaffHeader = computed(() => {
     const roles = auth.value?.roles ?? [];
@@ -66,8 +68,8 @@ const usesStaffHeader = computed(() => {
                         >
                             <Avatar class="size-8 shrink-0 overflow-hidden rounded-lg">
                                 <AvatarImage
-                                    v-if="auth.user.avatar"
-                                    :src="auth.user.avatar"
+                                    v-if="hasAvatar"
+                                    :src="avatarUrl!"
                                     :alt="auth.user.name"
                                 />
                                 <AvatarFallback
@@ -108,8 +110,8 @@ const usesStaffHeader = computed(() => {
                         >
                             <Avatar class="size-8 shrink-0 overflow-hidden rounded-lg">
                                 <AvatarImage
-                                    v-if="auth.user.avatar"
-                                    :src="auth.user.avatar"
+                                    v-if="hasAvatar"
+                                    :src="avatarUrl!"
                                     :alt="auth.user.name"
                                 />
                                 <AvatarFallback

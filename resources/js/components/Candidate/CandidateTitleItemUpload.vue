@@ -5,9 +5,11 @@ import {
     CheckCircle2,
     CloudUpload,
     FileText,
+    Info,
     Paperclip,
     Plus,
     Trash2,
+    TrendingUp,
 } from 'lucide-vue-next';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
@@ -192,6 +194,34 @@ const cardToneClass = computed(() => {
 
     return 'border-border/70 bg-card/60 dark:bg-card/40';
 });
+
+/**
+ * Pontuação prévia estimada para este item com base nos comprovantes enviados.
+ * Segue a mesma regra do backend: score_per_unit × quantidade (limitada por max_quantity),
+ * somada para todos os comprovantes válidos.
+ * É somente uma ESTIMATIVA — a pontuação final é definida pelo avaliador.
+ */
+const previewScore = computed((): number | null => {
+    if (validUploadedDocs.value.length === 0) {
+        return null;
+    }
+
+    const perUnit = Number(props.item.score_per_unit);
+    if (!Number.isFinite(perUnit) || perUnit <= 0) {
+        return null;
+    }
+
+    let total = 0;
+    for (const doc of validUploadedDocs.value) {
+        let qty = Math.max(1, Number(doc.quantidade ?? 1));
+        if (props.item.max_quantity != null) {
+            qty = Math.min(qty, props.item.max_quantity);
+        }
+        total += perUnit * qty;
+    }
+
+    return Math.round(total * 100) / 100;
+});
 </script>
 
 <template>
@@ -265,6 +295,28 @@ const cardToneClass = computed(() => {
                 />
             </div>
         </header>
+
+        <!-- Pontuação prévia estimada -->
+        <div
+            v-if="previewScore !== null"
+            class="flex items-start gap-2 rounded-xl border border-amber-200/80 bg-amber-50/60 px-3 py-2.5 dark:border-amber-800/40 dark:bg-amber-950/20"
+        >
+            <TrendingUp
+                :size="14"
+                class="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400"
+                aria-hidden="true"
+            />
+            <div class="min-w-0 flex-1">
+                <p class="text-[12px] font-semibold text-amber-800 dark:text-amber-300">
+                    Pontuação prévia estimada:
+                    <span class="tabular-nums">{{ formatScore(previewScore) }} pts</span>
+                </p>
+                <p class="mt-0.5 flex items-center gap-1 text-[11px] text-amber-700/80 dark:text-amber-400/80">
+                    <Info :size="11" aria-hidden="true" />
+                    Valor estimado com base nos comprovantes enviados. A pontuação final é definida pelo avaliador.
+                </p>
+            </div>
+        </div>
 
         <p
             v-if="item.candidate_instructions"

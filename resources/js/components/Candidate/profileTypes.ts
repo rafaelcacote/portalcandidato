@@ -44,6 +44,38 @@ export function hasValue(value: unknown): boolean {
     return String(value).trim() !== '';
 }
 
+/** Normalizes `YYYY-MM-DD` for HTML date inputs from ISO strings or Date objects. */
+export function toDateInputValue(value: unknown): string {
+    const text = asText(value);
+
+    if (text === null) {
+        return '';
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+        return text;
+    }
+
+    const date = new Date(text);
+
+    if (Number.isNaN(date.getTime())) {
+        return text.slice(0, 10);
+    }
+
+    return date.toISOString().slice(0, 10);
+}
+
+/** Lowercases sexo values saved with inconsistent casing. */
+export function normalizeSexo(value: unknown): string {
+    const text = asText(value);
+
+    if (text === null) {
+        return '';
+    }
+
+    return text.toLowerCase();
+}
+
 /** Returns the value as a clean string or null when empty. */
 export function asText(value: unknown): string | null {
     if (!hasValue(value)) {

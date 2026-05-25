@@ -628,7 +628,7 @@ const evaluatorsCount = computed(
 
 type SectionKey = 'edital' | 'documentos' | 'titulos' | 'criterios' | 'etapas';
 
-const activeSection = ref<SectionKey>('documentos');
+const activeSection = ref<SectionKey>('edital');
 
 const navSections = computed<
     Array<{

@@ -21,6 +21,7 @@ const emit = defineEmits<{
     'open-observation': [doc: EvaluatorApplicationDocument];
     'open-refuse': [doc: EvaluatorApplicationDocument];
     'patch-document-score': [payload: { application_document_id: number; pontuacao: number }];
+    'document-decision-saved': [documentId: number, status: string];
 }>();
 
 const form = useForm({
@@ -36,7 +37,12 @@ function approve(): void {
             application: props.applicationId,
             applicationDocument: props.document.id,
         }).url,
-        { preserveScroll: true },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                emit('document-decision-saved', props.document.id, 'aprovado');
+            },
+        },
     );
 }
 
@@ -83,40 +89,10 @@ const titleRowMax = computed(() =>
     props.showTitleScoring ? maxPointsForTitleDocumentRow(props.document) : null,
 );
 
-const titleScoreModel = computed({
-    get(): number {
-        const row = props.documentScores?.find((s) => s.application_document_id === props.document.id);
-        return Number(row?.pontuacao ?? 0);
-    },
-    set(value: number): void {
-        emit('patch-document-score', {
-            application_document_id: props.document.id,
-            pontuacao: value,
-        });
-    },
+const titleScoreModel = computed(() => {
+    const row = props.documentScores?.find((s) => s.application_document_id === props.document.id);
+    return Number(row?.pontuacao ?? 0);
 });
-
-function clampTitleScore(raw: number): number {
-    const max = titleRowMax.value;
-    if (max == null || !Number.isFinite(raw)) {
-        return 0;
-    }
-    return Math.min(Math.max(0, raw), max);
-}
-
-function onTitleScoreInput(e: Event): void {
-    const el = e.target as HTMLInputElement;
-    const n = parseFloat(el.value);
-    titleScoreModel.value = clampTitleScore(Number.isFinite(n) ? n : 0);
-}
-
-function onTitleScoreBlur(e: Event): void {
-    const el = e.target as HTMLInputElement;
-    const n = parseFloat(el.value);
-    const clamped = clampTitleScore(Number.isFinite(n) ? n : 0);
-    titleScoreModel.value = clamped;
-    el.value = String(clamped);
-}
 
 function getFileIconClass(filename: string): string {
     const ext = filename.split('.').pop()?.toLowerCase() ?? '';
@@ -181,20 +157,20 @@ function getFileIconClass(filename: string): string {
                         v-if="showTitleScoring && titleRowMax != null && titleRowMax > 0"
                         class="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-violet-50/80 px-2.5 py-2 ring-1 ring-violet-200/60"
                     >
-                        <span class="text-[11px] font-semibold text-violet-800">Pontos (avaliador)</span>
-                        <input
-                            type="number"
-                            :value="titleScoreModel"
-                            :min="0"
-                            :max="titleRowMax"
-                            step="0.01"
-                            class="w-20 rounded-lg border border-violet-200 bg-white px-2 py-1 text-center text-xs font-bold text-slate-800 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-300"
-                            @input="onTitleScoreInput"
-                            @blur="onTitleScoreBlur"
-                        />
-                        <span class="text-[11px] font-medium text-violet-700">
-                            / máx. {{ titleRowMax }}
-                        </span>
+                        <template v-if="document.status === 'aprovado'">
+                            <span class="text-[11px] font-semibold text-violet-800">Pontuação aplicada</span>
+                            <span class="rounded-lg bg-white px-2.5 py-1 text-xs font-bold tabular-nums text-emerald-700 ring-1 ring-emerald-200/80">
+                                {{ titleScoreModel.toFixed(2) }} pts
+                            </span>
+                            <span class="text-[11px] font-medium text-violet-600">
+                                (máx. {{ titleRowMax }} no edital)
+                            </span>
+                        </template>
+                        <template v-else>
+                            <span class="text-[11px] font-medium text-violet-700">
+                                Ao aprovar: até {{ titleRowMax }} pts conforme o edital
+                            </span>
+                        </template>
                     </div>
                 </div>
             </div>

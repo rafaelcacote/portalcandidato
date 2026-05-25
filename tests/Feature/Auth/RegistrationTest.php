@@ -25,6 +25,7 @@ function validCandidateRegistrationPayload(string $email): array
     return [
         'name' => 'Candidato Teste',
         'email' => $email,
+        'email_confirmation' => $email,
         'password' => 'password',
         'password_confirmation' => 'password',
         'data_nascimento' => '1995-06-15',
@@ -138,6 +139,18 @@ test('registration rejects invalid cpf', function () {
     $this->from(route('register'))
         ->post(route('register.store'), $payload)
         ->assertSessionHasErrors('cpf');
+
+    $this->assertGuest();
+});
+
+test('registration rejects mismatched email confirmation with portuguese message', function () {
+    $email = 'cand-email-mismatch-'.uniqid().'@example.com';
+    $payload = validCandidateRegistrationPayload($email);
+    $payload['email_confirmation'] = 'outro-'.uniqid().'@example.com';
+
+    $this->from(route('register'))
+        ->post(route('register.store'), $payload)
+        ->assertSessionHasErrors(['email' => 'A confirmação de e-mail não confere.']);
 
     $this->assertGuest();
 });

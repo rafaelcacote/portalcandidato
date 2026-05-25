@@ -48,8 +48,8 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                 </nav>
             </aside>
 
-            <div class="flex-1 md:max-w-2xl">
-                <section class="max-w-xl space-y-12">
+            <div class="flex-1 md:max-w-4xl">
+                <section class="max-w-3xl space-y-12">
                     <slot />
                 </section>
             </div>

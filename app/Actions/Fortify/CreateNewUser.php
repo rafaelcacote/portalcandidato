@@ -28,6 +28,7 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, $this->candidateRegistrationRules(), [
             'cpf.unique' => 'Este CPF já está cadastrado.',
             'email.unique' => 'Este e-mail já está cadastrado.',
+            'email.confirmed' => 'A confirmação de e-mail não confere.',
         ])->validate();
 
         /** @var UploadedFile $foto */
@@ -82,11 +83,15 @@ class CreateNewUser implements CreatesNewUsers
         $cepRaw = isset($input['cep']) ? preg_replace('/\D/', '', (string) $input['cep']) : '';
 
         $email = isset($input['email']) ? Str::lower(trim((string) $input['email'])) : null;
+        $emailConfirmation = isset($input['email_confirmation'])
+            ? Str::lower(trim((string) $input['email_confirmation']))
+            : null;
 
         return array_merge($input, [
             'cpf' => $cpf,
             'cep' => $cepRaw,
             'email' => $email,
+            'email_confirmation' => $emailConfirmation,
         ]);
     }
 }
