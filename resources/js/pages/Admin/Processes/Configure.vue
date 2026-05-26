@@ -23,11 +23,16 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import Tooltip from 'primevue/tooltip';
 import { useConfirm } from 'primevue/useconfirm';
 import { computed, ref } from 'vue';
+import { formatDateTimeBR } from '@/lib/utils';
 import { edit } from '@/routes/admin/processes';
 import {
     destroy as destroyCriteria,
     store as storeCriteria,
 } from '@/routes/admin/processes/criteria';
+import {
+    destroy as destroyStage,
+    store as storeStage,
+} from '@/routes/admin/processes/stages';
 import {
     destroy as destroyEdital,
     store as storeEdital,
@@ -86,7 +91,13 @@ type SelectionProcess = {
     tipo_programa?: string | null;
     inscricao_inicio_em?: string | null;
     inscricao_fim_em?: string | null;
-    stages?: Array<{ id: number; nome: string; ordem: number }>;
+    stages?: Array<{
+        id: number;
+        nome: string;
+        ordem: number;
+        inicio_em?: string | null;
+        fim_em?: string | null;
+    }>;
     title_groups?: ProcessTitleGroup[];
     required_documents?: Array<{
         id: number;
@@ -513,6 +524,84 @@ const deleteCriteriaAction = (criteriaId: number): void => {
     );
 };
 
+/* ─── Etapas ──────────────────────────────────────────────── */
+
+const nextStageOrder = computed(
+    () => (props.selectionProcess.stages?.length ?? 0) + 1,
+);
+
+const stageForm = useForm({
+    nome: '',
+    ordem: 1,
+    inicio_em: '',
+    fim_em: '',
+});
+const showAddStageForm = ref(false);
+
+const openAddStageForm = (): void => {
+    stageForm.ordem = nextStageOrder.value;
+    showAddStageForm.value = true;
+};
+
+const storeStageAction = (): void => {
+    stageForm.post(storeStage(props.selectionProcess.id).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            stageForm.reset();
+            stageForm.ordem = nextStageOrder.value;
+            showAddStageForm.value = false;
+        },
+    });
+};
+
+const confirmRemoveStage = (stage: {
+    id: number;
+    nome: string;
+}): void => {
+    confirm.require({
+        header: 'Remover etapa',
+        message: `Deseja remover a etapa "${stage.nome}" deste processo?`,
+        icon: 'pi pi-exclamation-triangle',
+        rejectLabel: 'Cancelar',
+        acceptLabel: 'Remover',
+        rejectProps: { outlined: true, icon: 'pi pi-times' },
+        acceptProps: { severity: 'danger', icon: 'pi pi-trash' },
+        accept: () => {
+            router.delete(
+                destroyStage({
+                    selectionProcess: props.selectionProcess.id,
+                    processStage: stage.id,
+                }).url,
+                { preserveScroll: true },
+            );
+        },
+    });
+};
+
+const formatStagePeriod = (
+    inicio?: string | null,
+    fim?: string | null,
+): string | null => {
+    if (!inicio && !fim) {
+        return null;
+    }
+
+    const options = {
+        dateStyle: 'short' as const,
+        timeStyle: 'short' as const,
+    };
+
+    if (inicio && fim) {
+        return `${formatDateTimeBR(inicio, options)} — ${formatDateTimeBR(fim, options)}`;
+    }
+
+    if (inicio) {
+        return `A partir de ${formatDateTimeBR(inicio, options)}`;
+    }
+
+    return `Até ${formatDateTimeBR(fim, options)}`;
+};
+
 /* ─── Helpers ─────────────────────────────────────────────── */
 
 const formatosToList = (formatos?: string[] | null): string[] => {
@@ -549,22 +638,11 @@ const formatScore = (value: string | number): string => {
     });
 };
 
-const formatPeriod = (value?: string | null): string => {
-    if (!value) {
-        return '-';
-    }
-
-    const parsed = new Date(value);
-
-    if (Number.isNaN(parsed.getTime())) {
-        return value;
-    }
-
-    return new Intl.DateTimeFormat('pt-BR', {
+const formatPeriod = (value?: string | null): string =>
+    formatDateTimeBR(value, {
         dateStyle: 'short',
         timeStyle: 'short',
-    }).format(parsed);
-};
+    });
 
 const periodLabel = computed(() => {
     const start = formatPeriod(props.selectionProcess.inscricao_inicio_em);
@@ -2906,24 +2984,182 @@ const completionDoneCount = computed(
                         v-if="activeSection === 'etapas'"
                         class="flex flex-col gap-5"
                     >
-                        <div class="flex items-start gap-3">
-                            <div
-                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600"
-                            >
-                                <Layers :size="20" />
+                        <div
+                            class="flex items-start justify-between gap-4"
+                        >
+                            <div class="flex items-start gap-3">
+                                <div
+                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600"
+                                >
+                                    <Layers :size="20" />
+                                </div>
+                                <div>
+                                    <h2 class="text-lg font-semibold">
+                                        Etapas do Processo
+                                    </h2>
+                                    <p class="text-sm text-muted-foreground">
+                                        Defina a sequência de etapas do processo
+                                        seletivo (inscrições, provas, entrevistas,
+                                        etc.).
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h2 class="text-lg font-semibold">
-                                    Etapas do Processo
-                                </h2>
-                                <p class="text-sm text-muted-foreground">
-                                    Sequência de etapas configuradas para este
-                                    processo seletivo.
-                                </p>
-                            </div>
+                            <Button
+                                v-if="!showAddStageForm"
+                                label="Adicionar"
+                                icon="pi pi-plus"
+                                size="small"
+                                @click="openAddStageForm"
+                            />
+                            <Button
+                                v-else
+                                label="Cancelar"
+                                icon="pi pi-times"
+                                size="small"
+                                outlined
+                                severity="secondary"
+                                @click="showAddStageForm = false"
+                            />
                         </div>
 
-                        <!-- Lista de etapas -->
+                        <Transition name="slide-down">
+                            <div
+                                v-if="showAddStageForm"
+                                class="rounded-xl border bg-muted/20 p-5"
+                            >
+                                <p class="mb-4 text-sm font-semibold">
+                                    Nova etapa
+                                </p>
+                                <Fluid>
+                                    <form
+                                        class="flex flex-col gap-4"
+                                        @submit.prevent="storeStageAction"
+                                    >
+                                        <label class="flex flex-col gap-1.5">
+                                            <span class="text-sm">
+                                                Nome da etapa
+                                                <span class="text-red-600"
+                                                    >*</span
+                                                >
+                                            </span>
+                                            <InputText
+                                                v-model="stageForm.nome"
+                                                placeholder="Ex.: Inscrições"
+                                                :invalid="
+                                                    Boolean(
+                                                        stageForm.errors.nome,
+                                                    )
+                                                "
+                                            />
+                                            <small
+                                                v-if="stageForm.errors.nome"
+                                                class="text-red-600"
+                                                >{{
+                                                    stageForm.errors.nome
+                                                }}</small
+                                            >
+                                        </label>
+                                        <div
+                                            class="grid grid-cols-1 gap-4 md:grid-cols-3"
+                                        >
+                                            <label
+                                                class="flex flex-col gap-1.5"
+                                            >
+                                                <span class="text-sm"
+                                                    >Ordem</span
+                                                >
+                                                <InputNumber
+                                                    v-model="stageForm.ordem"
+                                                    :min="1"
+                                                    :max="999"
+                                                    show-buttons
+                                                    placeholder="Ordem"
+                                                    fluid
+                                                />
+                                                <small
+                                                    v-if="stageForm.errors.ordem"
+                                                    class="text-red-600"
+                                                    >{{
+                                                        stageForm.errors.ordem
+                                                    }}</small
+                                                >
+                                            </label>
+                                            <label
+                                                class="flex flex-col gap-1.5"
+                                            >
+                                                <span class="text-sm"
+                                                    >Início (opcional)</span
+                                                >
+                                                <InputText
+                                                    v-model="
+                                                        stageForm.inicio_em
+                                                    "
+                                                    type="datetime-local"
+                                                    :invalid="
+                                                        Boolean(
+                                                            stageForm.errors
+                                                                .inicio_em,
+                                                        )
+                                                    "
+                                                />
+                                                <small
+                                                    v-if="
+                                                        stageForm.errors
+                                                            .inicio_em
+                                                    "
+                                                    class="text-red-600"
+                                                    >{{
+                                                        stageForm.errors
+                                                            .inicio_em
+                                                    }}</small
+                                                >
+                                            </label>
+                                            <label
+                                                class="flex flex-col gap-1.5"
+                                            >
+                                                <span class="text-sm"
+                                                    >Fim (opcional)</span
+                                                >
+                                                <InputText
+                                                    v-model="stageForm.fim_em"
+                                                    type="datetime-local"
+                                                    :invalid="
+                                                        Boolean(
+                                                            stageForm.errors
+                                                                .fim_em,
+                                                        )
+                                                    "
+                                                />
+                                                <small
+                                                    v-if="
+                                                        stageForm.errors.fim_em
+                                                    "
+                                                    class="text-red-600"
+                                                    >{{
+                                                        stageForm.errors.fim_em
+                                                    }}</small
+                                                >
+                                            </label>
+                                        </div>
+                                        <div class="flex justify-end">
+                                            <Button
+                                                :fluid="false"
+                                                type="submit"
+                                                size="small"
+                                                icon="pi pi-check"
+                                                label="Salvar etapa"
+                                                :loading="stageForm.processing"
+                                                :disabled="
+                                                    !stageForm.nome ||
+                                                    stageForm.processing
+                                                "
+                                            />
+                                        </div>
+                                    </form>
+                                </Fluid>
+                            </div>
+                        </Transition>
+
                         <div class="overflow-hidden rounded-xl border">
                             <div
                                 v-for="(stage, index) in props.selectionProcess
@@ -2937,9 +3173,37 @@ const completionDoneCount = computed(
                                 >
                                     {{ stage.ordem }}
                                 </span>
-                                <p class="text-sm font-medium">
-                                    {{ stage.nome }}
-                                </p>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-medium">
+                                        {{ stage.nome }}
+                                    </p>
+                                    <p
+                                        v-if="
+                                            formatStagePeriod(
+                                                stage.inicio_em,
+                                                stage.fim_em,
+                                            )
+                                        "
+                                        class="text-xs text-muted-foreground"
+                                    >
+                                        {{
+                                            formatStagePeriod(
+                                                stage.inicio_em,
+                                                stage.fim_em,
+                                            )
+                                        }}
+                                    </p>
+                                </div>
+                                <Button
+                                    v-tooltip.left="'Remover etapa'"
+                                    rounded
+                                    text
+                                    severity="danger"
+                                    icon="pi pi-trash"
+                                    size="small"
+                                    aria-label="Remover etapa"
+                                    @click="confirmRemoveStage(stage)"
+                                />
                             </div>
                             <div
                                 v-if="!stagesCount"
@@ -2954,8 +3218,8 @@ const completionDoneCount = computed(
                                 <p
                                     class="max-w-xs text-xs text-muted-foreground"
                                 >
-                                    As etapas são gerenciadas na edição do
-                                    processo.
+                                    Clique em "Adicionar" para cadastrar as
+                                    etapas deste processo.
                                 </p>
                             </div>
                         </div>

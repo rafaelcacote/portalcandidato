@@ -5,12 +5,17 @@ namespace App\Http\Controllers\Modules\Candidate;
 use App\Http\Controllers\Controller;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
+use App\Modules\Admin\Services\SelectionProcessDocumentTemplateService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ApplicationController extends Controller
 {
+    public function __construct(
+        private readonly SelectionProcessDocumentTemplateService $documentTemplateService,
+    ) {}
+
     public function index(Request $request): Response
     {
         return Inertia::render('Candidate/Applications/Index', [
@@ -32,11 +37,23 @@ class ApplicationController extends Controller
             'evaluations.evaluator',
             'selectionProcess' => function ($query): void {
                 $query->with(array_merge(
-                    ['requiredDocuments'],
+                    ['requiredDocuments.tipoDocumento'],
                     SelectionProcess::candidateTitleCatalogEagerLoads(),
                 ));
             },
         ]);
+
+        $selectionProcess = $application->selectionProcess;
+
+        if ($selectionProcess !== null) {
+            $selectionProcess->setRelation(
+                'requiredDocuments',
+                $this->documentTemplateService->sortRequiredDocuments(
+                    $selectionProcess->requiredDocuments,
+                    $selectionProcess->tipo_programa,
+                ),
+            );
+        }
 
         return Inertia::render('Candidate/Applications/Show', [
             'application' => $application,

@@ -6,6 +6,7 @@ use App\Models\Modules\Admin\Models\ProcessRequiredDocument;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Admin\Models\TipoDocumento;
 use App\Modules\Shared\Enums\SelectionProcessProgramType;
+use Illuminate\Support\Collection;
 
 class SelectionProcessDocumentTemplateService
 {
@@ -37,8 +38,6 @@ class SelectionProcessDocumentTemplateService
             : 'diploma_mestrado_enfermagem';
 
         return [
-            'comprovante_pagamento',
-            'comprovante_isencao_taxa',
             'documento_identidade_rg_cnh',
             $diplomaCodigo,
             'certidao_regularidade_coren',
@@ -46,6 +45,8 @@ class SelectionProcessDocumentTemplateService
             'pre_projeto_pesquisa',
             'curriculo_lattes',
             'autodeclaracao_cota_anexo_i',
+            'comprovante_pagamento',
+            'comprovante_isencao_taxa',
         ];
     }
 
@@ -75,6 +76,25 @@ class SelectionProcessDocumentTemplateService
                 'gerado_por_template' => true,
             ]);
         }
+    }
+
+    /**
+     * @param  Collection<int, ProcessRequiredDocument>  $documents
+     * @return Collection<int, ProcessRequiredDocument>
+     */
+    public function sortRequiredDocuments(
+        Collection $documents,
+        ?SelectionProcessProgramType $type,
+    ): Collection {
+        if ($type === null) {
+            return $documents;
+        }
+
+        $order = array_flip($this->orderedCodesFor($type));
+
+        return $documents
+            ->sortBy(fn (ProcessRequiredDocument $document): int => $order[$document->tipoDocumento?->codigo ?? ''] ?? 999)
+            ->values();
     }
 
     public function shouldResyncTemplateDocuments(SelectionProcess $process, ?SelectionProcessProgramType $previousTipo): bool

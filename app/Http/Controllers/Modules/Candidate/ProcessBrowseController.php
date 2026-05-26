@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modules\Candidate;
 use App\Http\Controllers\Controller;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
+use App\Modules\Admin\Services\SelectionProcessDocumentTemplateService;
 use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -12,6 +13,10 @@ use Inertia\Response;
 
 class ProcessBrowseController extends Controller
 {
+    public function __construct(
+        private readonly SelectionProcessDocumentTemplateService $documentTemplateService,
+    ) {}
+
     public function index(Request $request): Response
     {
         $search = $request->string('search')->trim()->value();
@@ -48,9 +53,17 @@ class ProcessBrowseController extends Controller
     public function show(SelectionProcess $selectionProcess, Request $request): Response
     {
         $selectionProcess->load(array_merge(
-            ['stages', 'requiredDocuments', 'criteria'],
+            ['stages', 'requiredDocuments.tipoDocumento', 'criteria'],
             SelectionProcess::candidateTitleCatalogEagerLoads(),
         ));
+
+        $selectionProcess->setRelation(
+            'requiredDocuments',
+            $this->documentTemplateService->sortRequiredDocuments(
+                $selectionProcess->requiredDocuments,
+                $selectionProcess->tipo_programa,
+            ),
+        );
 
         $application = Application::query()
             ->where('selection_process_id', $selectionProcess->id)

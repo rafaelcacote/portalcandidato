@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
-import { Bell } from 'lucide-vue-next';
 import { computed } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -45,20 +44,6 @@ const usesStaffHeader = computed(() => {
         <template v-if="usesStaffHeader">
             <SidebarTrigger class="-ml-0.5 shrink-0" />
             <div class="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    class="relative size-9 rounded-full text-muted-foreground hover:bg-slate-100 hover:text-foreground"
-                    aria-label="Notificações"
-                >
-                    <Bell class="size-[1.15rem]" />
-                    <span
-                        class="absolute -right-0.5 -top-0.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-bold leading-none text-white shadow-sm"
-                    >
-                        3
-                    </span>
-                </Button>
                 <DropdownMenu v-if="auth.user">
                     <DropdownMenuTrigger :as-child="true">
                         <Button

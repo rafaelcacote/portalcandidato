@@ -46,7 +46,7 @@ class SelectionProcess extends Model
 
     public function stages(): HasMany
     {
-        return $this->hasMany(ProcessStage::class);
+        return $this->hasMany(ProcessStage::class)->orderBy('ordem');
     }
 
     public function requiredDocuments(): HasMany

@@ -58,6 +58,14 @@ class SelectionProcessController extends Controller
             'applicationFields',
         ]);
 
+        $selectionProcess->setRelation(
+            'requiredDocuments',
+            $this->documentTemplateService->sortRequiredDocuments(
+                $selectionProcess->requiredDocuments,
+                $selectionProcess->tipo_programa,
+            ),
+        );
+
         return Inertia::render('Admin/Processes/Configure', [
             'selectionProcess' => $selectionProcess,
             'tiposDocumento' => TipoDocumento::query()

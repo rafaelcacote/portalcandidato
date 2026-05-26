@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Modules\Admin;
 
+use App\Http\Requests\Concerns\ParsesDatetimeLocalInAppTimezone;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Modules\Shared\Enums\SelectionProcessProgramType;
 use Illuminate\Foundation\Http\FormRequest;
@@ -10,12 +11,22 @@ use Illuminate\Validation\Validator;
 
 class UpdateSelectionProcessRequest extends FormRequest
 {
+    use ParsesDatetimeLocalInAppTimezone;
+
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->parseDatetimeLocalFields([
+            'inscricao_inicio_em',
+            'inscricao_fim_em',
+        ]);
     }
 
     /**

@@ -11,6 +11,7 @@ import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
+import { toDatetimeLocalInputValue } from '@/lib/utils';
 import { index, store, update } from '@/routes/admin/processes';
 
 const props = defineProps<{ selectionProcess?: Record<string, unknown> }>();
@@ -21,10 +22,12 @@ const form = useForm({
     status: (props.selectionProcess?.status as string) ?? 'rascunho',
     tipo_programa:
         (props.selectionProcess?.tipo_programa as string) ?? 'mestrado',
-    inscricao_inicio_em:
-        (props.selectionProcess?.inscricao_inicio_em as string) ?? '',
-    inscricao_fim_em:
-        (props.selectionProcess?.inscricao_fim_em as string) ?? '',
+    inscricao_inicio_em: toDatetimeLocalInputValue(
+        props.selectionProcess?.inscricao_inicio_em as string | undefined,
+    ),
+    inscricao_fim_em: toDatetimeLocalInputValue(
+        props.selectionProcess?.inscricao_fim_em as string | undefined,
+    ),
 });
 
 const clientErrors = ref<Record<string, string>>({});

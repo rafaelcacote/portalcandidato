@@ -14,6 +14,7 @@ import Tooltip from 'primevue/tooltip';
 import { useConfirm } from 'primevue/useconfirm';
 import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
+import { formatDateTimeBR } from '@/lib/utils';
 import { create, destroy, edit, show } from '@/routes/admin/processes';
 
 const props = defineProps<{
@@ -61,22 +62,6 @@ const filteredProcesses = computed(() => {
         return matchesSearch && matchesStatus;
     });
 });
-
-const formatDateTime = (value?: string | null): string => {
-    if (!value) {
-        return '-';
-    }
-
-    const parsed = new Date(value);
-
-    if (Number.isNaN(parsed.getTime())) {
-        return value;
-    }
-
-    return new Intl.DateTimeFormat('pt-BR', {
-        dateStyle: 'short',
-    }).format(parsed);
-};
 
 const removeProcess = (id: number): void => {
     router.delete(destroy(id).url);
@@ -205,7 +190,7 @@ const confirmRemoveProcess = (id: number): void => {
                             body-class="px-4 py-3 whitespace-nowrap"
                         >
                             <template #body="{ data }">
-                                {{ formatDateTime(data.inscricao_inicio_em) }}
+                                {{ formatDateTimeBR(data.inscricao_inicio_em) }}
                             </template>
                         </Column>
                         <Column
@@ -214,7 +199,7 @@ const confirmRemoveProcess = (id: number): void => {
                             body-class="px-4 py-3 whitespace-nowrap"
                         >
                             <template #body="{ data }">
-                                {{ formatDateTime(data.inscricao_fim_em) }}
+                                {{ formatDateTimeBR(data.inscricao_fim_em) }}
                             </template>
                         </Column>
                         <Column

@@ -25,6 +25,45 @@ test('admin store requires tipo_programa', function () {
         ->assertSessionHasErrors('tipo_programa');
 });
 
+test('template documents list payment proofs last', function () {
+    Role::findOrCreate('admin', 'web');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.processes.store'), [
+            'titulo' => 'PS Ordem Docs',
+            'descricao' => 'D',
+            'regras' => null,
+            'status' => 'rascunho',
+            'tipo_programa' => 'mestrado',
+        ])
+        ->assertRedirect();
+
+    $process = SelectionProcess::query()->where('titulo', 'PS Ordem Docs')->firstOrFail();
+
+    $codigos = ProcessRequiredDocument::query()
+        ->where('selection_process_id', $process->id)
+        ->where('gerado_por_template', true)
+        ->orderBy('id')
+        ->with('tipoDocumento:id,codigo')
+        ->get()
+        ->map(fn (ProcessRequiredDocument $doc) => $doc->tipoDocumento?->codigo)
+        ->all();
+
+    expect($codigos)->toBe([
+        'documento_identidade_rg_cnh',
+        'diploma_graduacao_enfermagem',
+        'certidao_regularidade_coren',
+        'declaracao_vinculo_enfermeiro',
+        'pre_projeto_pesquisa',
+        'curriculo_lattes',
+        'autodeclaracao_cota_anexo_i',
+        'comprovante_pagamento',
+        'comprovante_isencao_taxa',
+    ]);
+});
+
 test('doutorado template uses diploma de mestrado document type', function () {
     Role::findOrCreate('admin', 'web');
     $admin = User::factory()->create(['email_verified_at' => now()]);

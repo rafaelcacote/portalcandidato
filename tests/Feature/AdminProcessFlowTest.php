@@ -70,6 +70,60 @@ test('admin can create and update a selection process', function () {
     expect($process->fresh()->status)->toBe('ativo');
 });
 
+test('registration dates are stored in application timezone', function () {
+    Role::findOrCreate('admin', 'web');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.processes.store'), [
+            'titulo' => 'PS Fuso Horário',
+            'descricao' => 'Teste de fuso horário',
+            'regras' => null,
+            'status' => 'rascunho',
+            'tipo_programa' => 'mestrado',
+            'inscricao_inicio_em' => '2026-05-20T00:00',
+            'inscricao_fim_em' => '2026-05-31T23:59',
+        ])
+        ->assertRedirect();
+
+    $process = SelectionProcess::query()->firstOrFail();
+
+    expect($process->inscricao_inicio_em?->timezone('America/Sao_Paulo')->format('d/m/Y H:i'))
+        ->toBe('20/05/2026 00:00')
+        ->and($process->inscricao_fim_em?->timezone('America/Sao_Paulo')->format('d/m/Y H:i'))
+        ->toBe('31/05/2026 23:59');
+});
+
+test('edit process page exposes registration period dates', function () {
+    Role::findOrCreate('admin', 'web');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+
+    $start = now()->startOfMinute();
+    $end = now()->addDays(30)->startOfMinute();
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS Com Prazo',
+        'descricao' => 'Descrição do processo',
+        'regras' => null,
+        'status' => 'rascunho',
+        'tipo_programa' => 'mestrado',
+        'inscricao_inicio_em' => $start,
+        'inscricao_fim_em' => $end,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.processes.edit', $process))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Admin/Processes/Form')
+            ->where('selectionProcess.id', $process->id)
+            ->where('selectionProcess.inscricao_inicio_em', fn (mixed $value): bool => is_string($value) && $value !== '')
+            ->where('selectionProcess.inscricao_fim_em', fn (mixed $value): bool => is_string($value) && $value !== '')
+        );
+});
+
 test('selection process store rejects end date before start date', function () {
     Role::findOrCreate('admin', 'web');
     $admin = User::factory()->create(['email_verified_at' => now()]);
