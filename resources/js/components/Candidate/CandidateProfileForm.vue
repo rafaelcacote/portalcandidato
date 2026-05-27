@@ -36,6 +36,7 @@ import {
 } from '@/components/Candidate/profileTypes';
 import { getInitials } from '@/composables/useInitials';
 import { cepDigitsOnly, formatCepDisplay, formatCpfDisplay } from '@/lib/brDocuments';
+import { normalizeUploadFile } from '@/lib/uploadFile';
 import { cn } from '@/lib/utils';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import { send } from '@/routes/verification';
@@ -48,7 +49,7 @@ const props = defineProps<{
 }>();
 
 const selectClass: HTMLAttributes['class'] = cn(
-    'border-input h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs outline-none md:text-sm',
+    'border-input h-9 w-full rounded-md border bg-background px-3 py-1 text-base text-foreground shadow-xs outline-none [color-scheme:light] dark:[color-scheme:dark] md:text-sm',
     'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
     'disabled:cursor-not-allowed disabled:opacity-50',
 );
@@ -133,7 +134,7 @@ function onFotoChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
     revokeFotoPreview();
-    form.foto = file;
+    form.foto = file !== null ? normalizeUploadFile(file, 'foto') : null;
     form.clearErrors('foto');
     fotoLoadError.value = false;
     if (file !== null) {
@@ -205,15 +206,10 @@ async function lookupCep(): Promise<void> {
 const debouncedCepLookup = useDebounceFn(lookupCep, 500);
 
 function submit(): void {
-    form
-        .transform((data) => ({
-            ...data,
-            _method: 'patch',
-        }))
-        .post(ProfileController.update.url(), {
-            forceFormData: true,
-            preserveScroll: true,
-        });
+    form.patch(ProfileController.update.url(), {
+        forceFormData: true,
+        preserveScroll: true,
+    });
 }
 
 const activeFotoSrc = computed(() => fotoPreviewUrl.value ?? existingFotoUrl.value);

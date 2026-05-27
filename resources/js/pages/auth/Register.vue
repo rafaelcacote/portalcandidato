@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { cepDigitsOnly, cpfDigitsOnly, formatCepDisplay, isValidCpfDigits } from '@/lib/brDocuments';
+import { normalizeUploadFile } from '@/lib/uploadFile';
 import { cn } from '@/lib/utils';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
@@ -48,7 +49,7 @@ const props = defineProps<{
 const CHECK_CPF_URL = '/register/check-cpf';
 
 const selectClass: HTMLAttributes['class'] = cn(
-    'border-input h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs outline-none md:text-sm',
+    'border-input h-9 w-full rounded-md border bg-background px-3 py-1 text-base text-foreground shadow-xs outline-none [color-scheme:light] dark:[color-scheme:dark] md:text-sm',
     'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
     'disabled:cursor-not-allowed disabled:opacity-50',
 );
@@ -262,10 +263,10 @@ function onFotoChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
     revokeFotoPreview();
-    form.foto = file;
+    form.foto = file !== null ? normalizeUploadFile(file, 'foto') : null;
     form.clearErrors('foto');
     if (file !== null) {
-        fotoPreviewUrl.value = URL.createObjectURL(file);
+        fotoPreviewUrl.value = URL.createObjectURL(form.foto!);
     }
     touch('foto');
 }
