@@ -50,6 +50,11 @@ class HandleInertiaRequests extends Middleware
                 'log_out' => __('ui.log_out', [], 'pt_BR'),
             ],
             'candidateProfileComplete' => $this->candidateProfileComplete($request),
+            'lgpd' => [
+                'data_controller' => config('lgpd.data_controller'),
+                'contact_email' => config('lgpd.contact_email'),
+                'privacy_policy_url' => route('privacy-policy.show'),
+            ],
         ];
     }
 

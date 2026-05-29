@@ -8,8 +8,10 @@ use App\Http\Requests\Modules\Admin\UpdateSelectionProcessRequest;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Admin\Models\TipoDocumento;
 use App\Models\Modules\Admin\Models\TipoTitulo;
+use App\Modules\Admin\Services\ApplicationAppealAdminService;
 use App\Modules\Admin\Services\SelectionProcessDocumentTemplateService;
 use App\Modules\Admin\Services\SelectionProcessTitleTemplateService;
+use App\Modules\Shared\Enums\ApplicationAppealStatus;
 use App\Support\InertiaToast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +23,7 @@ class SelectionProcessController extends Controller
     public function __construct(
         private readonly SelectionProcessDocumentTemplateService $documentTemplateService,
         private readonly SelectionProcessTitleTemplateService $titleTemplateService,
+        private readonly ApplicationAppealAdminService $appealAdminService,
     ) {}
 
     public function index(): Response
@@ -68,6 +71,12 @@ class SelectionProcessController extends Controller
 
         return Inertia::render('Admin/Processes/Configure', [
             'selectionProcess' => $selectionProcess,
+            'processAppeals' => $this->appealAdminService->listForProcess($selectionProcess),
+            'pendingAppealsCount' => $this->appealAdminService->pendingCountForProcess($selectionProcess),
+            'appealStatusOptions' => collect(ApplicationAppealStatus::cases())
+                ->map(fn ($case) => ['value' => $case->value, 'label' => $case->label()])
+                ->values()
+                ->all(),
             'tiposDocumento' => TipoDocumento::query()
                 ->where('status', true)
                 ->orderBy('descricao')

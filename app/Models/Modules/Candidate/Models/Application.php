@@ -47,4 +47,16 @@ class Application extends Model
     {
         return $this->hasMany(ApplicationEvaluation::class);
     }
+
+    public function appeals(): HasMany
+    {
+        return $this->hasMany(ApplicationAppeal::class);
+    }
+
+    public function isFinalizedForDocuments(): bool
+    {
+        return $this->finalizada_em !== null
+            && $this->numero_protocolo !== null
+            && $this->status !== 'rascunho';
+    }
 }

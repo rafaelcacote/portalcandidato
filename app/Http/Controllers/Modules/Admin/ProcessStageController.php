@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Modules\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Modules\Admin\StoreProcessStageRequest;
+use App\Http\Requests\Modules\Admin\UpdateProcessStageRequest;
 use App\Models\Modules\Admin\Models\ProcessStage;
 use App\Models\Modules\Admin\Models\SelectionProcess;
+use App\Support\InertiaToast;
 use Illuminate\Http\RedirectResponse;
 
 class ProcessStageController extends Controller
@@ -17,6 +19,20 @@ class ProcessStageController extends Controller
         $selectionProcess->stages()->create($request->validated());
 
         return back()->with('success', 'Etapa adicionada com sucesso.');
+    }
+
+    public function update(
+        UpdateProcessStageRequest $request,
+        SelectionProcess $selectionProcess,
+        ProcessStage $processStage,
+    ): RedirectResponse {
+        abort_unless($processStage->selection_process_id === $selectionProcess->id, 404);
+
+        $processStage->update($request->validated());
+
+        InertiaToast::success('Etapa atualizada com sucesso.');
+
+        return redirect()->route('admin.processes.show', $selectionProcess);
     }
 
     public function destroy(

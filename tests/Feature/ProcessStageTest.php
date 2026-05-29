@@ -24,6 +24,8 @@ test('admin can add and remove process stages', function (): void {
             'ordem' => 1,
             'inicio_em' => '2026-06-01T08:00',
             'fim_em' => '2026-06-30T23:59',
+            'recurso_inicio_em' => '2026-07-01T08:00',
+            'recurso_fim_em' => '2026-07-05T23:59',
         ])
         ->assertRedirect();
 
@@ -31,7 +33,9 @@ test('admin can add and remove process stages', function (): void {
 
     expect($stage->selection_process_id)->toBe($process->id)
         ->and($stage->nome)->toBe('Inscrições')
-        ->and($stage->ordem)->toBe(1);
+        ->and($stage->ordem)->toBe(1)
+        ->and($stage->recurso_inicio_em)->not->toBeNull()
+        ->and($stage->recurso_fim_em)->not->toBeNull();
 
     $this->actingAs($admin)
         ->delete(route('admin.processes.stages.destroy', [

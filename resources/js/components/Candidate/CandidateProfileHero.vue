@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
 import {
     AtSign,
     BadgeCheck,
@@ -24,9 +23,14 @@ const vTooltip = Tooltip;
 
 const props = defineProps<{
     user: CandidateProfileUser | null;
-    editHref: string;
     isFinalized: boolean;
     isComplete: boolean;
+    /** Abre edição na própria tela (inscrição) em vez de navegar para /perfil. */
+    inlineEdit?: boolean;
+}>();
+
+const emit = defineEmits<{
+    edit: [];
 }>();
 
 const displayName = computed(() => asText(props.user?.name) ?? 'Candidato(a)');
@@ -125,30 +129,26 @@ const isEmailVerified = computed(() => Boolean(asText(props.user?.email_verified
             </div>
 
             <div class="flex w-full shrink-0 items-center gap-2 sm:w-auto sm:flex-col sm:items-end sm:gap-2.5">
-                <Link
-                    v-if="!isFinalized"
-                    :href="editHref"
-                    class="inline-flex w-full sm:w-auto"
+                <Button
+                    v-if="!isFinalized && inlineEdit"
+                    type="button"
+                    size="small"
+                    class="!w-full !rounded-xl !border-0 !bg-foreground !px-3.5 !py-2 !text-[13px] !font-semibold !text-background hover:!bg-foreground/90 sm:!w-auto dark:!bg-primary dark:!text-primary-foreground dark:hover:!bg-primary/90"
+                    @click="emit('edit')"
                 >
-                    <Button
-                        type="button"
-                        size="small"
-                        class="!w-full !rounded-xl !border-0 !bg-foreground !px-3.5 !py-2 !text-[13px] !font-semibold !text-background hover:!bg-foreground/90 sm:!w-auto dark:!bg-primary dark:!text-primary-foreground dark:hover:!bg-primary/90"
-                    >
-                        <template #default>
-                            <span class="flex items-center gap-1.5">
-                                <Pencil :size="14" stroke-width="2.4" aria-hidden="true" />
-                                Editar perfil
-                            </span>
-                        </template>
-                    </Button>
-                </Link>
+                    <template #default>
+                        <span class="flex items-center gap-1.5">
+                            <Pencil :size="14" stroke-width="2.4" aria-hidden="true" />
+                            Editar perfil
+                        </span>
+                    </template>
+                </Button>
 
                 <p
-                    v-tooltip.bottom="'Os dados são gerenciados nas configurações do perfil. As alterações aparecem aqui na próxima visita.'"
+                    v-if="inlineEdit"
                     class="hidden text-right text-[11px] leading-snug text-muted-foreground sm:block sm:max-w-[220px]"
                 >
-                    Os dados desta etapa vêm do seu perfil — somente leitura aqui.
+                    Clique em editar para alterar seus dados sem sair desta inscrição.
                 </p>
             </div>
         </div>

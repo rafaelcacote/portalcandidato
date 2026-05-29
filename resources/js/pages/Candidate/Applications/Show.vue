@@ -14,8 +14,14 @@ import Checkbox from 'primevue/checkbox';
 import Message from 'primevue/message';
 import StepPanel from 'primevue/steppanel';
 import Tag from 'primevue/tag';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import ApplicationModernStepper from '@/components/Candidate/ApplicationModernStepper.vue';
+import ApplicationProfessionalDocuments from '@/components/Candidate/ApplicationProfessionalDocuments.vue';
+import type {
+    AppealRow,
+    AppealStageRow,
+    ProfessionalDocumentRow,
+} from '@/components/Candidate/ApplicationProfessionalDocuments.vue';
 import ApplicationProgressCards from '@/components/Candidate/ApplicationProgressCards.vue';
 import CandidateApplicationHeader from '@/components/Candidate/CandidateApplicationHeader.vue';
 import CandidatePersonalDataPanel from '@/components/Candidate/CandidatePersonalDataPanel.vue';
@@ -29,7 +35,6 @@ import candidateApplications, {
     index as applicationsIndex,
 } from '@/routes/candidate/applications';
 import step from '@/routes/candidate/applications/step';
-import { edit as profileEdit } from '@/routes/profile';
 
 defineOptions({
     layout: {
@@ -53,37 +58,62 @@ type ApplicationDocumentRow = {
     quantidade?: number | null;
 };
 
-const props = defineProps<{
-    application: {
-        id: number;
-        status: string;
-        numero_protocolo: string | null;
-        selection_process_id: number;
-        dados_inscricao?: Record<string, unknown> | null;
-        finalizada_em?: string | null;
-        updated_at?: string | null;
-        selection_process?: {
+const personalDataPanelRef = ref<InstanceType<typeof CandidatePersonalDataPanel> | null>(null);
+
+const props = withDefaults(
+    defineProps<{
+        ufs?: string[];
+        mustVerifyEmail?: boolean;
+        application: {
             id: number;
-            titulo: string;
-            tipo_programa?: string | null;
-            inscricao_fim_em?: string | null;
-            inscricao_inicio_em?: string | null;
-            edital_download_url?: string | null;
-            required_documents?: Array<{
+            status: string;
+            numero_protocolo: string | null;
+            selection_process_id: number;
+            dados_inscricao?: Record<string, unknown> | null;
+            finalizada_em?: string | null;
+            updated_at?: string | null;
+            selection_process?: {
                 id: number;
-                nome: string;
-                obrigatorio: boolean;
-                descricao?: string | null;
-            }>;
-            title_groups?: ProcessTitleGroupRow[];
-        } | null;
-        documents?: ApplicationDocumentRow[];
-    };
-}>();
+                titulo: string;
+                tipo_programa?: string | null;
+                inscricao_fim_em?: string | null;
+                inscricao_inicio_em?: string | null;
+                edital_download_url?: string | null;
+                required_documents?: Array<{
+                    id: number;
+                    nome: string;
+                    obrigatorio: boolean;
+                    descricao?: string | null;
+                }>;
+                title_groups?: ProcessTitleGroupRow[];
+            } | null;
+            documents?: ApplicationDocumentRow[];
+        };
+        professionalDocuments?: ProfessionalDocumentRow[];
+        appealStages?: AppealStageRow[];
+        appeals?: AppealRow[];
+        hasOpenRecursoWindow?: boolean;
+    }>(),
+    {
+        ufs: () => [],
+        mustVerifyEmail: false,
+        professionalDocuments: () => [],
+        appealStages: () => [],
+        appeals: () => [],
+        hasOpenRecursoWindow: false,
+    },
+);
 
 const page = usePage<{ auth: { user: CandidateProfileUser | null } }>();
 
 const profileUser = computed<CandidateProfileUser | null>(() => page.props.auth?.user ?? null);
+
+async function openProfileEditOnStep2(): Promise<void> {
+    activeStep.value = '2';
+    await nextTick();
+    personalDataPanelRef.value?.startEditing();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 const activeStep = ref(props.application.status === 'rascunho' ? '1' : '5');
 
@@ -585,8 +615,10 @@ function formatDate(dateStr: string | null | undefined): string {
                             <StepPanel value="2">
                                 <div class="py-2">
                                     <CandidatePersonalDataPanel
+                                        ref="personalDataPanelRef"
                                         :user="profileUser"
-                                        :edit-href="profileEdit().url"
+                                        :ufs="props.ufs"
+                                        :must-verify-email="props.mustVerifyEmail"
                                         :is-finalized="isFinalized"
                                     />
 
@@ -811,15 +843,14 @@ function formatDate(dateStr: string | null | undefined): string {
                                             <div class="mb-3 flex items-center justify-between">
                                                 <p class="text-sm font-semibold">Perfil cadastral</p>
                                                 <div class="flex gap-1">
-                                                    <Link :href="profileEdit().url">
-                                                        <Button
-                                                            v-if="!isFinalized"
-                                                            label="Editar perfil"
-                                                            icon="pi pi-user"
-                                                            text
-                                                            size="small"
-                                                        />
-                                                    </Link>
+                                                    <Button
+                                                        v-if="!isFinalized"
+                                                        label="Editar perfil"
+                                                        icon="pi pi-user"
+                                                        text
+                                                        size="small"
+                                                        @click="openProfileEditOnStep2"
+                                                    />
                                                     <Button
                                                         v-if="!isFinalized"
                                                         label="Ver etapa"
@@ -993,18 +1024,26 @@ function formatDate(dateStr: string | null | undefined): string {
 
                                         <div
                                             v-else
-                                            class="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/30"
+                                            class="space-y-4"
                                         >
-                                            <div class="flex items-center gap-3">
-                                                <CheckCircle2 :size="20" class="text-green-600 dark:text-green-400" />
-                                                <div>
-                                                    <p class="font-semibold text-green-800 dark:text-green-300">
-                                                        Inscrição finalizada
-                                                    </p>
-                                                    <p class="text-sm text-green-700 dark:text-green-400">
-                                                        Protocolo:
-                                                        <strong>{{ application.numero_protocolo }}</strong>
-                                                    </p>
+                                            <div
+                                                class="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/30"
+                                            >
+                                                <div class="flex items-center gap-3">
+                                                    <CheckCircle2 :size="20" class="text-green-600 dark:text-green-400" />
+                                                    <div>
+                                                        <p class="font-semibold text-green-800 dark:text-green-300">
+                                                            Inscrição finalizada
+                                                        </p>
+                                                        <p class="text-sm text-green-700 dark:text-green-400">
+                                                            Protocolo:
+                                                            <strong>{{ application.numero_protocolo }}</strong>
+                                                        </p>
+                                                        <p class="mt-1 text-xs text-green-700/90 dark:text-green-400/90">
+                                                            Emita comprovantes e declarações na seção abaixo, para fins
+                                                            profissionais.
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1014,6 +1053,15 @@ function formatDate(dateStr: string | null | undefined): string {
                     </ApplicationModernStepper>
                 </template>
             </Card>
+
+            <ApplicationProfessionalDocuments
+                :application-id="application.id"
+                :is-finalized="isFinalized"
+                :professional-documents="professionalDocuments"
+                :appeal-stages="appealStages"
+                :appeals="appeals"
+                :has-open-recurso-window="hasOpenRecursoWindow"
+            />
         </div>
     </div>
 </template>

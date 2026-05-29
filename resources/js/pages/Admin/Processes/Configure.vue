@@ -5,11 +5,16 @@ import {
     CalendarRange,
     FileBadge,
     FileText,
+    Gavel,
     GraduationCap,
     Layers,
     Settings2,
     Users,
 } from 'lucide-vue-next';
+import AdminProcessAppealsPanel from '@/components/Admin/AdminProcessAppealsPanel.vue';
+import type { AppealStatusOption, ProcessAppealRow } from '@/components/Admin/AdminProcessAppealsPanel.vue';
+import AdminProcessStageRecursoEditor from '@/components/Admin/AdminProcessStageRecursoEditor.vue';
+import type { StageRow } from '@/components/Admin/AdminProcessStageRecursoEditor.vue';
 import Button from 'primevue/button';
 import ConfirmDialog from 'primevue/confirmdialog';
 import Fluid from 'primevue/fluid';
@@ -22,7 +27,7 @@ import Textarea from 'primevue/textarea';
 import ToggleSwitch from 'primevue/toggleswitch';
 import Tooltip from 'primevue/tooltip';
 import { useConfirm } from 'primevue/useconfirm';
-import { computed, ref } from 'vue';
+import { computed, ref, useTemplateRef } from 'vue';
 import { formatDateTimeBR } from '@/lib/utils';
 import { edit } from '@/routes/admin/processes';
 import {
@@ -91,13 +96,7 @@ type SelectionProcess = {
     tipo_programa?: string | null;
     inscricao_inicio_em?: string | null;
     inscricao_fim_em?: string | null;
-    stages?: Array<{
-        id: number;
-        nome: string;
-        ordem: number;
-        inicio_em?: string | null;
-        fim_em?: string | null;
-    }>;
+    stages?: StageRow[];
     title_groups?: ProcessTitleGroup[];
     required_documents?: Array<{
         id: number;
@@ -121,10 +120,20 @@ type SelectionProcess = {
     edital_download_url?: string | null;
 };
 
-const props = defineProps<{
-    selectionProcess: SelectionProcess;
-    tiposDocumento: Array<{ id: number; descricao: string }>;
-}>();
+const props = withDefaults(
+    defineProps<{
+        selectionProcess: SelectionProcess;
+        tiposDocumento: Array<{ id: number; descricao: string }>;
+        processAppeals: ProcessAppealRow[];
+        pendingAppealsCount: number;
+        appealStatusOptions: AppealStatusOption[];
+    }>(),
+    {
+        processAppeals: () => [],
+        pendingAppealsCount: 0,
+        appealStatusOptions: () => [],
+    },
+);
 
 const vTooltip = Tooltip;
 const confirm = useConfirm();
@@ -535,8 +544,11 @@ const stageForm = useForm({
     ordem: 1,
     inicio_em: '',
     fim_em: '',
+    recurso_inicio_em: '',
+    recurso_fim_em: '',
 });
 const showAddStageForm = ref(false);
+const stageRecursoEditorRef = useTemplateRef('stageRecursoEditor');
 
 const openAddStageForm = (): void => {
     stageForm.ordem = nextStageOrder.value;
@@ -704,7 +716,7 @@ const evaluatorsCount = computed(
 
 /* ─── Navegação lateral ───────────────────────────────────── */
 
-type SectionKey = 'edital' | 'documentos' | 'titulos' | 'criterios' | 'etapas';
+type SectionKey = 'edital' | 'documentos' | 'titulos' | 'criterios' | 'etapas' | 'recursos';
 
 const activeSection = ref<SectionKey>('edital');
 
@@ -751,6 +763,13 @@ const navSections = computed<
         icon: Layers,
         count: stagesCount.value,
         done: stagesCount.value > 0,
+    },
+    {
+        key: 'recursos',
+        label: 'Recursos',
+        icon: Gavel,
+        count: props.pendingAppealsCount > 0 ? props.pendingAppealsCount : props.processAppeals.length,
+        done: props.pendingAppealsCount === 0,
     },
 ]);
 
@@ -2998,9 +3017,9 @@ const completionDoneCount = computed(
                                         Etapas do Processo
                                     </h2>
                                     <p class="text-sm text-muted-foreground">
-                                        Defina a sequência de etapas do processo
-                                        seletivo (inscrições, provas, entrevistas,
-                                        etc.).
+                                        Defina a sequência de etapas e os prazos de
+                                        recurso. Sem datas de recurso, o sistema abre
+                                        automaticamente 5 dias após o fim de cada etapa.
                                     </p>
                                 </div>
                             </div>
@@ -3141,6 +3160,29 @@ const completionDoneCount = computed(
                                                 >
                                             </label>
                                         </div>
+                                        <div
+                                            class="rounded-lg border border-amber-200/80 bg-amber-50/50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20"
+                                        >
+                                            <p class="mb-3 text-sm font-semibold text-foreground">
+                                                Prazo de recurso (opcional)
+                                            </p>
+                                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                <label class="flex flex-col gap-1.5">
+                                                    <span class="text-sm">Início do recurso</span>
+                                                    <InputText
+                                                        v-model="stageForm.recurso_inicio_em"
+                                                        type="datetime-local"
+                                                    />
+                                                </label>
+                                                <label class="flex flex-col gap-1.5">
+                                                    <span class="text-sm">Fim do recurso</span>
+                                                    <InputText
+                                                        v-model="stageForm.recurso_fim_em"
+                                                        type="datetime-local"
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
                                         <div class="flex justify-end">
                                             <Button
                                                 :fluid="false"
@@ -3159,6 +3201,11 @@ const completionDoneCount = computed(
                                 </Fluid>
                             </div>
                         </Transition>
+
+                        <AdminProcessStageRecursoEditor
+                            ref="stageRecursoEditor"
+                            :selection-process-id="selectionProcess.id"
+                        />
 
                         <div class="overflow-hidden rounded-xl border">
                             <div
@@ -3186,6 +3233,7 @@ const completionDoneCount = computed(
                                         "
                                         class="text-xs text-muted-foreground"
                                     >
+                                        Etapa:
                                         {{
                                             formatStagePeriod(
                                                 stage.inicio_em,
@@ -3193,7 +3241,40 @@ const completionDoneCount = computed(
                                             )
                                         }}
                                     </p>
+                                    <p
+                                        v-if="
+                                            stageRecursoEditorRef?.formatPeriod(
+                                                stage.recurso_inicio_em,
+                                                stage.recurso_fim_em,
+                                            )
+                                        "
+                                        class="text-xs text-amber-700 dark:text-amber-400"
+                                    >
+                                        Recurso:
+                                        {{
+                                            stageRecursoEditorRef?.formatPeriod(
+                                                stage.recurso_inicio_em,
+                                                stage.recurso_fim_em,
+                                            )
+                                        }}
+                                    </p>
+                                    <p
+                                        v-else-if="stage.fim_em"
+                                        class="text-xs text-muted-foreground"
+                                    >
+                                        Recurso: padrão (5 dias após o fim da etapa)
+                                    </p>
                                 </div>
+                                <Button
+                                    v-tooltip.left="'Prazo de recurso'"
+                                    rounded
+                                    text
+                                    severity="secondary"
+                                    icon="pi pi-calendar-clock"
+                                    size="small"
+                                    aria-label="Editar prazo de recurso"
+                                    @click="stageRecursoEditorRef?.openEditor(stage)"
+                                />
                                 <Button
                                     v-tooltip.left="'Remover etapa'"
                                     rounded
@@ -3224,6 +3305,14 @@ const completionDoneCount = computed(
                             </div>
                         </div>
                     </div>
+
+                    <!-- ════════ RECURSOS ════════ -->
+                    <AdminProcessAppealsPanel
+                        v-if="activeSection === 'recursos'"
+                        :selection-process-id="selectionProcess.id"
+                        :appeals="processAppeals"
+                        :appeal-status-options="appealStatusOptions"
+                    />
 
                 </div>
                 <!-- ─── fim conteúdo ──────────────────────────────── -->

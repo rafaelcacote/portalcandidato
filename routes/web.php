@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\RegisterCpfAvailabilityController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\DashboardRedirectController;
+use App\Http\Controllers\Legal\PrivacyPolicyController;
 use App\Http\Controllers\SelectionProcessEditalDownloadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,9 @@ Route::get('/', function (Request $request) {
 
     return redirect()->route('login');
 })->name('home');
+
+Route::get('privacidade', [PrivacyPolicyController::class, 'show'])
+    ->name('privacy-policy.show');
 
 Route::middleware('throttle:40,1')
     ->get('register/check-cpf', RegisterCpfAvailabilityController::class)

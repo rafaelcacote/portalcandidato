@@ -15,6 +15,8 @@ import {
 } from 'lucide-vue-next';
 import Button from 'primevue/button';
 import CandidateHeader from '@/components/Candidate/CandidateHeader.vue';
+import LgpdDataProtectionNotice from '@/components/Lgpd/LgpdDataProtectionNotice.vue';
+import LgpdPrivacyPolicyDialog from '@/components/Lgpd/LgpdPrivacyPolicyDialog.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
@@ -25,6 +27,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -83,7 +86,7 @@ const stepFieldsMap: Record<StepId, string[]> = {
     2: ['name', 'data_nascimento', 'cpf', 'naturalidade', 'nacionalidade', 'sexo'],
     3: ['identidade', 'orgao_emissor', 'identidade_uf', 'identidade_data_emissao'],
     4: ['cep', 'endereco', 'endereco_numero', 'bairro', 'cidade', 'endereco_uf', 'pais'],
-    5: ['telefone', 'email', 'email_confirmation', 'password', 'password_confirmation'],
+    5: ['telefone', 'email', 'email_confirmation', 'password', 'password_confirmation', 'lgpd_consent'],
 };
 
 function touchStepFields(stepId: StepId): void {
@@ -172,6 +175,7 @@ const form = useForm({
     telefone: '',
     telefone_fixo: '',
     foto: null as File | null,
+    lgpd_consent: false,
 });
 
 const blurTouched = ref<Record<string, boolean>>({});
@@ -181,6 +185,7 @@ const cpfCheckStatus = ref<'idle' | 'loading' | 'available' | 'taken' | 'invalid
 const cepLookupLoading = ref(false);
 const cepLookupMessage = ref<string | null>(null);
 const fotoPreviewUrl = ref<string | null>(null);
+const privacyPolicyDialogOpen = ref(false);
 
 function revokeFotoPreview(): void {
     if (fotoPreviewUrl.value !== null) {
@@ -213,6 +218,12 @@ function fieldValue(name: string): string | File | null {
 function isRequiredEmpty(name: string): boolean {
     if (OPTIONAL_FIELDS.has(name)) {
         return false;
+    }
+
+    if (name === 'lgpd_consent') {
+        const record = form as unknown as Record<string, unknown>;
+
+        return record.lgpd_consent !== true;
     }
 
     const v = fieldValue(name);
@@ -428,6 +439,14 @@ const cpfHint = computed((): string | null => {
         <Head title="Cadastro" />
 
         <CandidateHeader class="mb-5 sm:mb-6" />
+
+        <LgpdDataProtectionNotice
+            class="mb-5 sm:mb-6"
+            external-policy-dialog
+            @open-policy="privacyPolicyDialogOpen = true"
+        />
+
+        <LgpdPrivacyPolicyDialog v-model:open="privacyPolicyDialogOpen" />
 
         <!-- ── Indicador de etapas ──────────────────────────────────────────── -->
         <div class="mb-6 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
@@ -1106,6 +1125,50 @@ const cpfHint = computed((): string | null => {
                                 <InputError :message="form.errors.password_confirmation" />
                             </div>
                         </div>
+
+                        <div
+                            class="rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20"
+                        >
+                            <div class="flex gap-3">
+                                <Checkbox
+                                    id="lgpd_consent"
+                                    name="lgpd_consent"
+                                    :checked="form.lgpd_consent === true"
+                                    :aria-invalid="fieldInvalid('lgpd_consent')"
+                                    class="mt-0.5"
+                                    @update:checked="
+                                        (checked) => {
+                                            form.lgpd_consent = checked === true;
+                                            touch('lgpd_consent');
+                                            form.clearErrors('lgpd_consent');
+                                        }
+                                    "
+                                />
+                                <div class="min-w-0 space-y-1">
+                                    <Label
+                                        for="lgpd_consent"
+                                        class="cursor-pointer text-sm leading-snug font-medium text-foreground"
+                                    >
+                                        Li e concordo com o tratamento dos meus dados pessoais e sensíveis
+                                        conforme a LGPD (Lei nº 13.709/2018) e a
+                                        <button
+                                            type="button"
+                                            class="text-primary underline underline-offset-2"
+                                            @click.stop="privacyPolicyDialogOpen = true"
+                                        >
+                                            Política de Privacidade
+                                        </button>.
+                                    </Label>
+                                    <InputError :message="form.errors.lgpd_consent" />
+                                    <p
+                                        v-if="fieldInvalid('lgpd_consent') && !form.errors.lgpd_consent"
+                                        class="text-xs text-destructive"
+                                    >
+                                        É necessário aceitar o tratamento de dados para criar a conta.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </template>
@@ -1147,9 +1210,20 @@ const cpfHint = computed((): string | null => {
                 </div>
             </div>
 
-            <div class="text-center text-sm text-muted-foreground">
-                Já tem conta?
-                <TextLink :href="login()" class="underline underline-offset-4">Entrar</TextLink>
+            <div class="space-y-2 text-center text-sm text-muted-foreground">
+                <p>
+                    Já tem conta?
+                    <TextLink :href="login()" class="underline underline-offset-4">Entrar</TextLink>
+                </p>
+                <p class="text-xs">
+                    <button
+                        type="button"
+                        class="underline decoration-muted-foreground/40 underline-offset-2 hover:text-foreground"
+                        @click="privacyPolicyDialogOpen = true"
+                    >
+                        Política de Privacidade (LGPD)
+                    </button>
+                </p>
             </div>
         </form>
     </div>

@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Modules\Admin\Models\SelectionProcess;
+use App\Models\Modules\Candidate\Models\Application;
 use App\Models\User;
 use App\Support\BrazilianStates;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -74,6 +76,7 @@ test('candidate can update personal profile information', function () {
     $payload = validCandidateProfileUpdatePayload('novo-email-perfil@example.com');
 
     $this->actingAs($user)
+        ->from(route('profile.edit'))
         ->patch(route('profile.update'), $payload)
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('profile.edit'));
@@ -86,6 +89,31 @@ test('candidate can update personal profile information', function () {
     expect($user->cidade)->toBe('Rio de Janeiro');
     expect($user->cep)->toBe('22041080');
     expect($user->email_verified_at)->toBeNull();
+});
+
+test('candidate profile update can return to enrollment page when stay_on_page is set', function () {
+    $user = User::factory()->completeCandidateProfile()->create();
+    $user->assignRole('candidato');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Processo teste',
+        'descricao' => 'Descrição',
+        'status' => 'ativo',
+    ]);
+
+    $application = Application::query()->create([
+        'user_id' => $user->id,
+        'selection_process_id' => $process->id,
+        'status' => 'rascunho',
+    ]);
+
+    $payload = validCandidateProfileUpdatePayload($user->email);
+
+    $this->actingAs($user)
+        ->from(route('candidate.applications.show', $application))
+        ->patch(route('profile.update', ['stay_on_page' => 1]), $payload)
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('candidate.applications.show', $application));
 });
 
 test('candidate can replace profile photo', function () {

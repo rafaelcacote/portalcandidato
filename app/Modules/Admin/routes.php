@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Modules\Admin\AdminDashboardController;
 use App\Http\Controllers\Modules\Admin\EvaluatorController;
+use App\Http\Controllers\Modules\Admin\ProcessApplicationAppealController;
 use App\Http\Controllers\Modules\Admin\ProcessApplicationFieldController;
 use App\Http\Controllers\Modules\Admin\ProcessCriteriaController;
 use App\Http\Controllers\Modules\Admin\ProcessRequiredDocumentController;
@@ -80,8 +81,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             ->name('processes.criteria.destroy');
         Route::post('processes/{selectionProcess}/stages', [ProcessStageController::class, 'store'])
             ->name('processes.stages.store');
+        Route::put('processes/{selectionProcess}/stages/{processStage}', [ProcessStageController::class, 'update'])
+            ->name('processes.stages.update');
         Route::delete('processes/{selectionProcess}/stages/{processStage}', [ProcessStageController::class, 'destroy'])
             ->name('processes.stages.destroy');
+        Route::put('processes/{selectionProcess}/appeals/{applicationAppeal}', [ProcessApplicationAppealController::class, 'update'])
+            ->name('processes.appeals.update');
         Route::post('processes/{selectionProcess}/application-fields', [ProcessApplicationFieldController::class, 'store'])
             ->name('processes.application-fields.store');
         Route::delete('processes/{selectionProcess}/application-fields/{processApplicationField}', [ProcessApplicationFieldController::class, 'destroy'])

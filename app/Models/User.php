@@ -81,6 +81,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'lgpd_consent_at' => 'datetime',
             'data_nascimento' => 'date',
             'identidade_data_emissao' => 'date',
             'ativo' => 'boolean',

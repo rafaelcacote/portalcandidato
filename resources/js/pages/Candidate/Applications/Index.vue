@@ -28,6 +28,7 @@ defineProps<{
             status: string;
             numero_protocolo: string | null;
             finalizada_em: string | null;
+            comprovante_url?: string | null;
             created_at: string;
             selection_process?: { id: number; titulo: string; orgao?: string | null } | null;
             documents_count?: number;
@@ -179,6 +180,23 @@ function formatDate(dateStr: string | null | undefined): string {
 
                             <!-- Status e ações -->
                             <div class="flex shrink-0 items-center gap-2">
+                                <a
+                                    v-if="application.comprovante_url"
+                                    v-tooltip.top="'Comprovante de inscrição (PDF)'"
+                                    :href="application.comprovante_url"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex"
+                                    @click.stop
+                                >
+                                    <Button
+                                        icon="pi pi-file-pdf"
+                                        rounded
+                                        text
+                                        size="small"
+                                        severity="secondary"
+                                    />
+                                </a>
                                 <Tag
                                     :value="statusLabel[application.status] ?? application.status"
                                     :severity="statusSeverity[application.status] ?? 'secondary'"

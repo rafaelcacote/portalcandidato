@@ -16,9 +16,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import LgpdPrivacyPolicyDialog from '@/components/Lgpd/LgpdPrivacyPolicyDialog.vue';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
+import { ref } from 'vue';
 
 defineOptions({
     layout: {
@@ -34,6 +36,8 @@ defineProps<{
     canResetPassword: boolean;
     canRegister: boolean;
 }>();
+
+const privacyPolicyDialogOpen = ref(false);
 </script>
 
 <template>
@@ -95,7 +99,7 @@ defineProps<{
                     >
                         <Shield :size="15" class="shrink-0 text-emerald-700" />
                         <span class="text-left sm:text-center lg:text-left">
-                            Conexão segura. Seus dados são protegidos.
+                            Conexão segura (HTTPS). Tratamento de dados conforme a LGPD.
                         </span>
                     </div>
 
@@ -107,8 +111,9 @@ defineProps<{
                                 <Lock :size="18" stroke-width="2.25" />
                             </div>
                             <p class="text-[13px] leading-relaxed text-slate-600 sm:text-[15px]">
-                                <span class="font-semibold text-slate-900">Acesso seguro</span>
-                                — Seus dados pessoais protegidos com criptografia de ponta.
+                                <span class="font-semibold text-slate-900">Proteção de dados (LGPD)</span>
+                                — Dados pessoais e sensíveis tratados com segurança, em conformidade com a
+                                Lei nº 13.709/2018.
                             </p>
                         </li>
                         <li class="flex gap-3 sm:gap-4">
@@ -275,7 +280,19 @@ defineProps<{
                                 Cadastre-se
                             </TextLink>
                         </p>
+
+                        <p class="text-center text-xs text-slate-500 dark:text-slate-400">
+                            <button
+                                type="button"
+                                class="underline decoration-slate-400/50 underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
+                                @click="privacyPolicyDialogOpen = true"
+                            >
+                                Política de Privacidade (LGPD)
+                            </button>
+                        </p>
                     </Form>
+
+                    <LgpdPrivacyPolicyDialog v-model:open="privacyPolicyDialogOpen" />
                 </div>
             </div>
         </div>

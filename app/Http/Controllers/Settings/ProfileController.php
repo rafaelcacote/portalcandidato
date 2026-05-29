@@ -154,6 +154,10 @@ class ProfileController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Perfil atualizado com sucesso.']);
 
+        if ($request->boolean('stay_on_page')) {
+            return back();
+        }
+
         return to_route('profile.edit');
     }
 

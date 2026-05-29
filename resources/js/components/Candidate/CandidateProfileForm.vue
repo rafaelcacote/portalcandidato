@@ -15,6 +15,7 @@ import {
     UploadCloud,
 } from 'lucide-vue-next';
 import CandidateProfileCompletion from '@/components/Candidate/CandidateProfileCompletion.vue';
+import LgpdDataProtectionNotice from '@/components/Lgpd/LgpdDataProtectionNotice.vue';
 import InputError from '@/components/InputError.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -41,12 +42,31 @@ import { cn } from '@/lib/utils';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import { send } from '@/routes/verification';
 
-const props = defineProps<{
-    profile: CandidateProfileUser;
-    ufs: string[];
-    mustVerifyEmail: boolean;
-    status?: string;
+const props = withDefaults(
+    defineProps<{
+        profile: CandidateProfileUser;
+        ufs: string[];
+        mustVerifyEmail: boolean;
+        status?: string;
+        /** Exibe formulário embutido na inscrição (sem navegação de seções). */
+        embedded?: boolean;
+        /** Prefixo para ids de campos quando há mais de um formulário na página. */
+        idPrefix?: string;
+    }>(),
+    {
+        embedded: false,
+        idPrefix: '',
+    },
+);
+
+const emit = defineEmits<{
+    saved: [];
+    cancel: [];
 }>();
+
+function fieldId(name: string): string {
+    return props.idPrefix ? `${props.idPrefix}${name}` : name;
+}
 
 const selectClass: HTMLAttributes['class'] = cn(
     'border-input h-9 w-full rounded-md border bg-background px-3 py-1 text-base text-foreground shadow-xs outline-none [color-scheme:light] dark:[color-scheme:dark] md:text-sm',
@@ -195,7 +215,7 @@ async function lookupCep(): Promise<void> {
         form.pais = 'Brasil';
         cepLookupMessage.value = 'Endereço preenchido a partir do CEP.';
         await nextTick();
-        document.getElementById('endereco_numero')?.focus();
+        document.getElementById(fieldId('endereco_numero'))?.focus();
     } catch {
         cepLookupMessage.value = 'Não foi possível consultar o CEP. Tente novamente.';
     } finally {
@@ -206,10 +226,27 @@ async function lookupCep(): Promise<void> {
 const debouncedCepLookup = useDebounceFn(lookupCep, 500);
 
 function submit(): void {
-    form.patch(ProfileController.update.url(), {
-        forceFormData: true,
+    const url = props.embedded
+        ? `${ProfileController.update.url()}?stay_on_page=1`
+        : ProfileController.update.url();
+
+    const hasNewPhoto = form.foto instanceof File;
+
+    // Multipart só quando há arquivo: com PATCH + FormData sem foto o PHP/Laravel
+    // frequentemente não recebe os campos e retorna "obrigatório" em tudo.
+    form.patch(url, {
+        forceFormData: hasNewPhoto,
         preserveScroll: true,
+        // Na inscrição, preserveState restaurava isEditing=true após o redirect.
+        preserveState: !props.embedded,
+        onSuccess: () => {
+            emit('saved');
+        },
     });
+}
+
+function cancelEdit(): void {
+    emit('cancel');
 }
 
 const activeFotoSrc = computed(() => fotoPreviewUrl.value ?? existingFotoUrl.value);
@@ -220,6 +257,7 @@ const avatarInitials = computed(() => getInitials(displayName.value));
 <template>
     <div class="space-y-6">
         <CandidateProfileCompletion
+            v-if="!embedded"
             :filled="completion.filled"
             :total="completion.total"
             :percent="completion.percent"
@@ -228,6 +266,7 @@ const avatarInitials = computed(() => getInitials(displayName.value));
         />
 
         <nav
+            v-if="!embedded"
             class="sticky top-0 z-10 -mx-1 flex gap-1 overflow-x-auto rounded-xl border bg-background/95 px-1 py-1.5 backdrop-blur supports-[backdrop-filter]:bg-background/80"
             aria-label="Seções do perfil"
         >
@@ -251,10 +290,13 @@ const avatarInitials = computed(() => getInitials(displayName.value));
             </a>
         </nav>
 
+        <LgpdDataProtectionNotice variant="compact" class="mb-2" />
+
         <form class="flex flex-col gap-6" @submit.prevent="submit">
             <Card
-                id="perfil-foto"
-                class="scroll-mt-24 overflow-hidden border-border/80 shadow-sm"
+                :id="embedded ? undefined : 'perfil-foto'"
+                class="overflow-hidden border-border/80 shadow-sm"
+                :class="embedded ? '' : 'scroll-mt-24'"
             >
                 <CardHeader class="space-y-1 border-b border-border/60 bg-muted/30 pb-4">
                     <div class="flex items-center gap-2">
@@ -298,7 +340,7 @@ const avatarInitials = computed(() => getInitials(displayName.value));
                                 A foto é usada na sua inscrição.
                             </p>
                             <label
-                                for="foto"
+                                :for="fieldId('foto')"
                                 class="mt-2.5 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/50 hover:bg-primary/5"
                             >
                                 <UploadCloud :size="13" aria-hidden="true" />
@@ -308,7 +350,7 @@ const avatarInitials = computed(() => getInitials(displayName.value));
                     </div>
 
                     <input
-                        id="foto"
+                        :id="fieldId('foto')"
                         type="file"
                         name="foto"
                         accept="image/jpeg,image/png,image/webp"
@@ -320,8 +362,9 @@ const avatarInitials = computed(() => getInitials(displayName.value));
             </Card>
 
             <Card
-                id="perfil-pessoais"
-                class="scroll-mt-24 overflow-hidden border-border/80 shadow-sm"
+                :id="embedded ? undefined : 'perfil-pessoais'"
+                class="overflow-hidden border-border/80 shadow-sm"
+                :class="embedded ? '' : 'scroll-mt-24'"
             >
                 <CardHeader class="space-y-1 border-b border-border/60 bg-muted/30 pb-4">
                     <div class="flex items-center gap-2">
@@ -341,14 +384,14 @@ const avatarInitials = computed(() => getInitials(displayName.value));
                 <CardContent class="space-y-5 pt-5">
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2 sm:col-span-2">
-                            <Label for="name">Nome completo *</Label>
-                            <Input id="name" v-model="form.name" name="name" autocomplete="name" />
+                            <Label :for="fieldId('name')">Nome completo *</Label>
+                            <Input :id="fieldId('name')" v-model="form.name" name="name" autocomplete="name" />
                             <InputError :message="form.errors.name" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="data_nascimento">Data de nascimento *</Label>
+                            <Label :for="fieldId('data_nascimento')">Data de nascimento *</Label>
                             <Input
-                                id="data_nascimento"
+                                :id="fieldId('data_nascimento')"
                                 v-model="form.data_nascimento"
                                 type="date"
                                 name="data_nascimento"
@@ -356,10 +399,10 @@ const avatarInitials = computed(() => getInitials(displayName.value));
                             <InputError :message="form.errors.data_nascimento" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="cpf-display">CPF</Label>
+                            <Label :for="fieldId('cpf-display')">CPF</Label>
                             <div class="relative">
                                 <Input
-                                    id="cpf-display"
+                                    :id="fieldId('cpf-display')"
                                     :model-value="cpfDisplay"
                                     type="text"
                                     disabled
@@ -375,18 +418,18 @@ const avatarInitials = computed(() => getInitials(displayName.value));
                             </p>
                         </div>
                         <div class="grid gap-2">
-                            <Label for="naturalidade">Naturalidade *</Label>
-                            <Input id="naturalidade" v-model="form.naturalidade" name="naturalidade" />
+                            <Label :for="fieldId('naturalidade')">Naturalidade *</Label>
+                            <Input :id="fieldId('naturalidade')" v-model="form.naturalidade" name="naturalidade" />
                             <InputError :message="form.errors.naturalidade" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="nacionalidade">Nacionalidade *</Label>
-                            <Input id="nacionalidade" v-model="form.nacionalidade" name="nacionalidade" />
+                            <Label :for="fieldId('nacionalidade')">Nacionalidade *</Label>
+                            <Input :id="fieldId('nacionalidade')" v-model="form.nacionalidade" name="nacionalidade" />
                             <InputError :message="form.errors.nacionalidade" />
                         </div>
                         <div class="grid gap-2 sm:col-span-2">
-                            <Label for="sexo">Sexo *</Label>
-                            <select id="sexo" v-model="form.sexo" name="sexo" :class="selectClass">
+                            <Label :for="fieldId('sexo')">Sexo *</Label>
+                            <select :id="fieldId('sexo')" v-model="form.sexo" name="sexo" :class="selectClass">
                                 <option disabled value="">Selecione</option>
                                 <option value="masculino">Masculino</option>
                                 <option value="feminino">Feminino</option>
@@ -400,8 +443,9 @@ const avatarInitials = computed(() => getInitials(displayName.value));
             </Card>
 
             <Card
-                id="perfil-documento"
-                class="scroll-mt-24 overflow-hidden border-border/80 shadow-sm"
+                :id="embedded ? undefined : 'perfil-documento'"
+                class="overflow-hidden border-border/80 shadow-sm"
+                :class="embedded ? '' : 'scroll-mt-24'"
             >
                 <CardHeader class="space-y-1 border-b border-border/60 bg-muted/30 pb-4">
                     <div class="flex items-center gap-2">
@@ -421,19 +465,19 @@ const avatarInitials = computed(() => getInitials(displayName.value));
                 <CardContent class="pt-5">
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
-                            <Label for="identidade">Identidade (RG) *</Label>
-                            <Input id="identidade" v-model="form.identidade" name="identidade" />
+                            <Label :for="fieldId('identidade')">Identidade (RG) *</Label>
+                            <Input :id="fieldId('identidade')" v-model="form.identidade" name="identidade" />
                             <InputError :message="form.errors.identidade" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="orgao_emissor">Órgão emissor *</Label>
-                            <Input id="orgao_emissor" v-model="form.orgao_emissor" name="orgao_emissor" />
+                            <Label :for="fieldId('orgao_emissor')">Órgão emissor *</Label>
+                            <Input :id="fieldId('orgao_emissor')" v-model="form.orgao_emissor" name="orgao_emissor" />
                             <InputError :message="form.errors.orgao_emissor" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="identidade_uf">UF (identidade) *</Label>
+                            <Label :for="fieldId('identidade_uf')">UF (identidade) *</Label>
                             <select
-                                id="identidade_uf"
+                                :id="fieldId('identidade_uf')"
                                 v-model="form.identidade_uf"
                                 name="identidade_uf"
                                 :class="selectClass"
@@ -446,9 +490,9 @@ const avatarInitials = computed(() => getInitials(displayName.value));
                             <InputError :message="form.errors.identidade_uf" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="identidade_data_emissao">Data de emissão *</Label>
+                            <Label :for="fieldId('identidade_data_emissao')">Data de emissão *</Label>
                             <Input
-                                id="identidade_data_emissao"
+                                :id="fieldId('identidade_data_emissao')"
                                 v-model="form.identidade_data_emissao"
                                 type="date"
                                 name="identidade_data_emissao"
@@ -460,8 +504,9 @@ const avatarInitials = computed(() => getInitials(displayName.value));
             </Card>
 
             <Card
-                id="perfil-endereco"
-                class="scroll-mt-24 overflow-hidden border-border/80 shadow-sm"
+                :id="embedded ? undefined : 'perfil-endereco'"
+                class="overflow-hidden border-border/80 shadow-sm"
+                :class="embedded ? '' : 'scroll-mt-24'"
             >
                 <CardHeader class="space-y-1 border-b border-border/60 bg-muted/30 pb-4">
                     <div class="flex items-center gap-2">
@@ -483,11 +528,11 @@ const avatarInitials = computed(() => getInitials(displayName.value));
                         class="rounded-xl border border-dashed border-primary/25 bg-primary/[0.03] p-4"
                     >
                         <div class="grid gap-2">
-                            <Label for="cep">CEP *</Label>
+                            <Label :for="fieldId('cep')">CEP *</Label>
                             <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                                 <div class="relative min-w-0 flex-1">
                                     <Input
-                                        id="cep"
+                                        :id="fieldId('cep')"
                                         :model-value="formatCepDisplay(form.cep)"
                                         inputmode="numeric"
                                         maxlength="9"
@@ -521,28 +566,28 @@ const avatarInitials = computed(() => getInitials(displayName.value));
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2 sm:col-span-2">
-                            <Label for="endereco">Logradouro *</Label>
-                            <Input id="endereco" v-model="form.endereco" name="endereco" />
+                            <Label :for="fieldId('endereco')">Logradouro *</Label>
+                            <Input :id="fieldId('endereco')" v-model="form.endereco" name="endereco" />
                             <InputError :message="form.errors.endereco" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="endereco_numero">Número *</Label>
-                            <Input id="endereco_numero" v-model="form.endereco_numero" name="endereco_numero" />
+                            <Label :for="fieldId('endereco_numero')">Número *</Label>
+                            <Input :id="fieldId('endereco_numero')" v-model="form.endereco_numero" name="endereco_numero" />
                             <InputError :message="form.errors.endereco_numero" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="bairro">Bairro *</Label>
-                            <Input id="bairro" v-model="form.bairro" name="bairro" />
+                            <Label :for="fieldId('bairro')">Bairro *</Label>
+                            <Input :id="fieldId('bairro')" v-model="form.bairro" name="bairro" />
                             <InputError :message="form.errors.bairro" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="cidade">Cidade *</Label>
-                            <Input id="cidade" v-model="form.cidade" name="cidade" />
+                            <Label :for="fieldId('cidade')">Cidade *</Label>
+                            <Input :id="fieldId('cidade')" v-model="form.cidade" name="cidade" />
                             <InputError :message="form.errors.cidade" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="endereco_uf">UF *</Label>
-                            <select id="endereco_uf" v-model="form.endereco_uf" name="endereco_uf" :class="selectClass">
+                            <Label :for="fieldId('endereco_uf')">UF *</Label>
+                            <select :id="fieldId('endereco_uf')" v-model="form.endereco_uf" name="endereco_uf" :class="selectClass">
                                 <option disabled value="">Selecione</option>
                                 <option v-for="uf in ufs" :key="`ed-${uf}`" :value="uf">
                                     {{ uf }}
@@ -551,8 +596,8 @@ const avatarInitials = computed(() => getInitials(displayName.value));
                             <InputError :message="form.errors.endereco_uf" />
                         </div>
                         <div class="grid gap-2 sm:col-span-2">
-                            <Label for="pais">País *</Label>
-                            <Input id="pais" v-model="form.pais" name="pais" />
+                            <Label :for="fieldId('pais')">País *</Label>
+                            <Input :id="fieldId('pais')" v-model="form.pais" name="pais" />
                             <InputError :message="form.errors.pais" />
                         </div>
                     </div>
@@ -560,8 +605,9 @@ const avatarInitials = computed(() => getInitials(displayName.value));
             </Card>
 
             <Card
-                id="perfil-contato"
-                class="scroll-mt-24 overflow-hidden border-border/80 shadow-sm"
+                :id="embedded ? undefined : 'perfil-contato'"
+                class="overflow-hidden border-border/80 shadow-sm"
+                :class="embedded ? '' : 'scroll-mt-24'"
             >
                 <CardHeader class="space-y-1 border-b border-border/60 bg-muted/30 pb-4">
                     <div class="flex items-center gap-2">
@@ -581,23 +627,23 @@ const avatarInitials = computed(() => getInitials(displayName.value));
                 <CardContent class="space-y-5 pt-5">
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
-                            <Label for="telefone">Telefone celular *</Label>
-                            <Input id="telefone" v-model="form.telefone" name="telefone" type="tel" />
+                            <Label :for="fieldId('telefone')">Telefone celular *</Label>
+                            <Input :id="fieldId('telefone')" v-model="form.telefone" name="telefone" type="tel" />
                             <InputError :message="form.errors.telefone" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="telefone_fixo">Telefone fixo</Label>
-                            <Input id="telefone_fixo" v-model="form.telefone_fixo" name="telefone_fixo" type="tel" />
+                            <Label :for="fieldId('telefone_fixo')">Telefone fixo</Label>
+                            <Input :id="fieldId('telefone_fixo')" v-model="form.telefone_fixo" name="telefone_fixo" type="tel" />
                             <InputError :message="form.errors.telefone_fixo" />
                         </div>
                         <div class="grid gap-2 sm:col-span-2">
-                            <Label for="email">
+                            <Label :for="fieldId('email')">
                                 <span class="inline-flex items-center gap-1.5">
                                     <Mail :size="14" class="text-muted-foreground" />
                                     E-mail *
                                 </span>
                             </Label>
-                            <Input id="email" v-model="form.email" name="email" type="email" autocomplete="username" />
+                            <Input :id="fieldId('email')" v-model="form.email" name="email" type="email" autocomplete="username" />
                             <InputError :message="form.errors.email" />
                             <p
                                 v-if="isEmailVerified"
@@ -629,14 +675,30 @@ const avatarInitials = computed(() => getInitials(displayName.value));
             </Card>
 
             <div
-                class="sticky bottom-0 z-10 flex flex-col gap-3 rounded-xl border bg-background/95 p-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between supports-[backdrop-filter]:bg-background/80"
+                class="flex flex-col gap-3 rounded-xl border bg-background/95 p-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between supports-[backdrop-filter]:bg-background/80"
+                :class="embedded ? '' : 'sticky bottom-0 z-10'"
             >
                 <p class="text-sm text-muted-foreground">
-                    Revise os dados antes de salvar. Alterações no e-mail exigem nova verificação.
+                    {{
+                        embedded
+                            ? 'Salve para atualizar os dados desta inscrição. Você também pode cancelar e seguir para a próxima etapa.'
+                            : 'Revise os dados antes de salvar. Alterações no e-mail exigem nova verificação.'
+                    }}
                 </p>
-                <Button type="submit" :disabled="form.processing" data-test="update-profile-button">
-                    {{ form.processing ? 'Salvando…' : 'Salvar perfil' }}
-                </Button>
+                <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    <Button
+                        v-if="embedded"
+                        type="button"
+                        variant="outline"
+                        :disabled="form.processing"
+                        @click="cancelEdit"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button type="submit" :disabled="form.processing" data-test="update-profile-button">
+                        {{ form.processing ? 'Salvando…' : 'Salvar alterações' }}
+                    </Button>
+                </div>
             </div>
         </form>
     </div>
