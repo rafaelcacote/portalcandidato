@@ -29,19 +29,7 @@ test('lgpd config is shared with inertia pages', function () {
         );
 });
 
-test('registration requires lgpd consent', function () {
-    $this->skipUnlessFortifyHas(Features::registration());
-
-    $payload = validCandidateRegistrationPayload('lgpd-'.uniqid().'@example.com');
-    unset($payload['lgpd_consent']);
-
-    $this->post(route('register.store'), $payload)
-        ->assertSessionHasErrors('lgpd_consent');
-
-    expect(User::query()->where('email', $payload['email'])->exists())->toBeFalse();
-});
-
-test('registration stores lgpd consent timestamp', function () {
+test('registration stores lgpd consent timestamp on account creation', function () {
     $this->skipUnlessFortifyHas(Features::registration());
 
     Notification::fake();
@@ -49,7 +37,6 @@ test('registration stores lgpd consent timestamp', function () {
 
     $email = 'lgpd-consent-'.uniqid().'@example.com';
     $payload = validCandidateRegistrationPayload($email);
-    $payload['lgpd_consent'] = true;
 
     $this->post(route('register.store'), $payload)
         ->assertRedirect(route('verification.notice', absolute: false));

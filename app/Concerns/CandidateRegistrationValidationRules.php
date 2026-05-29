@@ -41,7 +41,6 @@ trait CandidateRegistrationValidationRules
             'telefone' => ['required', 'string', 'max:25'],
             'telefone_fixo' => ['nullable', 'string', 'max:25'],
             'foto' => ['required', 'image', 'max:5120'],
-            'lgpd_consent' => ['required', 'accepted'],
         ];
     }
 }

@@ -29,7 +29,6 @@ class CreateNewUser implements CreatesNewUsers
             'cpf.unique' => 'Este CPF já está cadastrado.',
             'email.unique' => 'Este e-mail já está cadastrado.',
             'email.confirmed' => 'A confirmação de e-mail não confere.',
-            'lgpd_consent.accepted' => 'É necessário aceitar o tratamento de dados conforme a LGPD.',
         ])->validate();
 
         /** @var UploadedFile $foto */
