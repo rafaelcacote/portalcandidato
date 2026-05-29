@@ -52,10 +52,13 @@ const props = withDefaults(
         embedded?: boolean;
         /** Prefixo para ids de campos quando há mais de um formulário na página. */
         idPrefix?: string;
+        /** Etapa da inscrição a restaurar após salvar (modo embutido). */
+        enrollmentStep?: number;
     }>(),
     {
         embedded: false,
         idPrefix: '',
+        enrollmentStep: 2,
     },
 );
 
@@ -227,7 +230,7 @@ const debouncedCepLookup = useDebounceFn(lookupCep, 500);
 
 function submit(): void {
     const url = props.embedded
-        ? `${ProfileController.update.url()}?stay_on_page=1`
+        ? `${ProfileController.update.url()}?stay_on_page=1&enrollment_step=${props.enrollmentStep}`
         : ProfileController.update.url();
 
     const hasNewPhoto = form.foto instanceof File;
@@ -237,8 +240,7 @@ function submit(): void {
     form.patch(url, {
         forceFormData: hasNewPhoto,
         preserveScroll: true,
-        // Na inscrição, preserveState restaurava isEditing=true após o redirect.
-        preserveState: !props.embedded,
+        preserveState: props.embedded,
         onSuccess: () => {
             emit('saved');
         },

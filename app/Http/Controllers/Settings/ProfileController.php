@@ -16,6 +16,7 @@ use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Uri;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -155,6 +156,12 @@ class ProfileController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Perfil atualizado com sucesso.']);
 
         if ($request->boolean('stay_on_page')) {
+            $enrollmentStep = $request->integer('enrollment_step');
+
+            if ($enrollmentStep >= 1 && $enrollmentStep <= 5) {
+                return redirect()->to((string) Uri::of(url()->previous())->withQuery(['step' => $enrollmentStep]));
+            }
+
             return back();
         }
 

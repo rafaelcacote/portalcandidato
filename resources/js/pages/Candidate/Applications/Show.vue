@@ -115,7 +115,21 @@ async function openProfileEditOnStep2(): Promise<void> {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-const activeStep = ref(props.application.status === 'rascunho' ? '1' : '5');
+function resolveInitialActiveStep(): string {
+    if (props.application.status !== 'rascunho') {
+        return '5';
+    }
+
+    const stepParam = new URLSearchParams(window.location.search).get('step');
+
+    if (stepParam !== null && /^[1-5]$/.test(stepParam)) {
+        return stepParam;
+    }
+
+    return '1';
+}
+
+const activeStep = ref(resolveInitialActiveStep());
 
 const step1Data = (props.application.dados_inscricao?.step_1 ?? {}) as { concorre_vagas_pcd?: boolean };
 
@@ -620,6 +634,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         :ufs="props.ufs"
                                         :must-verify-email="props.mustVerifyEmail"
                                         :is-finalized="isFinalized"
+                                        :enrollment-step="2"
                                     />
 
                                     <div

@@ -15,12 +15,18 @@ import {
     type CandidateProfileUser,
 } from '@/components/Candidate/profileTypes';
 
-const props = defineProps<{
-    user: CandidateProfileUser | null;
-    ufs: string[];
-    mustVerifyEmail: boolean;
-    isFinalized: boolean;
-}>();
+const props = withDefaults(
+    defineProps<{
+        user: CandidateProfileUser | null;
+        ufs: string[];
+        mustVerifyEmail: boolean;
+        isFinalized: boolean;
+        enrollmentStep?: number;
+    }>(),
+    {
+        enrollmentStep: 2,
+    },
+);
 
 const isEditing = ref(false);
 
@@ -130,6 +136,7 @@ defineExpose({
                     :key="profileFormKey"
                     embedded
                     id-prefix="inscricao-perfil-"
+                    :enrollment-step="enrollmentStep"
                     :profile="user"
                     :ufs="ufs"
                     :must-verify-email="mustVerifyEmail"

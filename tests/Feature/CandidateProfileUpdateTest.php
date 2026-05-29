@@ -111,9 +111,9 @@ test('candidate profile update can return to enrollment page when stay_on_page i
 
     $this->actingAs($user)
         ->from(route('candidate.applications.show', $application))
-        ->patch(route('profile.update', ['stay_on_page' => 1]), $payload)
+        ->patch(route('profile.update', ['stay_on_page' => 1, 'enrollment_step' => 2]), $payload)
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('candidate.applications.show', $application));
+        ->assertRedirect(route('candidate.applications.show', $application).'?step=2');
 });
 
 test('candidate can replace profile photo', function () {
