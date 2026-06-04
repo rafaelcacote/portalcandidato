@@ -85,7 +85,19 @@ class ApplicationPdfService
             'process' => $application->selectionProcess,
             'institution' => config('lgpd.data_controller'),
             'generatedAt' => now()->timezone(config('app.timezone'))->format('d/m/Y H:i'),
+            'logoDataUri' => self::proensLogoDataUri(),
         ];
+    }
+
+    public static function proensLogoDataUri(): ?string
+    {
+        $path = public_path('img/logo_proensp_email.png');
+
+        if (! is_readable($path)) {
+            return null;
+        }
+
+        return 'data:image/png;base64,'.base64_encode((string) file_get_contents($path));
     }
 
     private function filename(Application $application, string $suffix): string

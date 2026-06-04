@@ -8,13 +8,18 @@ use App\Mail\InscricaoConfirmada;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Modules\Candidate\Services\ApplicationService;
+use App\Modules\Candidate\Services\EnrollmentFinalizeReminderService;
+use App\Modules\Shared\Enums\ApplicationStatus;
 use App\Support\InertiaToast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
 
 class ApplicationWizardController extends Controller
 {
-    public function __construct(private readonly ApplicationService $applicationService) {}
+    public function __construct(
+        private readonly ApplicationService $applicationService,
+        private readonly EnrollmentFinalizeReminderService $enrollmentFinalizeReminder,
+    ) {}
 
     public function start(SelectionProcess $selectionProcess): RedirectResponse
     {
@@ -37,9 +42,22 @@ class ApplicationWizardController extends Controller
     {
         abort_if($application->user_id !== auth()->id(), 403);
 
-        $this->applicationService->saveStep($application, $step, $request->validated()['payload']);
+        $application = $this->applicationService->saveStep(
+            $application,
+            $step,
+            $request->validated()['payload'],
+        );
 
-        return back()->with('success', "Etapa {$step} salva.");
+        if ($application->status === ApplicationStatus::Rascunho->value) {
+            InertiaToast::warning(
+                $this->enrollmentFinalizeReminder->stepSavedMessage($step),
+                EnrollmentFinalizeReminderService::TOAST_LIFE_MS,
+            );
+        } else {
+            InertiaToast::success("Etapa {$step} salva.");
+        }
+
+        return back();
     }
 
     public function submit(Application $application): RedirectResponse

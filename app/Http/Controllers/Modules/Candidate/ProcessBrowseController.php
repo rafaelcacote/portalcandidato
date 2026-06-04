@@ -22,10 +22,14 @@ class ProcessBrowseController extends Controller
         $search = $request->string('search')->trim()->value();
         $tipoPrograma = $request->string('tipo_programa')->trim()->value();
 
-        $processes = SelectionProcess::query()
+        $filteredQuery = SelectionProcess::query()
             ->where('status', 'ativo')
             ->when($search !== '', fn ($q) => $q->where('titulo', 'like', "%{$search}%"))
-            ->when($tipoPrograma !== '', fn ($q) => $q->where('tipo_programa', $tipoPrograma))
+            ->when($tipoPrograma !== '', fn ($q) => $q->where('tipo_programa', $tipoPrograma));
+
+        $openEnrollmentCount = (clone $filteredQuery)->inscricaoAberta()->count();
+
+        $processes = (clone $filteredQuery)
             ->latest()
             ->paginate(12)
             ->withQueryString();
@@ -42,6 +46,7 @@ class ProcessBrowseController extends Controller
 
         return Inertia::render('Candidate/Processes/Index', [
             'processes' => $processes,
+            'openEnrollmentCount' => $openEnrollmentCount,
             'draftApplicationIdsByProcessId' => $draftApplicationIdsByProcessId,
             'filters' => [
                 'search' => $search,

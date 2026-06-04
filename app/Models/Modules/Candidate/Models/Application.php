@@ -18,6 +18,7 @@ class Application extends Model
         'status',
         'dados_inscricao',
         'finalizada_em',
+        'enrollment_deadline_reminder_sent_at',
     ];
 
     protected function casts(): array
@@ -25,6 +26,7 @@ class Application extends Model
         return [
             'dados_inscricao' => 'array',
             'finalizada_em' => 'datetime',
+            'enrollment_deadline_reminder_sent_at' => 'datetime',
         ];
     }
 

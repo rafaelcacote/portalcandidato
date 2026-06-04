@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Modules\Admin\Models\ProcessRequiredDocument;
 use App\Models\Modules\Admin\Models\ProcessTitleGroup;
 use App\Models\Modules\Admin\Models\ProcessTitleItem;
 use App\Models\Modules\Admin\Models\SelectionProcess;
@@ -369,4 +370,64 @@ test('finalized application blocks deleting title proofs', function (): void {
         ->assertStatus(422);
 
     expect(ApplicationDocument::query()->find($document->id))->not->toBeNull();
+});
+
+test('candidate application page exposes linked document titles on uploaded documents', function (): void {
+    Storage::fake('local');
+    $candidate = createCandidateForTitleUpload();
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Edital com documentos',
+        'descricao' => 'Descricao',
+        'status' => 'ativo',
+    ]);
+    $application = Application::query()->create([
+        'selection_process_id' => $process->id,
+        'user_id' => $candidate->id,
+        'status' => 'rascunho',
+    ]);
+
+    $required = ProcessRequiredDocument::query()->create([
+        'selection_process_id' => $process->id,
+        'nome' => 'RG (frente e verso)',
+        'obrigatorio' => true,
+    ]);
+
+    ApplicationDocument::query()->create([
+        'application_id' => $application->id,
+        'process_required_document_id' => $required->id,
+        'caminho' => 'private/documents/test/rg.pdf',
+        'nome_arquivo' => 'rg.pdf',
+        'mime' => 'application/pdf',
+        'status' => 'enviado',
+    ]);
+
+    $item = createTitleItemForApplication($application, [
+        'code' => 'A.1',
+        'title' => 'Especialização em Saúde',
+    ]);
+
+    ApplicationDocument::query()->create([
+        'application_id' => $application->id,
+        'process_title_item_id' => $item->id,
+        'caminho' => 'private/documents/test/comprovante.pdf',
+        'nome_arquivo' => 'comprovante.pdf',
+        'mime' => 'application/pdf',
+        'status' => 'enviado',
+    ]);
+
+    $this->actingAs($candidate)
+        ->get(route('candidate.applications.show', $application))
+        ->assertSuccessful()
+        ->assertInertia(function ($page): void {
+            $page->component('Candidate/Applications/Show')
+                ->has('application.documents', 2);
+
+            $documents = collect($page->toArray()['props']['application']['documents']);
+            $requiredDoc = $documents->firstWhere('nome_arquivo', 'rg.pdf');
+            $titleDoc = $documents->firstWhere('nome_arquivo', 'comprovante.pdf');
+
+            expect($requiredDoc['required_document']['nome'])->toBe('RG (frente e verso)')
+                ->and($titleDoc['title_item']['title'])->toBe('Especialização em Saúde')
+                ->and($titleDoc['title_item']['code'])->toBe('A.1');
+        });
 });

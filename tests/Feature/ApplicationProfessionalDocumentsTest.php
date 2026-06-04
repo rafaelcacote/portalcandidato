@@ -4,6 +4,7 @@ use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\Modules\Candidate\Models\ApplicationAppeal;
 use App\Models\User;
+use App\Modules\Candidate\Services\ApplicationPdfService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
@@ -60,10 +61,30 @@ test('finalized application show includes professional documents and appeals pro
 test('candidate can download inscription receipt pdf', function () {
     ['candidate' => $candidate, 'application' => $application] = finalizedCandidateApplication();
 
+    expect(public_path('img/logo_proensp_email.png'))->toBeReadableFile();
+
     $this->actingAs($candidate)
         ->get(route('candidate.applications.documents.comprovante', $application))
         ->assertOk()
         ->assertHeader('content-type', 'application/pdf');
+});
+
+test('inscription receipt pdf html includes proens logo', function () {
+    ['application' => $application] = finalizedCandidateApplication();
+    $application->loadMissing(['user', 'selectionProcess']);
+
+    $html = view('pdfs.comprovante-inscricao', [
+        'application' => $application,
+        'candidate' => $application->user,
+        'process' => $application->selectionProcess,
+        'institution' => config('lgpd.data_controller'),
+        'generatedAt' => now()->timezone(config('app.timezone'))->format('d/m/Y H:i'),
+        'logoDataUri' => ApplicationPdfService::proensLogoDataUri(),
+    ])->render();
+
+    expect(ApplicationPdfService::proensLogoDataUri())->not->toBeNull()
+        ->and($html)->toContain('data:image/png;base64,')
+        ->and($html)->toContain('alt="PROENS"');
 });
 
 test('candidate cannot download receipt before finalizing', function () {

@@ -35,11 +35,16 @@ function handler(event: GlobalEvent<'flash'>): void {
         return;
     }
 
+    const life =
+        typeof rawToast.life === 'number' && rawToast.life > 0
+            ? rawToast.life
+            : LIFE_MS;
+
     primeToast.add({
         severity: flashTypeToSeverity(rawToast.type),
         summary: summaryForFlashType(rawToast.type),
         detail: rawToast.message,
-        life: LIFE_MS,
+        life,
         closable: true,
     });
 }

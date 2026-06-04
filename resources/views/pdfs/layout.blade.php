@@ -18,6 +18,24 @@
             padding-bottom: 16px;
             margin-bottom: 24px;
         }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .header-table td {
+            vertical-align: middle;
+            padding: 0;
+        }
+        .header-logo-cell {
+            width: 140px;
+            padding-right: 16px;
+        }
+        .header-logo {
+            display: block;
+            height: 52px;
+            width: auto;
+            max-width: 140px;
+        }
         .header h1 {
             font-size: 16pt;
             margin: 0 0 4px;
@@ -63,9 +81,24 @@
 </head>
 <body>
     <div class="header">
-        <div class="institution">{{ $institution }}</div>
-        <h1>@yield('document-title')</h1>
-        <div style="font-size: 9pt; color: #64748b;">Processo seletivo — documento para fins profissionais</div>
+        <table class="header-table">
+            <tr>
+                @if (! empty($logoDataUri))
+                    <td class="header-logo-cell">
+                        <img
+                            src="{{ $logoDataUri }}"
+                            alt="PROENS"
+                            class="header-logo"
+                        />
+                    </td>
+                @endif
+                <td>
+                    <div class="institution">{{ $institution }}</div>
+                    <h1>@yield('document-title')</h1>
+                    <div style="font-size: 9pt; color: #64748b;">Processo seletivo — documento para fins profissionais</div>
+                </td>
+            </tr>
+        </table>
     </div>
 
     @yield('content')

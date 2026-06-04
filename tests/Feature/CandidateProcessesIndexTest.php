@@ -150,6 +150,37 @@ test('candidate processes index filters by search term', function (): void {
         );
 });
 
+test('candidate processes index counts only enrollments open by date in open enrollment badge', function (): void {
+    Role::findOrCreate('candidato', 'web');
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    SelectionProcess::query()->create([
+        'titulo' => 'PS Inscrição aberta',
+        'descricao' => 'D',
+        'status' => 'ativo',
+        'inscricao_inicio_em' => now()->subDay(),
+        'inscricao_fim_em' => now()->addDays(10),
+    ]);
+
+    SelectionProcess::query()->create([
+        'titulo' => 'PS Inscrição encerrada',
+        'descricao' => 'D',
+        'status' => 'ativo',
+        'inscricao_inicio_em' => now()->subDays(30),
+        'inscricao_fim_em' => now()->subDay(),
+    ]);
+
+    $this->actingAs($candidate)
+        ->get(route('candidate.processes.index'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Candidate/Processes/Index')
+            ->where('openEnrollmentCount', 1)
+            ->where('processes.total', 2)
+        );
+});
+
 test('candidate processes index maps draft application ids for rascunho applications', function (): void {
     Role::findOrCreate('candidato', 'web');
     $candidate = User::factory()->create(['email_verified_at' => now()]);

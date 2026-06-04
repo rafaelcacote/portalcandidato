@@ -21,6 +21,7 @@ import {
 import { computed, ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PulseLoader } from '@/components/ui/pulse-loader';
 import { Input } from '@/components/ui/input';
 import { home } from '@/routes';
 import { show as applicationShow, start } from '@/routes/candidate/applications';
@@ -55,6 +56,7 @@ const props = defineProps<{
         current_page: number;
         last_page: number;
     };
+    openEnrollmentCount: number;
     draftApplicationIdsByProcessId: Record<number, number>;
     filters: {
         search: string;
@@ -196,16 +198,26 @@ function startApplication(processId: number): void {
                         </div>
 
                         <Badge
+                            v-if="openEnrollmentCount > 0"
                             variant="outline"
                             class="gap-2 border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400"
                         >
-                            <span
-                                class="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500"
-                            />
+                            <PulseLoader />
+                            {{
+                                openEnrollmentCount === 1
+                                    ? '1 inscrição aberta'
+                                    : `${openEnrollmentCount} inscrições abertas`
+                            }}
+                        </Badge>
+                        <Badge
+                            v-else-if="processes.total > 0"
+                            variant="outline"
+                            class="text-muted-foreground"
+                        >
                             {{
                                 processes.total === 1
-                                    ? '1 processo aberto'
-                                    : `${processes.total} processos abertos`
+                                    ? '1 processo listado'
+                                    : `${processes.total} processos listados`
                             }}
                         </Badge>
                     </div>
@@ -333,15 +345,14 @@ function startApplication(processId: number): void {
                                 />
                             </div>
                             <div class="flex flex-wrap justify-end gap-1.5">
-                                <span
+                                <Badge
                                     v-if="isInscricaoAberta(process)"
-                                    class="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400"
+                                    variant="outline"
+                                    class="gap-1.5 border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400"
                                 >
-                                    <span
-                                        class="h-1.5 w-1.5 rounded-full bg-green-500"
-                                    />
+                                    <PulseLoader />
                                     Aberto
-                                </span>
+                                </Badge>
                                 <span
                                     v-if="isClosingSoon(process)"
                                     class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400"

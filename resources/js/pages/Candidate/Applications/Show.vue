@@ -56,6 +56,8 @@ type ApplicationDocumentRow = {
     status: string;
     motivo_recusa?: string | null;
     quantidade?: number | null;
+    required_document?: { nome: string; descricao?: string | null } | null;
+    title_item?: { code?: string | null; title: string } | null;
 };
 
 const personalDataPanelRef = ref<InstanceType<typeof CandidatePersonalDataPanel> | null>(null);
@@ -290,6 +292,20 @@ const pcdLaudoDoc = computed(
         (props.application.documents ?? []).find((d) => d.candidatura_document_kind === 'pcd_laudo') ?? null,
 );
 
+function documentLinkedTitle(doc: ApplicationDocumentRow): string | null {
+    if (doc.required_document?.nome) {
+        return doc.required_document.nome;
+    }
+
+    if (doc.title_item?.title) {
+        const code = doc.title_item.code ? `${doc.title_item.code} – ` : '';
+
+        return `${code}${doc.title_item.title}`;
+    }
+
+    return null;
+}
+
 function documentRowLabel(doc: ApplicationDocumentRow): string {
     if (doc.candidatura_document_kind === 'pcd_declaracao') {
         return 'Declaração PcD (ações afirmativas)';
@@ -299,7 +315,7 @@ function documentRowLabel(doc: ApplicationDocumentRow): string {
         return 'Laudo médico ou carteira PcD';
     }
 
-    return doc.nome_arquivo;
+    return documentLinkedTitle(doc) ?? doc.nome_arquivo;
 }
 
 const submitApplication = (): void => {
@@ -448,6 +464,10 @@ const deadlineHint = computed((): string | undefined => {
 
 const isSavingEnrollment = computed(() => stepOneForm.processing);
 
+const showFinalizeEnrollmentReminder = computed(
+    () => props.application.status === 'rascunho' && hasStartedEnrollment.value,
+);
+
 function formatDate(dateStr: string | null | undefined): string {
     if (!dateStr) {
         return '—';
@@ -499,6 +519,17 @@ function formatDate(dateStr: string | null | undefined): string {
                     </span>
                 </div>
             </div>
+
+            <Message
+                v-else-if="showFinalizeEnrollmentReminder"
+                severity="warn"
+                :closable="false"
+                icon="pi pi-exclamation-triangle"
+            >
+                Sua inscrição ainda não foi enviada. Conclua todas as etapas e finalize na etapa
+                <strong>Revisar Inscrição</strong>
+                para enviar ao processo seletivo.
+            </Message>
 
             <ApplicationProgressCards
                 :progress-percent="enrollmentProgressPercent"
@@ -940,8 +971,18 @@ function formatDate(dateStr: string | null | undefined): string {
                                                     :key="doc.id"
                                                     class="flex items-center gap-2 text-sm"
                                                 >
-                                                    <i class="pi pi-file-o text-muted-foreground" />
-                                                    <span class="flex-1 truncate">{{ documentRowLabel(doc) }}</span>
+                                                    <i class="pi pi-file-o shrink-0 text-muted-foreground" />
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="truncate font-medium">
+                                                            {{ documentRowLabel(doc) }}
+                                                        </p>
+                                                        <p
+                                                            v-if="documentLinkedTitle(doc)"
+                                                            class="truncate text-xs text-muted-foreground"
+                                                        >
+                                                            {{ doc.nome_arquivo }}
+                                                        </p>
+                                                    </div>
                                                     <Tag
                                                         :value="
                                                             {

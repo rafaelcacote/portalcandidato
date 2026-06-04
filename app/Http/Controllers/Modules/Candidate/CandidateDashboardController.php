@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Modules\Candidate;
 use App\Http\Controllers\Controller;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\Modules\Candidate\Models\ApplicationDocument;
+use App\Modules\Candidate\Services\EnrollmentFinalizeReminderService;
 use App\Modules\Shared\Enums\ApplicationStatus;
 use App\Modules\Shared\Enums\DocumentStatus;
+use App\Support\InertiaToast;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
@@ -14,9 +16,24 @@ use Inertia\Response;
 
 class CandidateDashboardController extends Controller
 {
+    public function __construct(
+        private readonly EnrollmentFinalizeReminderService $enrollmentFinalizeReminder,
+    ) {}
+
     public function __invoke(Request $request): Response
     {
         $userId = $request->user()->id;
+
+        if (
+            $this->enrollmentFinalizeReminder->hasDraftEnrollment($userId)
+            && ! $request->session()->get(EnrollmentFinalizeReminderService::SESSION_SHOWN_KEY)
+        ) {
+            InertiaToast::warning(
+                $this->enrollmentFinalizeReminder->entryMessage(),
+                EnrollmentFinalizeReminderService::TOAST_LIFE_MS,
+            );
+            $request->session()->put(EnrollmentFinalizeReminderService::SESSION_SHOWN_KEY, true);
+        }
 
         $ongoingStatuses = [
             ApplicationStatus::Rascunho->value,

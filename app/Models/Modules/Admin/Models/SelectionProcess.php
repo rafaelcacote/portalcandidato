@@ -4,6 +4,9 @@ namespace App\Models\Modules\Admin\Models;
 
 use App\Models\Modules\Candidate\Models\Application;
 use App\Modules\Shared\Enums\SelectionProcessProgramType;
+use App\Modules\Shared\Enums\SelectionProcessStatus;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -82,6 +85,66 @@ class SelectionProcess extends Model
     public function applications(): HasMany
     {
         return $this->hasMany(Application::class);
+    }
+
+    /**
+     * Process is active and the enrollment window (when configured) includes now.
+     */
+    public function inscricaoEstaAberta(?CarbonInterface $now = null): bool
+    {
+        if ($this->status !== SelectionProcessStatus::Ativo->value) {
+            return false;
+        }
+
+        $now ??= now();
+
+        if ($this->inscricao_inicio_em !== null && $now->lt($this->inscricao_inicio_em)) {
+            return false;
+        }
+
+        if ($this->inscricao_fim_em !== null && $now->gt($this->inscricao_fim_em)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  Builder<SelectionProcess>  $query
+     */
+    public function scopeInscricaoAberta(Builder $query, ?CarbonInterface $now = null): void
+    {
+        $now ??= now();
+
+        $query
+            ->where('status', SelectionProcessStatus::Ativo->value)
+            ->where(function (Builder $inner) use ($now): void {
+                $inner
+                    ->whereNull('inscricao_inicio_em')
+                    ->orWhere('inscricao_inicio_em', '<=', $now);
+            })
+            ->where(function (Builder $inner) use ($now): void {
+                $inner
+                    ->whereNull('inscricao_fim_em')
+                    ->orWhere('inscricao_fim_em', '>=', $now);
+            });
+    }
+
+    /**
+     * Inscrição ainda aberta hoje e data de encerramento cai no dia civil daqui a N dias.
+     *
+     * @param  Builder<SelectionProcess>  $query
+     */
+    public function scopeInscricaoEncerraEmDias(Builder $query, int $days, ?CarbonInterface $now = null): void
+    {
+        $now = ($now ?? now())->timezone(config('app.timezone'));
+        $windowStart = $now->copy()->addDays($days)->startOfDay();
+        $windowEnd = $now->copy()->addDays($days)->endOfDay();
+
+        $query
+            ->inscricaoAberta($now)
+            ->whereNotNull('inscricao_fim_em')
+            ->whereBetween('inscricao_fim_em', [$windowStart, $windowEnd]);
     }
 
     /**
