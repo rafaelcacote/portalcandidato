@@ -1,0 +1,86 @@
+name: portalcandidato
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-portalcandidato}
+      POSTGRES_USER: ${DB_USERNAME:-portal_app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - portal
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      DB_HOST: postgres
+    volumes:
+      - app_storage:/var/www/html/storage/app
+      - public_data:/var/www/html/public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - portal
+
+  web:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    volumes:
+      - public_data:/var/www/html/public:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - portal
+
+  queue:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+    env_file: ../.env
+    environment:
+      DB_HOST: postgres
+    depends_on:
+      - app
+    networks:
+      - portal
+
+  scheduler:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    command: php artisan schedule:work
+    env_file: ../.env
+    environment:
+      DB_HOST: postgres
+    depends_on:
+      - app
+    networks:
+      - portal
+
+networks:
+  portal:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  app_storage:
+  public_data:
