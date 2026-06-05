@@ -27,6 +27,7 @@ services:
     environment:
       DB_HOST: postgres
     volumes:
+      - ../.env:/var/www/html/.env
       - app_storage:/var/www/html/storage/app
       - public_data:/var/www/html/public
     depends_on:
@@ -58,6 +59,8 @@ services:
     env_file: ../.env
     environment:
       DB_HOST: postgres
+    volumes:
+      - ../.env:/var/www/html/.env
     depends_on:
       - app
     networks:
@@ -72,6 +75,8 @@ services:
     env_file: ../.env
     environment:
       DB_HOST: postgres
+    volumes:
+      - ../.env:/var/www/html/.env
     depends_on:
       - app
     networks:
