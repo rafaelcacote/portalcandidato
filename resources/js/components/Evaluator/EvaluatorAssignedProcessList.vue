@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight, ClipboardList, Users } from 'lucide-vue-next';
-import { index as processesIndex, show as processShow } from '@/routes/evaluator/processes';
+import {
+    index as processesIndex,
+    show as processShow,
+} from '@/routes/evaluator/processes';
 
 defineProps<{
     processes: Array<{
@@ -18,11 +21,13 @@ defineProps<{
 
 function statusLabel(status: string): string {
     return (
-        ({
-            rascunho: 'Rascunho',
-            ativo: 'Ativo',
-            encerrado: 'Encerrado',
-        } as Record<string, string>)[status] ?? status
+        (
+            {
+                rascunho: 'Rascunho',
+                ativo: 'Ativo',
+                encerrado: 'Encerrado',
+            } as Record<string, string>
+        )[status] ?? status
     );
 }
 
@@ -40,14 +45,22 @@ function statusClasses(status: string): string {
 </script>
 
 <template>
-    <div class="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60">
+    <div
+        class="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60"
+    >
         <!-- Header -->
-        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <div
+            class="flex items-center justify-between border-b border-slate-100 px-5 py-4"
+        >
             <div class="flex items-center gap-2">
-                <div class="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500"
+                >
                     <ClipboardList class="size-3.5" />
                 </div>
-                <h2 class="text-sm font-semibold text-slate-900">Processos atribuídos</h2>
+                <h2 class="text-sm font-semibold text-slate-900">
+                    Processos atribuídos
+                </h2>
             </div>
             <Link
                 :href="processesIndex().url"
@@ -58,7 +71,10 @@ function statusClasses(status: string): string {
         </div>
 
         <!-- List -->
-        <ul v-if="processes.length > 0" class="flex-1 divide-y divide-slate-100">
+        <ul
+            v-if="processes.length > 0"
+            class="flex-1 divide-y divide-slate-100"
+        >
             <li
                 v-for="p in processes"
                 :key="p.id"
@@ -80,7 +96,9 @@ function statusClasses(status: string): string {
                         {{ p.titulo }}
                     </Link>
                     <div class="mt-0.5 flex items-center gap-3">
-                        <span class="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                        <span
+                            class="inline-flex items-center gap-1 text-[11px] text-slate-400"
+                        >
                             <Users class="size-3" />
                             {{ p.total_candidates }} candidatos
                         </span>
@@ -88,7 +106,9 @@ function statusClasses(status: string): string {
                             v-if="p.pending_candidates > 0"
                             class="text-[11px] font-medium text-amber-600"
                         >
-                            {{ p.pending_candidates }} pendente{{ p.pending_candidates !== 1 ? 's' : '' }}
+                            {{ p.pending_candidates }} pendente{{
+                                p.pending_candidates !== 1 ? 's' : ''
+                            }}
                         </span>
                         <span
                             v-else
@@ -110,7 +130,7 @@ function statusClasses(status: string): string {
                         {{ statusLabel(p.status) }}
                     </span>
                     <ArrowRight
-                        class="size-3.5 text-slate-300 opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100 group-hover:text-violet-500"
+                        class="size-3.5 text-slate-300 opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-violet-500 group-hover:opacity-100"
                     />
                 </div>
             </li>
@@ -121,12 +141,18 @@ function statusClasses(status: string): string {
             v-else
             class="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-14 text-center"
         >
-            <div class="flex size-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+            <div
+                class="flex size-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400"
+            >
                 <ClipboardList class="size-6" />
             </div>
             <div>
-                <p class="text-sm font-semibold text-slate-700">Nenhum processo atribuído</p>
-                <p class="mt-0.5 text-xs text-slate-400">Aguarde a atribuição de processos.</p>
+                <p class="text-sm font-semibold text-slate-700">
+                    Nenhum processo atribuído
+                </p>
+                <p class="mt-0.5 text-xs text-slate-400">
+                    Aguarde a atribuição de processos.
+                </p>
             </div>
         </div>
     </div>

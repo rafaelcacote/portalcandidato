@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import {
-    AlertTriangle,
-    FolderOpen,
-    RefreshCw,
-    Upload,
-} from 'lucide-vue-next';
+import { AlertTriangle, FolderOpen, Upload } from 'lucide-vue-next';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
-import Divider from 'primevue/divider';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
 import Select from 'primevue/select';
@@ -17,8 +11,8 @@ import Tag from 'primevue/tag';
 import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { home } from '@/routes';
-import { index as applicationsIndex, show as applicationShow } from '@/routes/candidate/applications';
-import { index as documentsIndex, store as documentStore } from '@/routes/candidate/documents';
+import { show as applicationShow } from '@/routes/candidate/applications';
+import { store as documentStore } from '@/routes/candidate/documents';
 
 defineOptions({
     layout: {
@@ -49,11 +43,18 @@ const props = defineProps<{
         id: number;
         numero_protocolo: string | null;
         selection_process?: { id: number; titulo: string } | null;
-        required_documents?: Array<{ id: number; nome: string; obrigatorio: boolean }>;
+        required_documents?: Array<{
+            id: number;
+            nome: string;
+            obrigatorio: boolean;
+        }>;
     }>;
 }>();
 
-const statusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'danger'> = {
+const statusSeverity: Record<
+    string,
+    'secondary' | 'success' | 'warn' | 'danger'
+> = {
     enviado: 'secondary',
     em_analise: 'warn',
     aprovado: 'success',
@@ -95,8 +96,14 @@ const appFilterOptions = computed(() => [
 
 const filteredDocuments = computed(() =>
     props.documents.filter((doc) => {
-        if (filterStatus.value && doc.status !== filterStatus.value) return false;
-        if (filterApp.value && doc.application?.id !== filterApp.value) return false;
+        if (filterStatus.value && doc.status !== filterStatus.value) {
+            return false;
+        }
+
+        if (filterApp.value && doc.application?.id !== filterApp.value) {
+            return false;
+        }
+
         return true;
     }),
 );
@@ -124,8 +131,12 @@ const selectedAppOptions = computed(() =>
 );
 
 const selectedAppRequiredDocs = computed(() => {
-    if (!selectedAppId.value) return [];
+    if (!selectedAppId.value) {
+        return [];
+    }
+
     const app = props.applications.find((a) => a.id === selectedAppId.value);
+
     return (app?.required_documents ?? []).map((d) => ({
         label: d.nome + (d.obrigatorio ? ' *' : ''),
         value: d.id,
@@ -138,7 +149,10 @@ const onFileChange = (event: Event): void => {
 };
 
 const doUpload = (): void => {
-    if (!selectedAppId.value) return;
+    if (!selectedAppId.value) {
+        return;
+    }
+
     uploadForm.process_required_document_id = selectedDocId.value;
     uploadForm.arquivo = selectedFile.value;
     uploadForm.transform((data) => ({
@@ -165,10 +179,22 @@ function formatDate(dateStr: string): string {
 }
 
 function mimeIcon(mime: string | null | undefined): string {
-    if (!mime) return 'pi-file';
-    if (mime.includes('pdf')) return 'pi-file-pdf';
-    if (mime.includes('image')) return 'pi-image';
-    if (mime.includes('word') || mime.includes('document')) return 'pi-file-word';
+    if (!mime) {
+        return 'pi-file';
+    }
+
+    if (mime.includes('pdf')) {
+        return 'pi-file-pdf';
+    }
+
+    if (mime.includes('image')) {
+        return 'pi-image';
+    }
+
+    if (mime.includes('word') || mime.includes('document')) {
+        return 'pi-file-word';
+    }
+
     return 'pi-file';
 }
 </script>
@@ -204,10 +230,14 @@ function mimeIcon(mime: string | null | undefined): string {
                 </template>
                 <div class="flex flex-col gap-0.5">
                     <span class="font-semibold">
-                        {{ recusadosCount }} documento{{ recusadosCount > 1 ? 's' : '' }} recusado{{ recusadosCount > 1 ? 's' : '' }}
+                        {{ recusadosCount }} documento{{
+                            recusadosCount > 1 ? 's' : ''
+                        }}
+                        recusado{{ recusadosCount > 1 ? 's' : '' }}
                     </span>
                     <span class="text-sm">
-                        Revise os motivos de recusa e reenvie os arquivos para continuar com suas inscrições.
+                        Revise os motivos de recusa e reenvie os arquivos para
+                        continuar com suas inscrições.
                     </span>
                 </div>
             </Message>
@@ -217,7 +247,10 @@ function mimeIcon(mime: string | null | undefined): string {
                 <template #content>
                     <div class="flex flex-wrap items-end gap-4">
                         <div class="flex min-w-48 flex-1 flex-col gap-1.5">
-                            <label class="text-xs font-medium text-muted-foreground">Status</label>
+                            <label
+                                class="text-xs font-medium text-muted-foreground"
+                                >Status</label
+                            >
                             <Select
                                 v-model="filterStatus"
                                 :options="statusFilterOptions"
@@ -228,7 +261,10 @@ function mimeIcon(mime: string | null | undefined): string {
                             />
                         </div>
                         <div class="flex min-w-48 flex-1 flex-col gap-1.5">
-                            <label class="text-xs font-medium text-muted-foreground">Inscrição</label>
+                            <label
+                                class="text-xs font-medium text-muted-foreground"
+                                >Inscrição</label
+                            >
                             <Select
                                 v-model="filterApp"
                                 :options="appFilterOptions"
@@ -244,7 +280,10 @@ function mimeIcon(mime: string | null | undefined): string {
                             severity="secondary"
                             text
                             size="small"
-                            @click="filterStatus = ''; filterApp = ''"
+                            @click="
+                                filterStatus = '';
+                                filterApp = '';
+                            "
                         />
                     </div>
                 </template>
@@ -255,15 +294,22 @@ function mimeIcon(mime: string | null | undefined): string {
                 v-if="filteredDocuments.length === 0"
                 class="flex flex-col items-center justify-center gap-4 rounded-xl border border-border bg-card py-16 text-center"
             >
-                <div class="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                    <i class="pi pi-folder-open text-2xl text-muted-foreground" />
+                <div
+                    class="flex h-14 w-14 items-center justify-center rounded-full bg-muted"
+                >
+                    <i
+                        class="pi pi-folder-open text-2xl text-muted-foreground"
+                    />
                 </div>
                 <div>
-                    <p class="text-base font-semibold">Nenhum documento encontrado</p>
+                    <p class="text-base font-semibold">
+                        Nenhum documento encontrado
+                    </p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        {{ documents.length === 0
-                            ? 'Você ainda não enviou nenhum documento.'
-                            : 'Nenhum documento corresponde aos filtros selecionados.'
+                        {{
+                            documents.length === 0
+                                ? 'Você ainda não enviou nenhum documento.'
+                                : 'Nenhum documento corresponde aos filtros selecionados.'
                         }}
                     </p>
                 </div>
@@ -283,49 +329,99 @@ function mimeIcon(mime: string | null | undefined): string {
                     class="rounded-xl shadow-sm"
                 >
                     <template #content>
-                        <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div
+                            class="flex flex-wrap items-start justify-between gap-4"
+                        >
                             <!-- Ícone + info do documento -->
                             <div class="flex min-w-0 items-start gap-3">
-                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                                    <i :class="['pi', mimeIcon(doc.mime), 'text-muted-foreground']" />
+                                <div
+                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted"
+                                >
+                                    <i
+                                        :class="[
+                                            'pi',
+                                            mimeIcon(doc.mime),
+                                            'text-muted-foreground',
+                                        ]"
+                                    />
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="truncate font-medium text-foreground">
+                                    <p
+                                        class="truncate font-medium text-foreground"
+                                    >
                                         {{ doc.nome_arquivo }}
                                     </p>
-                                    <p v-if="doc.tipo_documento" class="text-xs text-muted-foreground">
+                                    <p
+                                        v-if="doc.tipo_documento"
+                                        class="text-xs text-muted-foreground"
+                                    >
                                         {{ doc.tipo_documento }}
                                     </p>
-                                    <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                                        <span v-if="doc.application" class="flex items-center gap-1">
+                                    <div
+                                        class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
+                                    >
+                                        <span
+                                            v-if="doc.application"
+                                            class="flex items-center gap-1"
+                                        >
                                             <i class="pi pi-list" />
                                             <Link
-                                                :href="applicationShow({ application: doc.application.id }).url"
+                                                :href="
+                                                    applicationShow({
+                                                        application:
+                                                            doc.application.id,
+                                                    }).url
+                                                "
                                                 class="hover:text-primary hover:underline"
                                             >
-                                                {{ doc.application.selection_process?.titulo ?? `Inscrição #${doc.application.id}` }}
+                                                {{
+                                                    doc.application
+                                                        .selection_process
+                                                        ?.titulo ??
+                                                    `Inscrição #${doc.application.id}`
+                                                }}
                                             </Link>
-                                            <span v-if="doc.application.numero_protocolo">
-                                                · {{ doc.application.numero_protocolo }}
+                                            <span
+                                                v-if="
+                                                    doc.application
+                                                        .numero_protocolo
+                                                "
+                                            >
+                                                ·
+                                                {{
+                                                    doc.application
+                                                        .numero_protocolo
+                                                }}
                                             </span>
                                         </span>
                                         <span class="flex items-center gap-1">
                                             <i class="pi pi-calendar" />
-                                            Enviado em {{ formatDate(doc.created_at) }}
+                                            Enviado em
+                                            {{ formatDate(doc.created_at) }}
                                         </span>
                                     </div>
 
                                     <!-- Motivo de recusa -->
                                     <div
-                                        v-if="doc.status === 'recusado' && doc.motivo_recusa"
+                                        v-if="
+                                            doc.status === 'recusado' &&
+                                            doc.motivo_recusa
+                                        "
                                         class="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 dark:border-red-900 dark:bg-red-950/30"
                                     >
-                                        <AlertTriangle :size="13" class="mt-0.5 shrink-0 text-red-500" />
+                                        <AlertTriangle
+                                            :size="13"
+                                            class="mt-0.5 shrink-0 text-red-500"
+                                        />
                                         <div>
-                                            <p class="text-xs font-semibold text-red-700 dark:text-red-400">
+                                            <p
+                                                class="text-xs font-semibold text-red-700 dark:text-red-400"
+                                            >
                                                 Documento recusado
                                             </p>
-                                            <p class="text-xs text-red-600 dark:text-red-300">
+                                            <p
+                                                class="text-xs text-red-600 dark:text-red-300"
+                                            >
                                                 {{ doc.motivo_recusa }}
                                             </p>
                                         </div>
@@ -336,10 +432,26 @@ function mimeIcon(mime: string | null | undefined): string {
                             <!-- Status e ações -->
                             <div class="flex shrink-0 items-center gap-2">
                                 <div class="flex items-center gap-1.5">
-                                    <i :class="['pi', statusIcon[doc.status] ?? 'pi-file', doc.status === 'aprovado' ? 'text-green-600' : doc.status === 'recusado' ? 'text-red-500' : 'text-muted-foreground']" />
+                                    <i
+                                        :class="[
+                                            'pi',
+                                            statusIcon[doc.status] ?? 'pi-file',
+                                            doc.status === 'aprovado'
+                                                ? 'text-green-600'
+                                                : doc.status === 'recusado'
+                                                  ? 'text-red-500'
+                                                  : 'text-muted-foreground',
+                                        ]"
+                                    />
                                     <Tag
-                                        :value="statusLabel[doc.status] ?? doc.status"
-                                        :severity="statusSeverity[doc.status] ?? 'secondary'"
+                                        :value="
+                                            statusLabel[doc.status] ??
+                                            doc.status
+                                        "
+                                        :severity="
+                                            statusSeverity[doc.status] ??
+                                            'secondary'
+                                        "
                                     />
                                 </div>
 
@@ -358,7 +470,11 @@ function mimeIcon(mime: string | null | undefined): string {
                                     text
                                     rounded
                                     size="small"
-                                    @click="selectedAppId = doc.application?.id ?? null; showUploadDialog = true"
+                                    @click="
+                                        selectedAppId =
+                                            doc.application?.id ?? null;
+                                        showUploadDialog = true;
+                                    "
                                 />
                             </div>
                         </div>
@@ -414,17 +530,32 @@ function mimeIcon(mime: string | null | undefined): string {
                 >
                     <Upload :size="24" class="text-muted-foreground" />
                     <span class="text-sm text-muted-foreground">
-                        {{ selectedFile ? selectedFile.name : 'Clique para selecionar ou arraste o arquivo' }}
+                        {{
+                            selectedFile
+                                ? selectedFile.name
+                                : 'Clique para selecionar ou arraste o arquivo'
+                        }}
                     </span>
-                    <span class="text-xs text-muted-foreground">PDF, JPG, PNG (máx. 10MB)</span>
-                    <input type="file" class="sr-only" accept=".pdf,.jpg,.jpeg,.png" @change="onFileChange" />
+                    <span class="text-xs text-muted-foreground"
+                        >PDF, JPG, PNG (máx. 10MB)</span
+                    >
+                    <input
+                        type="file"
+                        class="sr-only"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        @change="onFileChange"
+                    />
                 </label>
                 <small v-if="uploadForm.errors.arquivo" class="text-red-500">
                     {{ uploadForm.errors.arquivo }}
                 </small>
             </div>
 
-            <Message v-if="uploadForm.errors.process_required_document_id" severity="error" :closable="false">
+            <Message
+                v-if="uploadForm.errors.process_required_document_id"
+                severity="error"
+                :closable="false"
+            >
                 {{ uploadForm.errors.process_required_document_id }}
             </Message>
         </div>

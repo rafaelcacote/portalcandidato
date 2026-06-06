@@ -15,7 +15,10 @@ import CandidateAvatar from '@/components/Evaluator/CandidateAvatar.vue';
 import { home } from '@/routes';
 import { dashboard } from '@/routes/evaluator';
 import { show as candidateShow } from '@/routes/evaluator/candidates';
-import { index as processesIndex, show as processShow } from '@/routes/evaluator/processes';
+import {
+    index as processesIndex,
+    show as processShow,
+} from '@/routes/evaluator/processes';
 
 defineOptions({
     layout: {
@@ -49,13 +52,21 @@ const props = defineProps<{
                 foto_url?: string | null;
                 photo_url?: string | null;
             };
-            evaluations: Array<{ id: number; resultado: string | null; pontuacao_total: number | null }>;
+            evaluations: Array<{
+                id: number;
+                resultado: string | null;
+                pontuacao_total: number | null;
+            }>;
         }>;
         meta?: {
             current_page: number;
             last_page: number;
             total: number;
-            links: Array<{ url: string | null; label: string; active: boolean }>;
+            links: Array<{
+                url: string | null;
+                label: string;
+                active: boolean;
+            }>;
         };
     };
     filters: {
@@ -103,14 +114,16 @@ function applyStatusFilter(status: string): void {
 
 function candidateStatusLabel(status: string): string {
     return (
-        ({
-            rascunho: 'Rascunho',
-            enviada: 'Aguardando',
-            em_analise: 'Em análise',
-            pendencia: 'Doc. pendentes',
-            aprovada: 'Aprovado',
-            reprovada: 'Reprovado',
-        } as Record<string, string>)[status] ?? status
+        (
+            {
+                rascunho: 'Rascunho',
+                enviada: 'Aguardando',
+                em_analise: 'Em análise',
+                pendencia: 'Doc. pendentes',
+                aprovada: 'Aprovado',
+                reprovada: 'Reprovado',
+            } as Record<string, string>
+        )[status] ?? status
     );
 }
 
@@ -158,7 +171,9 @@ function formatDate(dateStr: string | null): string {
 
         <div class="mx-auto flex w-full max-w-[1820px] flex-col gap-5">
             <!-- Back + title -->
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div
+                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+            >
                 <div>
                     <Link
                         :href="processesIndex().url"
@@ -167,12 +182,13 @@ function formatDate(dateStr: string | null): string {
                         <ChevronLeft class="size-3.5" />
                         Voltar para processos
                     </Link>
-                    <h1 class="mt-1.5 text-xl font-bold tracking-tight text-slate-900">
+                    <h1
+                        class="mt-1.5 text-xl font-bold tracking-tight text-slate-900"
+                    >
                         {{ selectionProcess.titulo }}
                     </h1>
                     <p class="mt-0.5 text-sm text-slate-500">
-                        Candidatos inscritos ·
-                        Inscrições:
+                        Candidatos inscritos · Inscrições:
                         {{ formatDate(selectionProcess.inscricao_inicio_em) }}
                         <span class="mx-1 text-slate-300">–</span>
                         {{ formatDate(selectionProcess.inscricao_fim_em) }}
@@ -184,29 +200,39 @@ function formatDate(dateStr: string | null): string {
                     v-if="candidates.meta"
                     class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-4 py-2 shadow-sm ring-1 ring-slate-200"
                 >
-                    <span class="text-2xl font-bold tabular-nums text-slate-900">
+                    <span
+                        class="text-2xl font-bold text-slate-900 tabular-nums"
+                    >
                         {{ candidates.meta.total }}
                     </span>
-                    <span class="text-xs font-medium text-slate-500">candidatos</span>
+                    <span class="text-xs font-medium text-slate-500"
+                        >candidatos</span
+                    >
                 </div>
             </div>
 
             <!-- Filters bar -->
-            <div class="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/60 sm:flex-row sm:items-center">
+            <div
+                class="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/60 sm:flex-row sm:items-center"
+            >
                 <!-- Search -->
                 <div class="relative flex-1">
-                    <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                    <Search
+                        class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
+                    />
                     <input
                         v-model="search"
                         type="search"
                         placeholder="Buscar por nome, CPF ou inscrição..."
-                        class="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 pl-9 pr-4 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-400/20"
+                        class="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 pr-4 pl-9 text-sm text-slate-800 transition-colors outline-none placeholder:text-slate-400 focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-400/20"
                     />
                 </div>
 
                 <!-- Status filter pills -->
                 <div class="flex items-center gap-1.5 overflow-x-auto">
-                    <SlidersHorizontal class="size-3.5 shrink-0 text-slate-400" />
+                    <SlidersHorizontal
+                        class="size-3.5 shrink-0 text-slate-400"
+                    />
                     <button
                         v-for="f in statusFilters"
                         :key="f.value"
@@ -229,7 +255,9 @@ function formatDate(dateStr: string | null): string {
                 v-if="candidates.data.length === 0"
                 class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-20 text-center shadow-sm"
             >
-                <div class="flex size-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                <div
+                    class="flex size-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400"
+                >
                     <FileSearch class="size-7" />
                 </div>
                 <p class="mt-4 text-base font-semibold text-slate-700">
@@ -241,7 +269,10 @@ function formatDate(dateStr: string | null): string {
             </div>
 
             <!-- Candidates list -->
-            <div v-else class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60">
+            <div
+                v-else
+                class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60"
+            >
                 <ul class="divide-y divide-slate-100">
                     <li
                         v-for="candidate in candidates.data"
@@ -256,12 +287,19 @@ function formatDate(dateStr: string | null): string {
 
                         <!-- Info -->
                         <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-semibold text-slate-800">
+                            <p
+                                class="truncate text-sm font-semibold text-slate-800"
+                            >
                                 {{ candidate.user.name }}
                             </p>
-                            <div class="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                            <div
+                                class="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-400"
+                            >
                                 <span>{{ candidate.user.email }}</span>
-                                <span v-if="candidate.numero_protocolo" class="font-mono">
+                                <span
+                                    v-if="candidate.numero_protocolo"
+                                    class="font-mono"
+                                >
                                     #{{ candidate.numero_protocolo }}
                                 </span>
                             </div>
@@ -295,12 +333,16 @@ function formatDate(dateStr: string | null): string {
 
                         <!-- CTA -->
                         <Link
-                            :href="candidateShow({ application: candidate.id }).url"
-                            class="group/link ml-2 inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-violet-50 px-3.5 py-2 text-xs font-semibold text-violet-700 ring-1 ring-violet-200/70 transition-all hover:bg-violet-600 hover:text-white hover:ring-violet-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
+                            :href="
+                                candidateShow({ application: candidate.id }).url
+                            "
+                            class="group/link ml-2 inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-violet-50 px-3.5 py-2 text-xs font-semibold text-violet-700 ring-1 ring-violet-200/70 transition-all hover:bg-violet-600 hover:text-white hover:ring-violet-600 focus-visible:ring-2 focus-visible:ring-violet-400/60 focus-visible:outline-none"
                         >
                             <User class="size-3.5" />
                             Avaliar
-                            <ArrowRight class="size-3.5 transition-transform duration-150 group-hover/link:translate-x-0.5" />
+                            <ArrowRight
+                                class="size-3.5 transition-transform duration-150 group-hover/link:translate-x-0.5"
+                            />
                         </Link>
                     </li>
                 </ul>
@@ -311,7 +353,10 @@ function formatDate(dateStr: string | null): string {
                 v-if="candidates.meta && candidates.meta.last_page > 1"
                 class="flex items-center justify-center gap-1"
             >
-                <template v-for="link in candidates.meta.links" :key="link.label">
+                <template
+                    v-for="link in candidates.meta.links"
+                    :key="link.label"
+                >
                     <Link
                         v-if="link.url"
                         :href="link.url"
@@ -321,8 +366,9 @@ function formatDate(dateStr: string | null): string {
                                 ? 'bg-violet-600 text-white'
                                 : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
                         "
-                        v-html="link.label"
-                    />
+                    >
+                        <span v-html="link.label" />
+                    </Link>
                     <span
                         v-else
                         class="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium text-slate-300"

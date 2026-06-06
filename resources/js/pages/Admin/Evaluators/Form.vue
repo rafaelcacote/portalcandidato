@@ -295,15 +295,13 @@ const confirmRemoveAssignment = (assignment: Assignment): void => {
 </script>
 
 <template>
-    <div class="px-4 py-3 sm:px-6 md:px-8 lg:px-10 md:py-4">
+    <div class="px-4 py-3 sm:px-6 md:px-8 md:py-4 lg:px-10">
         <ConfirmDialog />
 
         <div class="mx-auto flex w-full max-w-[1820px] flex-col gap-5">
             <div class="flex items-start justify-between gap-8 py-3">
                 <Heading
-                    :title="
-                        isEditing() ? 'Editar Avaliador' : 'Novo Avaliador'
-                    "
+                    :title="isEditing() ? 'Editar Avaliador' : 'Novo Avaliador'"
                     description="Cadastre os dados do avaliador e gerencie suas atribuições aos processos."
                     :icon="Users"
                 />
@@ -494,15 +492,13 @@ const confirmRemoveAssignment = (assignment: Assignment): void => {
             <Card v-if="isEditing()" class="rounded-xl shadow-md">
                 <template #content>
                     <div class="flex flex-col gap-5 p-2 md:p-3">
-                        <div
-                            class="flex flex-col gap-1 border-b pb-3"
-                        >
+                        <div class="flex flex-col gap-1 border-b pb-3">
                             <h3 class="text-base font-semibold">
                                 Atribuições aos processos
                             </h3>
                             <p class="text-sm text-muted-foreground">
-                                Vincule este avaliador aos processos seletivos
-                                e defina as permissões para cada um.
+                                Vincule este avaliador aos processos seletivos e
+                                defina as permissões para cada um.
                             </p>
                         </div>
 
@@ -635,16 +631,12 @@ const confirmRemoveAssignment = (assignment: Assignment): void => {
                                 <template #body="{ data }">
                                     <div class="flex flex-col">
                                         <span class="font-medium">
-                                            {{
-                                                data.selection_process.titulo
-                                            }}
+                                            {{ data.selection_process.titulo }}
                                         </span>
                                         <small
                                             class="text-xs text-muted-foreground"
                                         >
-                                            #{{
-                                                data.selection_process.id
-                                            }}
+                                            #{{ data.selection_process.id }}
                                         </small>
                                     </div>
                                 </template>
@@ -734,9 +726,7 @@ const confirmRemoveAssignment = (assignment: Assignment): void => {
                                         text
                                         severity="danger"
                                         icon="pi pi-trash"
-                                        @click="
-                                            confirmRemoveAssignment(data)
-                                        "
+                                        @click="confirmRemoveAssignment(data)"
                                     />
                                 </template>
                             </Column>

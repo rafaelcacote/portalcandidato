@@ -74,14 +74,23 @@ function circleClass(value: string | number, activeFromPrime: boolean): string {
             <StepList
                 class="mb-2 flex w-full flex-col gap-2 border-0 bg-transparent p-0 sm:gap-3 md:mb-6 md:flex-row md:items-stretch md:justify-between md:gap-3"
             >
-                <Step v-for="s in steps" :key="s.value" :value="s.value" class="flex-1 border-0 bg-transparent p-0">
+                <Step
+                    v-for="s in steps"
+                    :key="s.value"
+                    :value="s.value"
+                    class="flex-1 border-0 bg-transparent p-0"
+                >
                     <template #default="{ active, value }">
                         <button
                             type="button"
                             class="group flex w-full flex-row items-center gap-3 rounded-2xl border border-transparent p-2 text-left transition-colors hover:border-border/80 hover:bg-muted/30 md:flex-col md:items-center md:gap-2.5 md:p-3 md:text-center"
                             :class="[
-                                stateOf(value) === 'current' || active ? 'md:bg-primary/[0.04]' : '',
-                                !canClick(value) ? 'cursor-default' : 'cursor-pointer',
+                                stateOf(value) === 'current' || active
+                                    ? 'md:bg-primary/[0.04]'
+                                    : '',
+                                !canClick(value)
+                                    ? 'cursor-default'
+                                    : 'cursor-pointer',
                             ]"
                             :disabled="!canClick(value)"
                             @click="onStepActivate(value)"
@@ -95,16 +104,20 @@ function circleClass(value: string | number, activeFromPrime: boolean): string {
                                 />
                                 <component
                                     :is="s.icon"
-                                    v-else-if="stateOf(value) === 'upcoming' && !active"
+                                    v-else-if="
+                                        stateOf(value) === 'upcoming' && !active
+                                    "
                                     :size="18"
                                     class="shrink-0 opacity-75"
                                     aria-hidden="true"
                                 />
-                                <span v-else class="tabular-nums">{{ value }}</span>
+                                <span v-else class="tabular-nums">{{
+                                    value
+                                }}</span>
                             </div>
                             <div class="min-w-0 flex-1 md:w-full">
                                 <p
-                                    class="text-xs font-semibold leading-snug sm:text-[13px]"
+                                    class="text-xs leading-snug font-semibold sm:text-[13px]"
                                     :class="
                                         stateOf(value) === 'current' || active
                                             ? 'text-foreground'
@@ -113,7 +126,9 @@ function circleClass(value: string | number, activeFromPrime: boolean): string {
                                 >
                                     {{ s.label }}
                                 </p>
-                                <p class="mt-0.5 hidden text-[11px] text-muted-foreground md:block">
+                                <p
+                                    class="mt-0.5 hidden text-[11px] text-muted-foreground md:block"
+                                >
                                     {{
                                         stateOf(value) === 'done'
                                             ? 'Concluída'

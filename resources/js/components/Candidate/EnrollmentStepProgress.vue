@@ -22,10 +22,13 @@ const props = withDefaults(
 
 const current = computed(() => {
     const n = Number.parseInt(props.currentStep, 10);
+
     return Number.isNaN(n) ? 1 : Math.min(Math.max(n, 1), props.totalSteps);
 });
 
-const progress = computed(() => Math.round((current.value / props.totalSteps) * 100));
+const progress = computed(() =>
+    Math.round((current.value / props.totalSteps) * 100),
+);
 
 const currentLabel = computed(
     () => props.stepLabels[current.value - 1] ?? `Etapa ${current.value}`,
@@ -38,7 +41,9 @@ const currentLabel = computed(
         role="status"
         :aria-label="`Progresso da inscrição: etapa ${current} de ${totalSteps}, ${currentLabel}`"
     >
-        <div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+        <div
+            class="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm"
+        >
             <span class="font-medium text-foreground">
                 Etapa {{ current }} de {{ totalSteps }}
             </span>
@@ -46,8 +51,8 @@ const currentLabel = computed(
         </div>
         <ProgressBar :value="progress" :show-value="false" class="h-2" />
         <p class="mt-2 text-xs text-muted-foreground">
-            Seu progresso é salvo ao avançar nas etapas. Você pode voltar para revisar antes de
-            finalizar.
+            Seu progresso é salvo ao avançar nas etapas. Você pode voltar para
+            revisar antes de finalizar.
         </p>
     </div>
 </template>

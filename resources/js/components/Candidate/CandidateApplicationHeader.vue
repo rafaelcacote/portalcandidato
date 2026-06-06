@@ -33,7 +33,7 @@ defineProps<{
         class="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/25 shadow-sm dark:border-border/40 dark:from-card dark:via-card dark:to-muted/10"
     >
         <div
-            class="pointer-events-none absolute -right-24 -top-24 size-[320px] rounded-full bg-primary/[0.07] blur-3xl dark:bg-primary/10"
+            class="pointer-events-none absolute -top-24 -right-24 size-[320px] rounded-full bg-primary/[0.07] blur-3xl dark:bg-primary/10"
             aria-hidden="true"
         />
         <div
@@ -42,7 +42,9 @@ defineProps<{
         />
 
         <div class="relative flex flex-col gap-6 p-5 sm:p-7 lg:p-8">
-            <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div
+                class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between"
+            >
                 <ApplicationHero
                     :process-title="processTitle"
                     :process-type-label="processTypeLabel"
@@ -50,9 +52,16 @@ defineProps<{
                     :has-started="hasStarted"
                 />
 
-                <div class="flex w-full shrink-0 flex-col gap-3 lg:w-auto lg:items-end">
-                    <ApplicationAutoSaveInfo :updated-at="updatedAt" :is-saving="isSaving" />
-                    <div class="flex w-full flex-wrap items-center justify-end gap-2">
+                <div
+                    class="flex w-full shrink-0 flex-col gap-3 lg:w-auto lg:items-end"
+                >
+                    <ApplicationAutoSaveInfo
+                        :updated-at="updatedAt"
+                        :is-saving="isSaving"
+                    />
+                    <div
+                        class="flex w-full flex-wrap items-center justify-end gap-2"
+                    >
                         <a
                             v-if="editalUrl"
                             v-tooltip.bottom="'PDF oficial do processo'"
@@ -102,10 +111,14 @@ defineProps<{
                         <Link2 :size="20" aria-hidden="true" />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <p
+                            class="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+                        >
                             Protocolo
                         </p>
-                        <p class="mt-1 break-all font-mono text-sm font-semibold text-foreground">
+                        <p
+                            class="mt-1 font-mono text-sm font-semibold break-all text-foreground"
+                        >
                             {{ protocol ?? 'Será gerado ao enviar' }}
                         </p>
                     </div>
@@ -120,14 +133,22 @@ defineProps<{
                         <Hash :size="20" aria-hidden="true" />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <p
+                            class="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+                        >
                             Etapas concluídas
                         </p>
                         <p class="mt-1 text-sm font-semibold text-foreground">
-                            <span class="tabular-nums text-lg font-bold">{{ completedSteps }}</span>
-                            <span class="text-muted-foreground"> / {{ totalSteps }}</span>
+                            <span class="text-lg font-bold tabular-nums">{{
+                                completedSteps
+                            }}</span>
+                            <span class="text-muted-foreground">
+                                / {{ totalSteps }}</span
+                            >
                         </p>
-                        <p class="mt-0.5 text-xs text-muted-foreground">Marcos principais da inscrição</p>
+                        <p class="mt-0.5 text-xs text-muted-foreground">
+                            Marcos principais da inscrição
+                        </p>
                     </div>
                 </div>
 
@@ -141,11 +162,16 @@ defineProps<{
                         <Sparkles :size="20" aria-hidden="true" />
                     </div>
                     <div class="min-w-0">
-                        <p class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <p
+                            class="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+                        >
                             Lembrete
                         </p>
-                        <p class="mt-1 text-sm font-medium leading-snug text-foreground">
-                            Avance etapa a etapa. Você pode voltar para revisar antes de enviar.
+                        <p
+                            class="mt-1 text-sm leading-snug font-medium text-foreground"
+                        >
+                            Avance etapa a etapa. Você pode voltar para revisar
+                            antes de enviar.
                         </p>
                     </div>
                 </div>

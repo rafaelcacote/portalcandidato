@@ -109,9 +109,11 @@ const cards = computed(() => [
 
             <!-- Value -->
             <div class="mt-4">
-                <p class="text-xs font-semibold text-slate-500">{{ card.label }}</p>
+                <p class="text-xs font-semibold text-slate-500">
+                    {{ card.label }}
+                </p>
                 <p
-                    class="mt-1 text-3xl font-bold tabular-nums tracking-tight text-slate-900"
+                    class="mt-1 text-3xl font-bold tracking-tight text-slate-900 tabular-nums"
                 >
                     {{ card.value }}
                 </p>

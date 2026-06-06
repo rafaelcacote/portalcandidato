@@ -3,7 +3,11 @@ import { Link } from '@inertiajs/vue3';
 import { ChevronRight } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { toast } from 'vue-sonner';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
     SidebarGroup,
     SidebarGroupLabel,

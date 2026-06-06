@@ -195,16 +195,21 @@
 }
 
 /* ── Nav item refinements (admin only) ────────────────────────────────── */
-.admin-app-shell [data-sidebar="menu-button"] {
+.admin-app-shell [data-sidebar='menu-button'] {
     border-radius: 0.625rem;
-    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
-.admin-app-shell [data-sidebar="menu-button"][data-active="true"] {
-    box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.15), 0 0 16px rgba(52, 211, 153, 0.07);
+.admin-app-shell [data-sidebar='menu-button'][data-active='true'] {
+    box-shadow:
+        0 0 0 1px rgba(52, 211, 153, 0.15),
+        0 0 16px rgba(52, 211, 153, 0.07);
 }
 
-.admin-app-shell [data-sidebar="group-label"] {
+.admin-app-shell [data-sidebar='group-label'] {
     font-size: 0.6rem;
     letter-spacing: 0.11em;
     font-weight: 700;

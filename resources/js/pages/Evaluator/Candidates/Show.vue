@@ -8,14 +8,20 @@ import CandidateScoreSection from '@/components/Evaluator/CandidateScoreSection.
 import CandidateStatusBadge from '@/components/Evaluator/CandidateStatusBadge.vue';
 import DocumentSection from '@/components/Evaluator/DocumentSection.vue';
 import EvaluationSummary from '@/components/Evaluator/EvaluationSummary.vue';
-import ObservationDialog from '@/components/Evaluator/ObservationDialog.vue';
 import { buildEvaluatorDocumentSections } from '@/components/Evaluator/evaluatorDocumentGrouping';
-import type { EvaluatorApplicationDocument, EvaluatorDocumentSection } from '@/components/Evaluator/evaluatorDocumentTypes';
+import type {
+    EvaluatorApplicationDocument,
+    EvaluatorDocumentSection,
+} from '@/components/Evaluator/evaluatorDocumentTypes';
 import { resolvePointsForApprovedTitleDocument } from '@/components/Evaluator/evaluatorTitleScoring';
+import ObservationDialog from '@/components/Evaluator/ObservationDialog.vue';
 import { home } from '@/routes';
 import { dashboard } from '@/routes/evaluator';
-import { index as processesIndex, show as processShow } from '@/routes/evaluator/processes';
 import scoreRoutes from '@/routes/evaluator/candidates/score';
+import {
+    index as processesIndex,
+    show as processShow,
+} from '@/routes/evaluator/processes';
 
 defineOptions({
     layout: {
@@ -59,14 +65,19 @@ const props = defineProps<{
             pontuacao_total: number | null;
             observacoes?: string | null;
             scores?: Array<{ process_criteria_id: number; pontuacao: number }>;
-            document_scores?: Array<{ application_document_id: number; pontuacao: number }>;
+            document_scores?: Array<{
+                application_document_id: number;
+                pontuacao: number;
+            }>;
         }>;
     };
 }>();
 
 // ── Document sections ────────────────────────────────────────────────────────
 const allDocuments = computed(() => props.application.documents ?? []);
-const sections = computed(() => buildEvaluatorDocumentSections(allDocuments.value));
+const sections = computed(() =>
+    buildEvaluatorDocumentSections(allDocuments.value),
+);
 
 const searchQuery = ref('');
 const statusFilter = ref('all');
@@ -77,6 +88,7 @@ const categoryOptions = computed(() => {
     sections.value.forEach((s) => {
         base.push({ label: s.title, value: s.key });
     });
+
     return base;
 });
 
@@ -84,6 +96,7 @@ const visibleSections = computed(() => {
     if (categoryFilter.value === 'all') {
         return sections.value;
     }
+
     return sections.value.filter((s) => s.key === categoryFilter.value);
 });
 
@@ -104,15 +117,24 @@ function openRefuse(doc: EvaluatorApplicationDocument): void {
     obsDialogVisible.value = true;
 }
 
-function buildInitialDocumentScores(): Array<{ application_document_id: number; pontuacao: number }> {
+function buildInitialDocumentScores(): Array<{
+    application_document_id: number;
+    pontuacao: number;
+}> {
     const docs = (props.application.documents ?? []).filter(
         (d) => d.process_title_item_id != null && d.process_title_item_id > 0,
     );
     const eval0 = props.application.evaluations?.[0];
-    const scores: Array<{ application_document_id: number; pontuacao: number }> = [];
+    const scores: Array<{
+        application_document_id: number;
+        pontuacao: number;
+    }> = [];
 
     for (const doc of docs) {
-        const existing = eval0?.document_scores?.find((s) => s.application_document_id === doc.id);
+        const existing = eval0?.document_scores?.find(
+            (s) => s.application_document_id === doc.id,
+        );
+
         if (existing != null) {
             scores.push({
                 application_document_id: doc.id,
@@ -120,10 +142,15 @@ function buildInitialDocumentScores(): Array<{ application_document_id: number; 
             });
             continue;
         }
+
         if (doc.status === 'aprovado') {
             scores.push({
                 application_document_id: doc.id,
-                pontuacao: resolvePointsForApprovedTitleDocument(doc, scores, docs),
+                pontuacao: resolvePointsForApprovedTitleDocument(
+                    doc,
+                    scores,
+                    docs,
+                ),
             });
         } else {
             scores.push({
@@ -141,7 +168,9 @@ function syncDocumentScoresFromProps(): void {
 }
 
 // ── Score form ───────────────────────────────────────────────────────────────
-const criteria = computed(() => props.application.selectionProcess?.criteria ?? []);
+const criteria = computed(
+    () => props.application.selectionProcess?.criteria ?? [],
+);
 const existingEvaluation = computed(() => props.application.evaluations?.[0]);
 
 const scoreForm = useForm({
@@ -149,6 +178,7 @@ const scoreForm = useForm({
         const existing = existingEvaluation.value?.scores?.find(
             (s) => s.process_criteria_id === item.id,
         );
+
         return {
             process_criteria_id: item.id,
             pontuacao: existing?.pontuacao ?? 0,
@@ -162,20 +192,26 @@ const scoreForm = useForm({
 const titulacaoMaxTotal = computed(() => {
     const seen = new Set<number>();
     let sum = 0;
+
     for (const d of allDocuments.value) {
         if (!d.process_title_item_id) {
             continue;
         }
+
         const gid = d.title_item?.title_group?.id;
+
         if (gid == null || seen.has(gid)) {
             continue;
         }
+
         seen.add(gid);
         const m = d.title_item?.title_group?.max_score;
+
         if (m != null && m !== '') {
             sum += Number(m);
         }
     }
+
     return sum;
 });
 
@@ -185,10 +221,16 @@ const documentScoresSum = computed(() =>
 
 const displayedPontuacaoTotal = computed(() => {
     const saved = existingEvaluation.value?.pontuacao_total;
+
     if (saved != null && saved !== '') {
         return Number(saved);
     }
-    const criteriaPart = scoreForm.scores.reduce((a, s) => a + Number(s.pontuacao ?? 0), 0);
+
+    const criteriaPart = scoreForm.scores.reduce(
+        (a, s) => a + Number(s.pontuacao ?? 0),
+        0,
+    );
+
     return criteriaPart + documentScoresSum.value;
 });
 
@@ -196,7 +238,9 @@ watch(
     () => [
         props.application.evaluations?.[0]?.document_scores,
         props.application.evaluations?.[0]?.pontuacao_total,
-        (props.application.documents ?? []).map((d) => `${d.id}:${d.status}`).join('|'),
+        (props.application.documents ?? [])
+            .map((d) => `${d.id}:${d.status}`)
+            .join('|'),
     ],
     () => {
         syncDocumentScoresFromProps();
@@ -210,24 +254,33 @@ function titleGroupStatsForSection(
     if (section.kind !== 'titles' || section.documents.length === 0) {
         return undefined;
     }
+
     const g = section.documents[0].title_item?.title_group;
+
     if (g?.max_score == null || g.max_score === '') {
         return undefined;
     }
+
     const ids = new Set(section.documents.map((d) => d.id));
     const current = scoreForm.document_scores
         .filter((s) => ids.has(s.application_document_id))
         .reduce((a, s) => a + Number(s.pontuacao), 0);
+
     return { current, max: Number(g.max_score) };
 }
 
-function patchDocumentScore(payload: { application_document_id: number; pontuacao: number }): void {
+function patchDocumentScore(payload: {
+    application_document_id: number;
+    pontuacao: number;
+}): void {
     const idx = scoreForm.document_scores.findIndex(
         (r) => r.application_document_id === payload.application_document_id,
     );
+
     if (idx === -1) {
         return;
     }
+
     scoreForm.document_scores[idx] = {
         application_document_id: payload.application_document_id,
         pontuacao: payload.pontuacao,
@@ -236,19 +289,29 @@ function patchDocumentScore(payload: { application_document_id: number; pontuaca
 
 function applyAutoScoreForDocument(documentId: number, status: string): void {
     const doc = allDocuments.value.find((d) => d.id === documentId);
+
     if (doc == null || !doc.process_title_item_id) {
         return;
     }
 
     const points =
         status === 'aprovado'
-            ? resolvePointsForApprovedTitleDocument(doc, scoreForm.document_scores, allDocuments.value)
+            ? resolvePointsForApprovedTitleDocument(
+                  doc,
+                  scoreForm.document_scores,
+                  allDocuments.value,
+              )
             : 0;
 
-    patchDocumentScore({ application_document_id: documentId, pontuacao: points });
+    patchDocumentScore({
+        application_document_id: documentId,
+        pontuacao: points,
+    });
 }
 
-function handleScoresUpdate(scores: Array<{ process_criteria_id: number; pontuacao: number }>): void {
+function handleScoresUpdate(
+    scores: Array<{ process_criteria_id: number; pontuacao: number }>,
+): void {
     scoreForm.scores = scores;
 }
 
@@ -257,11 +320,15 @@ function handleObservacoesUpdate(value: string): void {
 }
 
 function saveDraft(): void {
-    scoreForm.post(scoreRoutes.store(props.application.id).url, { preserveScroll: true });
+    scoreForm.post(scoreRoutes.store(props.application.id).url, {
+        preserveScroll: true,
+    });
 }
 
 function finalize(): void {
-    scoreForm.post(scoreRoutes.store(props.application.id).url, { preserveScroll: true });
+    scoreForm.post(scoreRoutes.store(props.application.id).url, {
+        preserveScroll: true,
+    });
 }
 </script>
 
@@ -270,15 +337,19 @@ function finalize(): void {
         <Head :title="`Avaliação – ${application.user.name}`" />
 
         <!-- ── Scrollable content ── -->
-        <div class="flex-1 px-3 pb-24 pt-4 sm:px-6 sm:pb-28 sm:pt-5 lg:px-8">
+        <div class="flex-1 px-3 pt-4 pb-24 sm:px-6 sm:pt-5 sm:pb-28 lg:px-8">
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5">
-
                 <!-- Page header -->
                 <div class="flex flex-col gap-2">
                     <Link
-                        :href="application.selectionProcess
-                            ? processShow({ selectionProcess: application.selectionProcess.id }).url
-                            : processesIndex().url"
+                        :href="
+                            application.selectionProcess
+                                ? processShow({
+                                      selectionProcess:
+                                          application.selectionProcess.id,
+                                  }).url
+                                : processesIndex().url
+                        "
                         class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-teal-600"
                     >
                         <ChevronLeft class="size-3.5" />
@@ -287,20 +358,28 @@ function finalize(): void {
 
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex items-center gap-3">
-                            <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                            <div
+                                class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600"
+                            >
                                 <ClipboardCheck class="size-4.5" />
                             </div>
                             <div>
-                                <h1 class="text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                                <h1
+                                    class="text-base font-bold tracking-tight text-slate-900 sm:text-lg"
+                                >
                                     Avaliação de Candidato
                                 </h1>
                                 <p class="text-xs text-slate-500">
-                                    Valide os documentos enviados e registre sua avaliação.
+                                    Valide os documentos enviados e registre sua
+                                    avaliação.
                                 </p>
                             </div>
                         </div>
 
-                        <CandidateStatusBadge :status="application.status" size="md" />
+                        <CandidateStatusBadge
+                            :status="application.status"
+                            size="md"
+                        />
                     </div>
                 </div>
 
@@ -329,8 +408,12 @@ function finalize(): void {
                     :active-status-filter="statusFilter"
                     :active-search="searchQuery"
                     :document-scores="scoreForm.document_scores"
-                    :title-group-score-current="titleGroupStatsForSection(section)?.current ?? null"
-                    :title-group-score-max="titleGroupStatsForSection(section)?.max ?? null"
+                    :title-group-score-current="
+                        titleGroupStatsForSection(section)?.current ?? null
+                    "
+                    :title-group-score-max="
+                        titleGroupStatsForSection(section)?.max ?? null
+                    "
                     @open-observation="openObservation"
                     @open-refuse="openRefuse"
                     @patch-document-score="patchDocumentScore"

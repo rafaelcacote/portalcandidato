@@ -8,7 +8,10 @@ const props = defineProps<{
 }>();
 
 const config = computed(() => {
-    const map: Record<string, { label: string; classes: string; iconClasses: string; icon: unknown }> = {
+    const map: Record<
+        string,
+        { label: string; classes: string; iconClasses: string; icon: unknown }
+    > = {
         enviada: {
             label: 'Aguardando',
             classes: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/80',
@@ -29,7 +32,8 @@ const config = computed(() => {
         },
         aprovada: {
             label: 'Aprovado',
-            classes: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80',
+            classes:
+                'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80',
             iconClasses: 'text-emerald-500',
             icon: CheckCircle2,
         },
@@ -47,7 +51,8 @@ const config = computed(() => {
         },
         aprovado: {
             label: 'Aprovado',
-            classes: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80',
+            classes:
+                'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80',
             iconClasses: 'text-emerald-500',
             icon: CheckCircle2,
         },
@@ -83,6 +88,7 @@ const config = computed(() => {
 
 const sizeClasses = computed(() => {
     const s = props.size ?? 'md';
+
     return {
         sm: 'px-2 py-0.5 text-[10px] gap-1',
         md: 'px-2.5 py-1 text-xs gap-1.5',
@@ -92,6 +98,7 @@ const sizeClasses = computed(() => {
 
 const iconSize = computed(() => {
     const s = props.size ?? 'md';
+
     return { sm: 'size-3', md: 'size-3.5', lg: 'size-4' }[s];
 });
 </script>
@@ -104,10 +111,7 @@ const iconSize = computed(() => {
             sizeClasses,
         ]"
     >
-        <component
-            :is="config.icon"
-            :class="[iconSize, config.iconClasses]"
-        />
+        <component :is="config.icon" :class="[iconSize, config.iconClasses]" />
         {{ config.label }}
     </span>
 </template>

@@ -2,7 +2,10 @@
 import ProgressBar from 'primevue/progressbar';
 import { computed } from 'vue';
 import RequiredDocumentCard from '@/components/Candidate/RequiredDocumentCard.vue';
-import type { RequiredDocRow, UploadedDocRow } from '@/components/Candidate/RequiredDocumentCard.vue';
+import type {
+    RequiredDocRow,
+    UploadedDocRow,
+} from '@/components/Candidate/RequiredDocumentCard.vue';
 
 const props = defineProps<{
     documents: RequiredDocRow[];
@@ -11,13 +14,19 @@ const props = defineProps<{
     isFinalized?: boolean;
 }>();
 
-const requiredDocs = computed(() => props.documents.filter((d) => d.obrigatorio));
-const optionalDocs = computed(() => props.documents.filter((d) => !d.obrigatorio));
+const requiredDocs = computed(() =>
+    props.documents.filter((d) => d.obrigatorio),
+);
+const optionalDocs = computed(() =>
+    props.documents.filter((d) => !d.obrigatorio),
+);
 
 function getUploadedDoc(docId: number): UploadedDocRow | null {
     return (
         props.uploadedDocs.find(
-            (d) => d.process_required_document_id != null && d.process_required_document_id === docId,
+            (d) =>
+                d.process_required_document_id != null &&
+                d.process_required_document_id === docId,
         ) ?? null
     );
 }
@@ -26,32 +35,43 @@ const uploadedRequiredCount = computed(
     () =>
         requiredDocs.value.filter((d) => {
             const uploaded = getUploadedDoc(d.id);
+
             return uploaded !== null && uploaded.status !== 'recusado';
         }).length,
 );
 
 const requiredProgress = computed(() =>
     requiredDocs.value.length > 0
-        ? Math.round((uploadedRequiredCount.value / requiredDocs.value.length) * 100)
+        ? Math.round(
+              (uploadedRequiredCount.value / requiredDocs.value.length) * 100,
+          )
         : 100,
 );
 </script>
 
 <template>
     <div class="flex flex-col gap-5">
-        <div v-if="documents.length === 0" class="py-8 text-center text-sm text-muted-foreground">
+        <div
+            v-if="documents.length === 0"
+            class="py-8 text-center text-sm text-muted-foreground"
+        >
             Nenhum documento exigido por este processo.
         </div>
 
         <template v-else>
             <!-- Obrigatórios -->
             <div v-if="requiredDocs.length > 0">
-                <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <div
+                    class="mb-3 flex flex-wrap items-center justify-between gap-2"
+                >
+                    <p
+                        class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                    >
                         Documentos obrigatórios
                     </p>
                     <span class="text-xs text-muted-foreground">
-                        {{ uploadedRequiredCount }} de {{ requiredDocs.length }} enviado(s)
+                        {{ uploadedRequiredCount }} de
+                        {{ requiredDocs.length }} enviado(s)
                     </span>
                 </div>
 
@@ -59,7 +79,11 @@ const requiredProgress = computed(() =>
                     :value="requiredProgress"
                     :show-value="false"
                     class="mb-4 h-1.5"
-                    :class="requiredProgress === 100 ? '[&_.p-progressbar-value]:bg-green-500' : ''"
+                    :class="
+                        requiredProgress === 100
+                            ? '[&_.p-progressbar-value]:bg-green-500'
+                            : ''
+                    "
                 />
 
                 <div class="flex flex-col gap-3">
@@ -76,7 +100,9 @@ const requiredProgress = computed(() =>
 
             <!-- Opcionais -->
             <div v-if="optionalDocs.length > 0">
-                <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <p
+                    class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                >
                     Documentos opcionais
                 </p>
                 <div class="flex flex-col gap-3">

@@ -11,10 +11,6 @@ import {
     Settings2,
     Users,
 } from 'lucide-vue-next';
-import AdminProcessAppealsPanel from '@/components/Admin/AdminProcessAppealsPanel.vue';
-import type { AppealStatusOption, ProcessAppealRow } from '@/components/Admin/AdminProcessAppealsPanel.vue';
-import AdminProcessStageRecursoEditor from '@/components/Admin/AdminProcessStageRecursoEditor.vue';
-import type { StageRow } from '@/components/Admin/AdminProcessStageRecursoEditor.vue';
 import Button from 'primevue/button';
 import ConfirmDialog from 'primevue/confirmdialog';
 import Fluid from 'primevue/fluid';
@@ -28,16 +24,19 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import Tooltip from 'primevue/tooltip';
 import { useConfirm } from 'primevue/useconfirm';
 import { computed, ref, useTemplateRef } from 'vue';
+import type {
+    AppealStatusOption,
+    ProcessAppealRow,
+} from '@/components/Admin/AdminProcessAppealsPanel.vue';
+import AdminProcessAppealsPanel from '@/components/Admin/AdminProcessAppealsPanel.vue';
+import type { StageRow } from '@/components/Admin/AdminProcessStageRecursoEditor.vue';
+import AdminProcessStageRecursoEditor from '@/components/Admin/AdminProcessStageRecursoEditor.vue';
 import { formatDateTimeBR } from '@/lib/utils';
 import { edit } from '@/routes/admin/processes';
 import {
     destroy as destroyCriteria,
     store as storeCriteria,
 } from '@/routes/admin/processes/criteria';
-import {
-    destroy as destroyStage,
-    store as storeStage,
-} from '@/routes/admin/processes/stages';
 import {
     destroy as destroyEdital,
     store as storeEdital,
@@ -47,6 +46,10 @@ import {
     store as storeRequiredDocument,
     update as updateRequiredDocument,
 } from '@/routes/admin/processes/required-documents';
+import {
+    destroy as destroyStage,
+    store as storeStage,
+} from '@/routes/admin/processes/stages';
 import {
     destroy as destroyTitleGroup,
     store as storeTitleGroup,
@@ -145,8 +148,8 @@ const editalForm = useForm({
 });
 const editalInputKey = ref(0);
 
-const hasEditalPdf = computed(
-    () => Boolean(props.selectionProcess.edital_download_url),
+const hasEditalPdf = computed(() =>
+    Boolean(props.selectionProcess.edital_download_url),
 );
 
 const onEditalFileChange = (event: Event): void => {
@@ -313,8 +316,7 @@ const toggleGroup = (id: number): void => {
     }
 };
 
-const isGroupExpanded = (id: number): boolean =>
-    expandedGroups.value.has(id);
+const isGroupExpanded = (id: number): boolean => expandedGroups.value.has(id);
 
 const openAddItemForm = (groupId: number): void => {
     showAddItemFormForGroup.value = groupId;
@@ -358,10 +360,7 @@ const storeTitleItemAction = (): void => {
     );
 };
 
-const confirmRemoveTitleGroup = (group: {
-    id: number;
-    name: string;
-}): void => {
+const confirmRemoveTitleGroup = (group: { id: number; name: string }): void => {
     confirm.require({
         header: 'Remover grupo de títulos',
         message: `Deseja remover o grupo "${group.name}" e todos os seus itens? Esta ação não pode ser desfeita.`,
@@ -481,10 +480,7 @@ const cancelEditItem = (): void => {
     editItemForm.reset();
 };
 
-const updateItemAction = (
-    groupId: number,
-    itemId: number,
-): void => {
+const updateItemAction = (groupId: number, itemId: number): void => {
     editItemForm.put(
         updateTitleItem({
             selectionProcess: props.selectionProcess.id,
@@ -566,10 +562,7 @@ const storeStageAction = (): void => {
     });
 };
 
-const confirmRemoveStage = (stage: {
-    id: number;
-    nome: string;
-}): void => {
+const confirmRemoveStage = (stage: { id: number; nome: string }): void => {
     confirm.require({
         header: 'Remover etapa',
         message: `Deseja remover a etapa "${stage.nome}" deste processo?`,
@@ -622,19 +615,6 @@ const formatosToList = (formatos?: string[] | null): string[] => {
     }
 
     return formatos.filter((value): value is string => Boolean(value));
-};
-
-const formatPontuacao = (value: string | number): string => {
-    const parsed = typeof value === 'number' ? value : Number(value);
-
-    if (Number.isNaN(parsed)) {
-        return String(value);
-    }
-
-    return parsed.toLocaleString('pt-BR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
 };
 
 const formatScore = (value: string | number): string => {
@@ -707,16 +687,20 @@ const titleGroupsTotalMaxScore = computed(() =>
 const criteriaCount = computed(
     () => props.selectionProcess.criteria?.length ?? 0,
 );
-const stagesCount = computed(
-    () => props.selectionProcess.stages?.length ?? 0,
-);
+const stagesCount = computed(() => props.selectionProcess.stages?.length ?? 0);
 const evaluatorsCount = computed(
     () => props.selectionProcess.evaluator_assignments?.length ?? 0,
 );
 
 /* ─── Navegação lateral ───────────────────────────────────── */
 
-type SectionKey = 'edital' | 'documentos' | 'titulos' | 'criterios' | 'etapas' | 'recursos';
+type SectionKey =
+    | 'edital'
+    | 'documentos'
+    | 'titulos'
+    | 'criterios'
+    | 'etapas'
+    | 'recursos';
 
 const activeSection = ref<SectionKey>('edital');
 
@@ -768,14 +752,20 @@ const navSections = computed<
         key: 'recursos',
         label: 'Recursos',
         icon: Gavel,
-        count: props.pendingAppealsCount > 0 ? props.pendingAppealsCount : props.processAppeals.length,
+        count:
+            props.pendingAppealsCount > 0
+                ? props.pendingAppealsCount
+                : props.processAppeals.length,
         done: props.pendingAppealsCount === 0,
     },
 ]);
 
 const completionChecks = computed(() => [
     { label: 'Edital PDF enviado', done: hasEditalPdf.value },
-    { label: 'Documentos configurados', done: requiredDocumentsCount.value > 0 },
+    {
+        label: 'Documentos configurados',
+        done: requiredDocumentsCount.value > 0,
+    },
     { label: 'Títulos configurados', done: titleGroupsCount.value > 0 },
     { label: 'Critérios definidos', done: criteriaCount.value > 0 },
     { label: 'Etapas criadas', done: stagesCount.value > 0 },
@@ -787,11 +777,10 @@ const completionDoneCount = computed(
 </script>
 
 <template>
-    <div class="px-4 py-3 sm:px-6 md:px-8 lg:px-10 md:py-4">
+    <div class="px-4 py-3 sm:px-6 md:px-8 md:py-4 lg:px-10">
         <ConfirmDialog />
 
         <div class="mx-auto flex w-full max-w-[1400px] flex-col gap-6">
-
             <!-- ─── Cabeçalho da página ────────────────────────────── -->
             <div class="flex items-start justify-between gap-4 py-2">
                 <div class="flex flex-col gap-1">
@@ -799,7 +788,7 @@ const completionDoneCount = computed(
                         class="flex items-center gap-1.5 text-xs text-muted-foreground"
                     >
                         <Settings2 :size="12" />
-                        <span class="uppercase tracking-wide"
+                        <span class="tracking-wide uppercase"
                             >Processo Seletivo</span
                         >
                     </div>
@@ -823,7 +812,7 @@ const completionDoneCount = computed(
 
             <!-- ─── Tabs mobile (visível apenas abaixo de lg) ─────── -->
             <div
-                class="flex overflow-x-auto gap-1 rounded-xl border bg-muted/30 p-1 lg:hidden"
+                class="flex gap-1 overflow-x-auto rounded-xl border bg-muted/30 p-1 lg:hidden"
             >
                 <button
                     v-for="section in navSections"
@@ -850,16 +839,17 @@ const completionDoneCount = computed(
 
             <!-- ─── Layout principal: sidebar + conteúdo ──────────── -->
             <div class="flex items-start gap-6">
-
                 <!-- ─── Sidebar (desktop) ─────────────────────────── -->
                 <aside
                     class="hidden w-60 shrink-0 flex-col gap-3 self-start lg:sticky lg:top-6 lg:flex xl:w-64"
                 >
                     <!-- Resumo do processo -->
-                    <div class="rounded-xl border bg-card p-4 flex flex-col gap-4">
+                    <div
+                        class="flex flex-col gap-4 rounded-xl border bg-card p-4"
+                    >
                         <div class="flex items-center justify-between">
                             <span
-                                class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                                class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
                                 >Status</span
                             >
                             <Tag
@@ -915,7 +905,7 @@ const completionDoneCount = computed(
                     <div class="overflow-hidden rounded-xl border bg-card">
                         <div class="border-b px-3 py-2.5">
                             <span
-                                class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                                class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
                                 >Configuração</span
                             >
                         </div>
@@ -968,7 +958,7 @@ const completionDoneCount = computed(
                     <div class="rounded-xl border bg-card p-4">
                         <div class="mb-3 flex items-center justify-between">
                             <span
-                                class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                                class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
                                 >Progresso</span
                             >
                             <span class="text-xs font-bold">
@@ -1016,8 +1006,7 @@ const completionDoneCount = computed(
                 </aside>
 
                 <!-- ─── Área de conteúdo ───────────────────────────── -->
-                <div class="min-w-0 flex-1 flex flex-col gap-4">
-
+                <div class="flex min-w-0 flex-1 flex-col gap-4">
                     <!-- ════════ EDITAL ════════ -->
                     <div
                         v-if="activeSection === 'edital'"
@@ -1171,9 +1160,7 @@ const completionDoneCount = computed(
                         v-if="activeSection === 'documentos'"
                         class="flex flex-col gap-5"
                     >
-                        <div
-                            class="flex items-start justify-between gap-4"
-                        >
+                        <div class="flex items-start justify-between gap-4">
                             <div class="flex items-start gap-3">
                                 <div
                                     class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
@@ -1213,10 +1200,10 @@ const completionDoneCount = computed(
                             severity="info"
                             :closable="false"
                         >
-                            A lista base de documentos é gerada
-                            automaticamente conforme o tipo do programa
-                            (Mestrado ou Doutorado). Você pode incluir
-                            documentos adicionais ou remover itens do padrão.
+                            A lista base de documentos é gerada automaticamente
+                            conforme o tipo do programa (Mestrado ou Doutorado).
+                            Você pode incluir documentos adicionais ou remover
+                            itens do padrão.
                         </Message>
 
                         <!-- Formulário collapsível -->
@@ -1619,9 +1606,7 @@ const completionDoneCount = computed(
                         class="flex flex-col gap-5"
                     >
                         <!-- Cabeçalho da seção -->
-                        <div
-                            class="flex items-start justify-between gap-4"
-                        >
+                        <div class="flex items-start justify-between gap-4">
                             <div class="flex items-start gap-3">
                                 <div
                                     class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600"
@@ -1675,9 +1660,7 @@ const completionDoneCount = computed(
                                     pts</span
                                 >
                             </div>
-                            <div
-                                class="flex items-center gap-2 border-l pl-4"
-                            >
+                            <div class="flex items-center gap-2 border-l pl-4">
                                 <span class="text-sm text-muted-foreground"
                                     >{{ titleGroupsCount }}
                                     {{
@@ -1719,12 +1702,14 @@ const completionDoneCount = computed(
                                                     ></span
                                                 >
                                                 <InputText
-                                                    v-model="titleGroupForm.code"
+                                                    v-model="
+                                                        titleGroupForm.code
+                                                    "
                                                     placeholder="A"
                                                     :invalid="
                                                         Boolean(
-                                                            titleGroupForm.errors
-                                                                .code,
+                                                            titleGroupForm
+                                                                .errors.code,
                                                         )
                                                     "
                                                 />
@@ -1750,12 +1735,14 @@ const completionDoneCount = computed(
                                                     ></span
                                                 >
                                                 <InputText
-                                                    v-model="titleGroupForm.name"
+                                                    v-model="
+                                                        titleGroupForm.name
+                                                    "
                                                     placeholder="Ex.: Formação Acadêmica/Titulação"
                                                     :invalid="
                                                         Boolean(
-                                                            titleGroupForm.errors
-                                                                .name,
+                                                            titleGroupForm
+                                                                .errors.name,
                                                         )
                                                     "
                                                 />
@@ -1791,7 +1778,8 @@ const completionDoneCount = computed(
                                                     placeholder="0,0"
                                                     :invalid="
                                                         Boolean(
-                                                            titleGroupForm.errors
+                                                            titleGroupForm
+                                                                .errors
                                                                 .max_score,
                                                         )
                                                     "
@@ -2078,7 +2066,7 @@ const completionDoneCount = computed(
                                         class="border-b bg-muted/10 px-4 py-2.5"
                                     >
                                         <p
-                                            class="text-xs italic text-muted-foreground"
+                                            class="text-xs text-muted-foreground italic"
                                         >
                                             {{ group.description }}
                                         </p>
@@ -2086,15 +2074,16 @@ const completionDoneCount = computed(
 
                                     <!-- Itens do grupo -->
                                     <template
-                                        v-for="(item, idx) in group.items ??
-                                        []"
+                                        v-for="(item, idx) in group.items ?? []"
                                         :key="item.id"
                                     >
                                         <!-- Modo edição do item (inline) -->
                                         <div
                                             v-if="editingItemId === item.id"
                                             class="border-t bg-muted/10 p-4"
-                                            :class="idx === 0 ? '!border-t-0' : ''"
+                                            :class="
+                                                idx === 0 ? '!border-t-0' : ''
+                                            "
                                         >
                                             <p
                                                 class="mb-3 text-sm font-semibold text-amber-700 dark:text-amber-400"
@@ -2183,8 +2172,12 @@ const completionDoneCount = computed(
                                                                 "
                                                                 :min="0"
                                                                 :max="9999.99"
-                                                                :min-fraction-digits="1"
-                                                                :max-fraction-digits="2"
+                                                                :min-fraction-digits="
+                                                                    1
+                                                                "
+                                                                :max-fraction-digits="
+                                                                    2
+                                                                "
                                                                 fluid
                                                             />
                                                         </label>
@@ -2211,7 +2204,8 @@ const completionDoneCount = computed(
                                                         >
                                                             <span
                                                                 class="text-sm"
-                                                                >Qtd. máxima</span
+                                                                >Qtd.
+                                                                máxima</span
                                                             >
                                                             <InputNumber
                                                                 v-model="
@@ -2298,7 +2292,7 @@ const completionDoneCount = computed(
                                             </span>
                                             <div class="min-w-0 flex-1">
                                                 <p
-                                                    class="text-sm font-medium leading-snug"
+                                                    class="text-sm leading-snug font-medium"
                                                 >
                                                     {{ item.title }}
                                                 </p>
@@ -2387,9 +2381,7 @@ const completionDoneCount = computed(
                                     </div>
 
                                     <!-- Área de adicionar item -->
-                                    <div
-                                        class="border-t bg-muted/10 px-4 py-3"
-                                    >
+                                    <div class="border-t bg-muted/10 px-4 py-3">
                                         <!-- Formulário de novo item -->
                                         <Transition name="slide-down">
                                             <div
@@ -2639,7 +2631,8 @@ const completionDoneCount = computed(
                                                             <span
                                                                 class="text-sm"
                                                                 >Instrução para
-                                                                o candidato</span
+                                                                o
+                                                                candidato</span
                                                             >
                                                             <Textarea
                                                                 v-model="
@@ -2795,9 +2788,7 @@ const completionDoneCount = computed(
                         v-if="activeSection === 'criterios'"
                         class="flex flex-col gap-5"
                     >
-                        <div
-                            class="flex items-start justify-between gap-4"
-                        >
+                        <div class="flex items-start justify-between gap-4">
                             <div class="flex items-start gap-3">
                                 <div
                                     class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600"
@@ -2858,7 +2849,8 @@ const completionDoneCount = computed(
                                                 placeholder="Ex.: Análise de currículo"
                                                 :invalid="
                                                     Boolean(
-                                                        criteriaForm.errors.nome,
+                                                        criteriaForm.errors
+                                                            .nome,
                                                     )
                                                 "
                                             />
@@ -3003,9 +2995,7 @@ const completionDoneCount = computed(
                         v-if="activeSection === 'etapas'"
                         class="flex flex-col gap-5"
                     >
-                        <div
-                            class="flex items-start justify-between gap-4"
-                        >
+                        <div class="flex items-start justify-between gap-4">
                             <div class="flex items-start gap-3">
                                 <div
                                     class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600"
@@ -3017,9 +3007,10 @@ const completionDoneCount = computed(
                                         Etapas do Processo
                                     </h2>
                                     <p class="text-sm text-muted-foreground">
-                                        Defina a sequência de etapas e os prazos de
-                                        recurso. Sem datas de recurso, o sistema abre
-                                        automaticamente 5 dias após o fim de cada etapa.
+                                        Defina a sequência de etapas e os prazos
+                                        de recurso. Sem datas de recurso, o
+                                        sistema abre automaticamente 5 dias após
+                                        o fim de cada etapa.
                                     </p>
                                 </div>
                             </div>
@@ -3096,7 +3087,9 @@ const completionDoneCount = computed(
                                                     fluid
                                                 />
                                                 <small
-                                                    v-if="stageForm.errors.ordem"
+                                                    v-if="
+                                                        stageForm.errors.ordem
+                                                    "
                                                     class="text-red-600"
                                                     >{{
                                                         stageForm.errors.ordem
@@ -3163,21 +3156,37 @@ const completionDoneCount = computed(
                                         <div
                                             class="rounded-lg border border-amber-200/80 bg-amber-50/50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20"
                                         >
-                                            <p class="mb-3 text-sm font-semibold text-foreground">
+                                            <p
+                                                class="mb-3 text-sm font-semibold text-foreground"
+                                            >
                                                 Prazo de recurso (opcional)
                                             </p>
-                                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                <label class="flex flex-col gap-1.5">
-                                                    <span class="text-sm">Início do recurso</span>
+                                            <div
+                                                class="grid grid-cols-1 gap-4 md:grid-cols-2"
+                                            >
+                                                <label
+                                                    class="flex flex-col gap-1.5"
+                                                >
+                                                    <span class="text-sm"
+                                                        >Início do recurso</span
+                                                    >
                                                     <InputText
-                                                        v-model="stageForm.recurso_inicio_em"
+                                                        v-model="
+                                                            stageForm.recurso_inicio_em
+                                                        "
                                                         type="datetime-local"
                                                     />
                                                 </label>
-                                                <label class="flex flex-col gap-1.5">
-                                                    <span class="text-sm">Fim do recurso</span>
+                                                <label
+                                                    class="flex flex-col gap-1.5"
+                                                >
+                                                    <span class="text-sm"
+                                                        >Fim do recurso</span
+                                                    >
                                                     <InputText
-                                                        v-model="stageForm.recurso_fim_em"
+                                                        v-model="
+                                                            stageForm.recurso_fim_em
+                                                        "
                                                         type="datetime-local"
                                                     />
                                                 </label>
@@ -3262,7 +3271,8 @@ const completionDoneCount = computed(
                                         v-else-if="stage.fim_em"
                                         class="text-xs text-muted-foreground"
                                     >
-                                        Recurso: padrão (5 dias após o fim da etapa)
+                                        Recurso: padrão (5 dias após o fim da
+                                        etapa)
                                     </p>
                                 </div>
                                 <Button
@@ -3273,7 +3283,9 @@ const completionDoneCount = computed(
                                     icon="pi pi-calendar-clock"
                                     size="small"
                                     aria-label="Editar prazo de recurso"
-                                    @click="stageRecursoEditorRef?.openEditor(stage)"
+                                    @click="
+                                        stageRecursoEditorRef?.openEditor(stage)
+                                    "
                                 />
                                 <Button
                                     v-tooltip.left="'Remover etapa'"
@@ -3313,13 +3325,10 @@ const completionDoneCount = computed(
                         :appeals="processAppeals"
                         :appeal-status-options="appealStatusOptions"
                     />
-
                 </div>
                 <!-- ─── fim conteúdo ──────────────────────────────── -->
-
             </div>
             <!-- ─── fim layout principal ──────────────────────────── -->
-
         </div>
     </div>
 </template>

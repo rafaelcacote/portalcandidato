@@ -13,14 +13,14 @@ defineProps<{
 <template>
     <div class="relative min-w-0 flex-1">
         <div
-            class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/90 dark:border-primary/25 dark:bg-primary/10"
+            class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-[11px] font-semibold tracking-[0.2em] text-primary/90 uppercase dark:border-primary/25 dark:bg-primary/10"
         >
             <Sparkles :size="12" class="opacity-80" aria-hidden="true" />
             Inscrição
         </div>
 
         <h1
-            class="text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl lg:leading-[1.15]"
+            class="text-2xl font-bold tracking-tight text-balance text-foreground sm:text-3xl lg:text-4xl lg:leading-[1.15]"
         >
             {{ processTitle }}
         </h1>
@@ -32,7 +32,10 @@ defineProps<{
             >
                 {{ processTypeLabel }}
             </span>
-            <ApplicationStatusBadge :status="status" :has-started="hasStarted" />
+            <ApplicationStatusBadge
+                :status="status"
+                :has-started="hasStarted"
+            />
         </div>
     </div>
 </template>

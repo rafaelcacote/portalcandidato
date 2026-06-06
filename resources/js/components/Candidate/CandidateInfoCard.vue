@@ -54,7 +54,9 @@ const accentBadgeClass = computed<string>(() => {
             </span>
 
             <div class="min-w-0 flex-1">
-                <h4 class="text-[13px] font-semibold tracking-tight text-foreground">
+                <h4
+                    class="text-[13px] font-semibold tracking-tight text-foreground"
+                >
                     {{ title }}
                 </h4>
                 <p
@@ -68,7 +70,7 @@ const accentBadgeClass = computed<string>(() => {
             <slot name="header-action" />
         </header>
 
-        <div class="flex-1 px-2.5 pb-3 pt-2 sm:px-3">
+        <div class="flex-1 px-2.5 pt-2 pb-3 sm:px-3">
             <slot />
         </div>
     </section>

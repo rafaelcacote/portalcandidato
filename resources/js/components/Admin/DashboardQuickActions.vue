@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ArrowRight, BarChart3, FileText, Settings2, Users } from 'lucide-vue-next';
+import {
+    ArrowRight,
+    BarChart3,
+    FileText,
+    Settings2,
+    Users,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import { index as evaluatorsIndex } from '@/routes/admin/evaluators';
 import { index as processesIndex } from '@/routes/admin/processes';
@@ -10,7 +16,8 @@ import { index as documentTypesIndex } from '@/routes/admin/support-tables/docum
 const actions = computed(() => [
     {
         title: 'Processos seletivos',
-        description: 'Criar, editar e configurar editais e etapas dos processos.',
+        description:
+            'Criar, editar e configurar editais e etapas dos processos.',
         href: processesIndex().url,
         icon: FileText,
         bgClass: 'bg-emerald-50 group-hover:bg-emerald-100/60',
@@ -43,7 +50,8 @@ const actions = computed(() => [
     },
     {
         title: 'Relatórios',
-        description: 'Acompanhar indicadores e exportar relatórios da plataforma.',
+        description:
+            'Acompanhar indicadores e exportar relatórios da plataforma.',
         href: reportsIndex().url,
         icon: BarChart3,
         bgClass: 'bg-orange-50 group-hover:bg-orange-100/60',
@@ -57,7 +65,9 @@ const actions = computed(() => [
 
 <template>
     <div>
-        <h2 class="mb-4 text-sm font-semibold tracking-tight text-slate-800">Ações rápidas</h2>
+        <h2 class="mb-4 text-sm font-semibold tracking-tight text-slate-800">
+            Ações rápidas
+        </h2>
         <div class="grid gap-3 sm:grid-cols-2">
             <Link
                 v-for="action in actions"
@@ -68,7 +78,7 @@ const actions = computed(() => [
             >
                 <!-- Accent bar left -->
                 <div
-                    class="absolute bottom-0 left-0 top-0 w-0.5 rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                    class="absolute top-0 bottom-0 left-0 w-0.5 rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                     :class="action.accentBar"
                 />
 

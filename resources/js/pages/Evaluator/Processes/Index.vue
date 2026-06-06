@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowRight, CheckCircle2, ClipboardList, Clock, Users } from 'lucide-vue-next';
+import {
+    ArrowRight,
+    CheckCircle2,
+    ClipboardList,
+    Clock,
+    Users,
+} from 'lucide-vue-next';
 import { home } from '@/routes';
-import { dashboard as evaluatorDashboard, dashboard } from '@/routes/evaluator';
-import { index as processesIndex, show as processShow } from '@/routes/evaluator/processes';
+import { dashboard } from '@/routes/evaluator';
+import {
+    index as processesIndex,
+    show as processShow,
+} from '@/routes/evaluator/processes';
 
 defineOptions({
     layout: {
@@ -32,18 +41,24 @@ defineProps<{
             last_page: number;
             per_page: number;
             total: number;
-            links: Array<{ url: string | null; label: string; active: boolean }>;
+            links: Array<{
+                url: string | null;
+                label: string;
+                active: boolean;
+            }>;
         };
     };
 }>();
 
 function statusLabel(status: string): string {
     return (
-        ({
-            rascunho: 'Rascunho',
-            ativo: 'Ativo',
-            encerrado: 'Encerrado',
-        } as Record<string, string>)[status] ?? status
+        (
+            {
+                rascunho: 'Rascunho',
+                ativo: 'Ativo',
+                encerrado: 'Encerrado',
+            } as Record<string, string>
+        )[status] ?? status
     );
 }
 
@@ -92,7 +107,8 @@ function formatDate(dateStr: string | null): string {
                         Processos atribuídos
                     </h1>
                     <p class="mt-1 text-sm text-slate-500">
-                        Processos seletivos nos quais você está designado como avaliador.
+                        Processos seletivos nos quais você está designado como
+                        avaliador.
                     </p>
                 </div>
             </div>
@@ -102,7 +118,9 @@ function formatDate(dateStr: string | null): string {
                 v-if="processes.data.length === 0"
                 class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-20 text-center shadow-sm"
             >
-                <div class="flex size-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                <div
+                    class="flex size-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400"
+                >
                     <ClipboardList class="size-7" />
                 </div>
                 <p class="mt-4 text-base font-semibold text-slate-700">
@@ -121,17 +139,25 @@ function formatDate(dateStr: string | null): string {
                     class="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-slate-300/60"
                 >
                     <!-- Card header -->
-                    <div class="flex items-start justify-between gap-3 border-b border-slate-100 p-5">
+                    <div
+                        class="flex items-start justify-between gap-3 border-b border-slate-100 p-5"
+                    >
                         <div class="flex min-w-0 flex-1 items-start gap-3">
-                            <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                            <div
+                                class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600"
+                            >
                                 <ClipboardList class="size-5" />
                             </div>
                             <div class="min-w-0">
-                                <h3 class="truncate text-sm font-semibold text-slate-900">
+                                <h3
+                                    class="truncate text-sm font-semibold text-slate-900"
+                                >
                                     {{ process.titulo }}
                                 </h3>
                                 <p class="mt-0.5 text-[11px] text-slate-400">
-                                    {{ formatDate(process.inscricao_inicio_em) }}
+                                    {{
+                                        formatDate(process.inscricao_inicio_em)
+                                    }}
                                     <span class="mx-1">–</span>
                                     {{ formatDate(process.inscricao_fim_em) }}
                                 </p>
@@ -149,34 +175,64 @@ function formatDate(dateStr: string | null): string {
 
                     <!-- Stats row -->
                     <div class="flex items-center gap-4 px-5 py-3">
-                        <div class="flex items-center gap-1.5 text-xs text-slate-500">
+                        <div
+                            class="flex items-center gap-1.5 text-xs text-slate-500"
+                        >
                             <Users class="size-3.5 text-slate-400" />
-                            <span class="font-medium text-slate-700">{{ process.total_candidates }}</span>
+                            <span class="font-medium text-slate-700">{{
+                                process.total_candidates
+                            }}</span>
                             candidatos
                         </div>
                         <div
                             class="flex items-center gap-1.5 text-xs"
-                            :class="process.pending_candidates > 0 ? 'text-amber-600' : 'text-emerald-600'"
+                            :class="
+                                process.pending_candidates > 0
+                                    ? 'text-amber-600'
+                                    : 'text-emerald-600'
+                            "
                         >
-                            <Clock v-if="process.pending_candidates > 0" class="size-3.5" />
+                            <Clock
+                                v-if="process.pending_candidates > 0"
+                                class="size-3.5"
+                            />
                             <CheckCircle2 v-else class="size-3.5" />
-                            <span class="font-semibold">{{ process.pending_candidates }}</span>
-                            pendente{{ process.pending_candidates !== 1 ? 's' : '' }}
+                            <span class="font-semibold">{{
+                                process.pending_candidates
+                            }}</span>
+                            pendente{{
+                                process.pending_candidates !== 1 ? 's' : ''
+                            }}
                         </div>
-                        <div class="flex items-center gap-1.5 text-xs text-slate-400">
+                        <div
+                            class="flex items-center gap-1.5 text-xs text-slate-400"
+                        >
                             <CheckCircle2 class="size-3.5 text-emerald-500" />
-                            <span class="font-medium text-slate-600">{{ process.analyzed_candidates }}</span>
+                            <span class="font-medium text-slate-600">{{
+                                process.analyzed_candidates
+                            }}</span>
                             avaliados
                         </div>
                     </div>
 
                     <!-- Progress bar -->
                     <div class="px-5 pb-3">
-                        <div class="flex items-center justify-between text-[10px] font-medium text-slate-400">
+                        <div
+                            class="flex items-center justify-between text-[10px] font-medium text-slate-400"
+                        >
                             <span>Progresso de análise</span>
-                            <span>{{ progressPercent(process.analyzed_candidates, process.total_candidates) }}%</span>
+                            <span
+                                >{{
+                                    progressPercent(
+                                        process.analyzed_candidates,
+                                        process.total_candidates,
+                                    )
+                                }}%</span
+                            >
                         </div>
-                        <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                            class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100"
+                        >
                             <div
                                 class="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-500"
                                 :style="`width: ${progressPercent(process.analyzed_candidates, process.total_candidates)}%`"
@@ -187,12 +243,17 @@ function formatDate(dateStr: string | null): string {
                     <!-- CTA button -->
                     <div class="mt-auto border-t border-slate-100 px-5 py-3">
                         <Link
-                            :href="processShow({ selectionProcess: process.id }).url"
-                            class="group/btn inline-flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 focus-visible:ring-offset-1"
+                            :href="
+                                processShow({ selectionProcess: process.id })
+                                    .url
+                            "
+                            class="group/btn inline-flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-violet-700 focus-visible:ring-2 focus-visible:ring-violet-400/60 focus-visible:ring-offset-1 focus-visible:outline-none"
                         >
                             <Users class="size-4" />
                             Ver candidatos inscritos
-                            <ArrowRight class="ml-auto size-4 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+                            <ArrowRight
+                                class="ml-auto size-4 transition-transform duration-200 group-hover/btn:translate-x-0.5"
+                            />
                         </Link>
                     </div>
                 </div>
@@ -203,7 +264,10 @@ function formatDate(dateStr: string | null): string {
                 v-if="processes.meta && processes.meta.last_page > 1"
                 class="flex items-center justify-center gap-1"
             >
-                <template v-for="link in processes.meta.links" :key="link.label">
+                <template
+                    v-for="link in processes.meta.links"
+                    :key="link.label"
+                >
                     <Link
                         v-if="link.url"
                         :href="link.url"
@@ -213,8 +277,9 @@ function formatDate(dateStr: string | null): string {
                                 ? 'bg-violet-600 text-white'
                                 : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
                         "
-                        v-html="link.label"
-                    />
+                    >
+                        <span v-html="link.label" />
+                    </Link>
                     <span
                         v-else
                         class="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium text-slate-300"

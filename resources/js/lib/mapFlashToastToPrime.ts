@@ -16,7 +16,9 @@ const summaries: Record<FlashToast['type'], string> = {
 };
 
 /** Maps app flash types to PrimeVue Toast `severity`. */
-export function flashTypeToSeverity(type: FlashToast['type']): PrimeToastSeverity {
+export function flashTypeToSeverity(
+    type: FlashToast['type'],
+): PrimeToastSeverity {
     if (type === 'warning') {
         return 'warn';
     }

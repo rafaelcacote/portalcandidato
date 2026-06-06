@@ -117,7 +117,9 @@ const chartPeriodOptions = [{ label: 'Últimos 30 dias', value: 30 }];
                         />
                     </div>
                     <div class="mt-4 flex-1">
-                        <AdminApplicationsTrendChart :values="applications_trend" />
+                        <AdminApplicationsTrendChart
+                            :values="applications_trend"
+                        />
                     </div>
                 </div>
             </div>
@@ -125,7 +127,9 @@ const chartPeriodOptions = [{ label: 'Últimos 30 dias', value: 30 }];
             <!-- ── Recent lists ──────────────────────────────────────────── -->
             <div class="grid gap-5 lg:grid-cols-2">
                 <DashboardRecentProcesses :processes="recent_processes" />
-                <DashboardRecentApplications :applications="recent_applications" />
+                <DashboardRecentApplications
+                    :applications="recent_applications"
+                />
             </div>
         </div>
     </div>
