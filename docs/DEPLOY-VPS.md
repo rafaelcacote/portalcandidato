@@ -4,20 +4,78 @@ Guia para implantar o **portalcandidato** em produção. Use este arquivo quando
 
 **Stack:** Laravel 13 · PHP 8.3 · Vue 3 + Inertia v3 · Fortify · PostgreSQL · fila/sessão/cache em `database`
 
+**Produção de referência:** `https://portaldocandidatoproensp.cloud` · VPS `2.25.167.220` · usuário `deploy`
+
 ---
 
 ## Status — marque conforme avançar
 
 - [x] **Fase 1** — VPS preparada (Ubuntu, Docker, usuário `deploy`, firewall, clone do Git)
-- [ ] **Fase 2** — Arquivos `docker/` no repositório + build na VPS + `.env` produção
-- [ ] **Fase 3** — Domínio, HTTPS, testes, backup do Postgres
-- [ ] **Fase 4** — Deploy automático (GitHub Actions + `deploy.sh`)
+- [x] **Fase 2** — Docker de produção + `.env` + build na VPS
+- [x] **Fase 3** — Domínio, HTTPS (Caddy), testes, backup do Postgres
+- [x] **Fase 4** — Deploy automático (GitHub Actions + `deploy.sh`)
 
 ---
 
-## Fase 1 — O que você já fez (referência)
+## Visão da arquitetura (produção)
 
-Confira na VPS se tudo está ok antes da Fase 2:
+```text
+Internet (HTTPS :443)
+    ↓
+Caddy (host Ubuntu — Let's Encrypt automático)
+    ↓
+127.0.0.1:8080
+    ↓
+container web (Nginx → volume public_data)
+    ↓
+container app (PHP 8.3-FPM — Laravel)
+    ↓
+container postgres (só rede interna Docker)
+
+Paralelo:
+  container queue     → php artisan queue:work
+  container scheduler → php artisan schedule:work
+```
+
+| Caminho na VPS | Conteúdo |
+|----------------|----------|
+| `/opt/portalcandidato/app` | Clone Git (código) |
+| `/opt/portalcandidato/app/.env` | Config produção (**nunca** no Git) |
+| `/opt/portalcandidato/deploy.sh` | Script de deploy (copiado de `deploy/vps-deploy.sh`) |
+| `/opt/portalcandidato/backup-db.sh` | Backup Postgres |
+| `/opt/portalcandidato/backups/` | Arquivos `.sql.gz` |
+
+**Importante:** em produção o frontend é **compilado** (`npm run build` dentro do Dockerfile). Não rode `npm run dev` na VPS.
+
+---
+
+## Regras de ouro
+
+| Faça | Não faça |
+|------|----------|
+| `git pull` + `docker compose` na VPS | `composer install` / `composer update` na VPS |
+| Editar `.env` só na VPS | Commitar `.env` no Git |
+| Commit/push no **PC** | Commit/push na VPS (exceto emergência) |
+| Sempre `--env-file .env` no compose | Esquecer `--env-file` (quebra `DB_PASSWORD`) |
+| Chave SSH pública em `/home/deploy/.ssh/` | Colocar chave em `/root/.ssh/` |
+| Chave **privada** só no PC + GitHub Secret | Colocar chave privada na VPS |
+
+---
+
+## Alias recomendado (VPS)
+
+```bash
+echo "alias dc='docker compose --env-file .env -f docker/compose.prod.yml'" >> ~/.bashrc
+source ~/.bashrc
+```
+
+Uso: `dc ps`, `dc logs -f app`, `dc exec app php artisan migrate:status`
+
+---
+
+## Fase 1 — VPS preparada
+
+Confira na VPS antes da Fase 2:
 
 ```bash
 docker --version
@@ -35,318 +93,149 @@ ls /opt/portalcandidato/app
 | Firewall | Só **22**, **80**, **443** públicos |
 | Não expor | Postgres 5432, pgAdmin, Portainer, Vite 5173 |
 
----
+Se existir **Nginx do host** na porta 80, pare antes do Docker:
 
-## Visão da arquitetura
-
-```text
-Internet (HTTPS :443)
-    ↓
-Caddy ou Nginx + certificado TLS
-    ↓
-container web (Nginx → pasta public/)
-    ↓
-container app (PHP 8.3-FPM — Laravel)
-    ↓
-container postgres (só rede interna Docker)
-
-Paralelo:
-  container queue     → php artisan queue:work
-  container scheduler → php artisan schedule:work
+```bash
+sudo systemctl stop nginx
+sudo systemctl disable nginx
 ```
-
-**Importante:** em produção o frontend é **compilado** (`npm run build` dentro do Dockerfile). Não rode `npm run dev` na VPS.
 
 ---
 
 ## Fase 2 — Docker de produção
 
-### 2.1 Arquivos que devem existir no Git
-
-Crie na **raiz do projeto** (no PC de casa):
+### 2.1 Arquivos no repositório
 
 ```text
 portalcandidato/
 ├── .dockerignore
+├── deploy/
+│   └── vps-deploy.sh          ← script de deploy (Fase 4)
 ├── docker/
-│   ├── Dockerfile
+│   ├── Dockerfile             ← build PHP+Node (Wayfinder)
 │   ├── compose.prod.yml
-│   └── nginx/
-│       └── default.conf
-└── docs/
-    └── DEPLOY-VPS.md   ← este arquivo
+│   ├── docker-entrypoint.sh
+│   ├── php-fpm/99-app-env.conf
+│   └── nginx/default.conf
+├── .github/workflows/deploy.yml
+└── docs/DEPLOY-VPS.md
 ```
 
-> **Atalho:** no Cursor, modo **Agent**, peça: *“Crie os arquivos docker/ da Fase 2 conforme docs/DEPLOY-VPS.md”* se ainda não existirem.
+Os arquivos completos estão no Git — **não copie versões antigas deste doc**. Use sempre `git pull`.
 
-### 2.2 `.dockerignore` (raiz do projeto)
+### 2.2 Destaques do `Dockerfile`
 
-```dockerignore
-.git
-.github
-node_modules
-vendor
-.env
-.env.*
-storage/logs/*
-storage/framework/cache/*
-storage/framework/sessions/*
-storage/framework/views/*
-tests
-.phpunit.result.cache
-```
+- **Estágio builder:** PHP 8.3-cli + Node 22 + Composer → `wayfinder:generate` + `npm run build`
+- **Estágio runtime:** PHP 8.3-fpm + extensões PostgreSQL
+- **Não** use estágio Node separado sem PHP (Wayfinder falha com `php: not found`)
 
-### 2.3 `docker/Dockerfile`
+### 2.3 Destaques do `compose.prod.yml`
 
-```dockerfile
-# Estágio 1: build do frontend (Vite + Vue + Inertia)
-FROM node:22-alpine AS frontend
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
+- **`--env-file .env` obrigatório** em todos os comandos (compose lê `.env` da pasta `docker/` por padrão)
+- **`.env` montado** em `app`, `queue` e `scheduler`: `../.env:/var/www/html/.env`
+- **Volume `public_data`** compartilhado entre `app` e `web` (assets Vite)
+- **Porta web:** `127.0.0.1:8080:80` (Caddy usa 80/443 no host — Fase 3)
 
-# Estágio 2: aplicação PHP
-FROM php:8.3-fpm-bookworm AS app
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git unzip libpq-dev libzip-dev libpng-dev libonig-dev \
-    && docker-php-ext-install pdo_pgsql pgsql mbstring zip gd opcache \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+### 2.4 Destaques do `nginx/default.conf`
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-WORKDIR /var/www/html
+- `resolver 127.0.0.11` + `$fastcgi_backend` — evita `host not found in upstream "app"`
+- `fastcgi_buffer_size 32k` — evita **502** com cookies/sessão Fortify
 
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
-
-COPY . .
-COPY --from=frontend /app/public/build ./public/build
-
-RUN composer dump-autoload --optimize \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
-
-USER www-data
-EXPOSE 9000
-CMD ["php-fpm"]
-```
-
-### 2.4 `docker/nginx/default.conf`
-
-```nginx
-server {
-    listen 80;
-    server_name _;
-    root /var/www/html/public;
-    index index.php;
-    client_max_body_size 20M;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        fastcgi_pass app:9000;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        include fastcgi_params;
-        fastcgi_hide_header X-Powered-By;
-    }
-
-    location ~ /\.(?!well-known).* {
-        deny all;
-    }
-}
-```
-
-### 2.5 `docker/compose.prod.yml`
-
-O `context: ..` aponta para a **raiz do projeto** (pasta acima de `docker/`).
-
-```yaml
-name: portalcandidato
-
-services:
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${DB_DATABASE:-portalcandidato}
-      POSTGRES_USER: ${DB_USERNAME:-portal_app}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - portal
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  app:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    restart: unless-stopped
-    env_file: ../.env
-    environment:
-      DB_HOST: postgres
-    volumes:
-      - app_storage:/var/www/html/storage/app
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - portal
-
-  web:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - '80:80'
-    volumes:
-      - ../public:/var/www/html/public:ro
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - app
-    networks:
-      - portal
-
-  queue:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    restart: unless-stopped
-    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
-    env_file: ../.env
-    environment:
-      DB_HOST: postgres
-    depends_on:
-      - app
-    networks:
-      - portal
-
-  scheduler:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    restart: unless-stopped
-    command: php artisan schedule:work
-    env_file: ../.env
-    environment:
-      DB_HOST: postgres
-    depends_on:
-      - app
-    networks:
-      - portal
-
-networks:
-  portal:
-    driver: bridge
-
-volumes:
-  postgres_data:
-  app_storage:
-```
-
-### 2.6 No PC de casa — commit e push
-
-```bash
-cd portalcandidato
-git add docker/ .dockerignore docs/DEPLOY-VPS.md
-git commit -m "Adiciona configuração Docker de produção"
-git push origin main
-```
-
-### 2.7 Na VPS — atualizar código e `.env`
+### 2.5 Na VPS — `.env` de produção
 
 ```bash
 cd /opt/portalcandidato/app
-git pull
-
 cp .env.example .env
 nano .env
-chmod 600 .env
+chmod 644 .env   # www-data precisa ler (volume montado no container)
 ```
 
-**`.env` de produção (ajuste valores reais):**
+**Valores mínimos (Fase 2 — teste no IP):**
 
 ```env
-APP_NAME="Portal Candidato"
+APP_NAME="Portal Candidato ProEns"
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://SEU-DOMINIO.br
+APP_URL=http://IP-DA-VPS
 
 APP_KEY=
-# Gerar na etapa 2.9
+# Gerar na etapa 2.7 — use ASPAS se tiver + / = na key
 
 DB_CONNECTION=pgsql
 DB_HOST=postgres
 DB_PORT=5432
 DB_DATABASE=portalcandidato
 DB_USERNAME=portal_app
-DB_PASSWORD=COLOQUE_SENHA_FORTE_AQUI
+DB_PASSWORD="COLOQUE_SENHA_FORTE_AQUI"
 
 SESSION_DRIVER=database
 QUEUE_CONNECTION=database
 CACHE_STORE=database
 SESSION_ENCRYPT=true
-
 LOG_LEVEL=warning
-
-MAIL_MAILER=smtp
-# ... configurar SMTP institucional quando tiver
-
-LGPD_DATA_CONTROLLER="Universidade do Estado do Amazonas (UEA) — ProEnSP"
-LGPD_CONTACT_EMAIL=privacidade@seudominio.br
 ```
 
 | Variável | Local (dev) | VPS (Docker) |
-|----------|---------------|--------------|
+|----------|-------------|--------------|
 | `APP_DEBUG` | `true` | **`false`** |
 | `DB_HOST` | `127.0.0.1` | **`postgres`** |
-| `APP_URL` | `http://localhost` | `https://domínio` |
+| `APP_URL` | `http://localhost` | `https://domínio` (Fase 3) |
 
-### 2.8 Build e subir containers
+### 2.6 Build e subir containers
 
 ```bash
 cd /opt/portalcandidato/app
 
-docker compose -f docker/compose.prod.yml build --no-cache
-docker compose -f docker/compose.prod.yml up -d
-docker compose -f docker/compose.prod.yml ps
+docker compose --env-file .env -f docker/compose.prod.yml build --no-cache
+docker compose --env-file .env -f docker/compose.prod.yml up -d
+docker compose --env-file .env -f docker/compose.prod.yml ps
 ```
 
 Todos os serviços devem aparecer como `Up` (postgres `healthy`).
 
-### 2.9 Comandos Laravel (primeira vez)
+### 2.7 Comandos Laravel (primeira vez)
 
 ```bash
 cd /opt/portalcandidato/app
 
-docker compose -f docker/compose.prod.yml exec app php artisan key:generate --force
-docker compose -f docker/compose.prod.yml exec app php artisan migrate --force
-docker compose -f docker/compose.prod.yml exec app php artisan storage:link
-docker compose -f docker/compose.prod.yml exec app php artisan config:cache
-docker compose -f docker/compose.prod.yml exec app php artisan route:cache
-docker compose -f docker/compose.prod.yml exec app php artisan view:cache
+# APP_KEY — só funciona com .env montado no container (compose.prod.yml)
+docker compose --env-file .env -f docker/compose.prod.yml exec app php artisan key:generate --force
+
+docker compose --env-file .env -f docker/compose.prod.yml exec app php artisan migrate --force
+docker compose --env-file .env -f docker/compose.prod.yml exec app php artisan storage:link
+docker compose --env-file .env -f docker/compose.prod.yml exec app php artisan config:cache
+docker compose --env-file .env -f docker/compose.prod.yml exec app php artisan route:cache
+docker compose --env-file .env -f docker/compose.prod.yml exec app php artisan view:cache
 ```
 
-### 2.10 Teste
+Confirme a key:
 
-- Abra `http://IP-DA-VPS` no navegador.
-- Se **502**: `docker compose -f docker/compose.prod.yml logs app --tail=100`
-- Se **sem CSS/JS**: confira build — `docker compose -f docker/compose.prod.yml exec app ls -la public/build`
+```bash
+docker compose --env-file .env -f docker/compose.prod.yml exec app php artisan config:show app.key
+```
 
-### 2.11 O que NÃO fazer (tutorial antigo incorreto)
+### 2.8 Teste (Fase 2)
 
-- Não rodar `composer create-project laravel/laravel`
-- Não instalar Breeze (o projeto usa **Fortify**)
+- Abra `http://IP-DA-VPS` no navegador (antes do Caddy, se web ainda em `80:80`)
+- Se **502**: `dc logs app --tail=50` e `dc logs web --tail=30`
+- Se **500**: verifique `APP_KEY` com aspas e `config:clear` + `config:cache`
+- Se **sem CSS/JS**: `dc exec app ls -la public/build/manifest.json`
+
+### 2.9 O que NÃO fazer
+
+- Não rodar `composer install` / `composer update` **na VPS** (altera `composer.lock` e quebra o build)
 - Não usar `npm run dev` em produção
 - Não `chmod 777` em `storage`
-- Não expor Postgres na porta 5432 para a internet
-- Não usar senhas como `secret123` ou `admin123`
+- Não expor Postgres na porta 5432
+- Não commitar `.env`
+
+Se rodou `composer` na VPS por engano:
+
+```bash
+git checkout -- composer.lock
+rm -rf vendor
+git pull
+```
 
 ---
 
@@ -354,35 +243,84 @@ docker compose -f docker/compose.prod.yml exec app php artisan view:cache
 
 ### 3.1 DNS
 
-Registro **A**: `portal.seudominio.br` → IP da VPS.
+Registro **A**: `portaldocandidatoproensp.cloud` → IP da VPS (ex.: `2.25.167.220`).
 
-### 3.2 HTTPS
+```bash
+dig +short portaldocandidatoproensp.cloud
+```
 
-Opções:
+### 3.2 Docker na porta 8080 (liberar 80/443 para Caddy)
 
-- **Caddy** na VPS com reverse proxy para `localhost:80` (Let's Encrypt automático)
-- **Certbot** + Nginx no host
+No `docker/compose.prod.yml`, serviço `web`:
 
-Após HTTPS, atualize `.env`:
-
-```env
-APP_URL=https://portal.seudominio.br
+```yaml
+ports:
+  - '127.0.0.1:8080:80'
 ```
 
 ```bash
-docker compose -f docker/compose.prod.yml exec app php artisan config:cache
+cd /opt/portalcandidato/app
+docker compose --env-file .env -f docker/compose.prod.yml up -d --force-recreate web
+curl -I http://127.0.0.1:8080/login
 ```
 
-### 3.3 Checklist de testes
+### 3.3 Caddy (HTTPS automático)
 
+```bash
+sudo apt update
+sudo apt install -y caddy
+sudo nano /etc/caddy/Caddyfile
+```
+
+```caddy
+portaldocandidatoproensp.cloud {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+```bash
+sudo systemctl enable caddy
+sudo systemctl restart caddy
+sudo systemctl status caddy
+```
+
+### 3.4 `.env` após HTTPS
+
+```env
+APP_URL=https://portaldocandidatoproensp.cloud
+ASSET_URL=https://portaldocandidatoproensp.cloud
+SESSION_SECURE_COOKIE=true
+APP_KEY="base64:...sua-chave-com-aspas..."
+```
+
+```bash
+cd /opt/portalcandidato/app
+docker compose --env-file .env -f docker/compose.prod.yml exec app php artisan config:clear
+docker compose --env-file .env -f docker/compose.prod.yml exec app php artisan config:cache
+docker compose --env-file .env -f docker/compose.prod.yml restart app
+```
+
+**Página em branco no HTTPS?** Quase sempre assets em `http://` (mixed content). Confira:
+
+```bash
+curl -s https://portaldocandidatoproensp.cloud/login | grep -o 'href="http[^"]*build[^"]*"' | head -3
+```
+
+Não deve retornar URLs `http://`. Se retornar, ajuste `ASSET_URL` e `APP_URL` com `https://`.
+
+O código também inclui `trustProxies` e `URL::forceScheme('https')` em `bootstrap/app.php` e `AppServiceProvider.php`.
+
+### 3.5 Checklist de testes
+
+- [ ] `https://portaldocandidatoproensp.cloud` abre (cadeado verde)
 - [ ] Login / logout (Fortify)
 - [ ] Fluxo principal do candidato
 - [ ] E-mail (se SMTP configurado)
 - [ ] Fila processando (`queue` container ativo)
 - [ ] `APP_DEBUG=false` — sem stack trace público
-- [ ] HTTPS e cookies de sessão ok
+- [ ] HTTPS e cookies de sessão ok (refresh mantém login)
 
-### 3.4 Backup PostgreSQL
+### 3.6 Backup PostgreSQL
 
 Crie `/opt/portalcandidato/backup-db.sh`:
 
@@ -393,64 +331,84 @@ BACKUP_DIR=/opt/portalcandidato/backups
 mkdir -p "$BACKUP_DIR"
 FILE="$BACKUP_DIR/portalcandidato-$(date +%Y%m%d-%H%M%S).sql.gz"
 
-docker compose -f /opt/portalcandidato/app/docker/compose.prod.yml \
-  exec -T postgres pg_dump -U portal_app portalcandidato | gzip > "$FILE"
+docker compose --env-file /opt/portalcandidato/app/.env \
+  -f /opt/portalcandidato/app/docker/compose.prod.yml \
+  exec -T postgres pg_dump -U "${DB_USERNAME:-portal_app}" "${DB_DATABASE:-portalcandidato}" | gzip > "$FILE"
 
 find "$BACKUP_DIR" -name '*.sql.gz' -mtime +14 -delete
+echo "Backup: $FILE"
 ```
+
+Ajuste `DB_USERNAME` / `DB_DATABASE` se forem diferentes no `.env`.
 
 ```bash
 chmod +x /opt/portalcandidato/backup-db.sh
-crontab -e
-# Linha: 0 3 * * * /opt/portalcandidato/backup-db.sh
+/opt/portalcandidato/backup-db.sh
+ls -lh /opt/portalcandidato/backups/
 ```
 
-Copie backups para **fora** da VPS (outro servidor ou nuvem).
+Cron (usuário `deploy`):
+
+```bash
+crontab -e
+```
+
+Adicione **dentro do editor** (não no terminal):
+
+```cron
+0 3 * * * /opt/portalcandidato/backup-db.sh >> /opt/portalcandidato/backups/backup.log 2>&1
+```
+
+Confirme: `crontab -l`
+
+Copie backups para **fora** da VPS (nuvem ou outro servidor).
 
 ---
 
 ## Fase 4 — Deploy automático via Git
 
-### 4.1 Chave SSH (PC de casa)
+### 4.1 Chave SSH (no PC)
 
 ```bash
-ssh-keygen -t ed25519 -f deploy_portalcandidato -N ""
+ssh-keygen -t ed25519 -f ~/deploy_portalcandidato -N ""
 ```
 
-- **Pública** → VPS: `~deploy/.ssh/authorized_keys`
-- **Privada** → GitHub Secret `DEPLOY_SSH_KEY`
+| Arquivo | Onde vai |
+|---------|----------|
+| `deploy_portalcandidato.pub` | VPS: `/home/deploy/.ssh/authorized_keys` |
+| `deploy_portalcandidato` (privada) | GitHub Secret `DEPLOY_SSH_KEY` — **nunca** na VPS |
 
-Teste: `ssh -i deploy_portalcandidato deploy@IP-DA-VPS`
-
-### 4.2 Script na VPS — `/opt/portalcandidato/deploy.sh`
+**Na VPS (como root ou deploy):**
 
 ```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-APP_DIR=/opt/portalcandidato/app
-COMPOSE="docker compose -f docker/compose.prod.yml"
-
-cd "$APP_DIR"
-
-git fetch origin
-git checkout main
-git pull --ff-only
-
-$COMPOSE build app
-$COMPOSE run --rm app php artisan migrate --force
-$COMPOSE up -d --remove-orphans
-
-$COMPOSE exec -T app php artisan config:cache
-$COMPOSE exec -T app php artisan route:cache
-$COMPOSE exec -T app php artisan view:cache
-
-docker image prune -f
+sudo mkdir -p /home/deploy/.ssh
+sudo nano /home/deploy/.ssh/authorized_keys   # cole a linha pública
+sudo chown -R deploy:deploy /home/deploy/.ssh
+sudo chmod 700 /home/deploy/.ssh
+sudo chmod 600 /home/deploy/.ssh/authorized_keys
 ```
 
+**Teste no PC:**
+
 ```bash
+ssh -i ~/deploy_portalcandidato deploy@2.25.167.220
+```
+
+Deve entrar **sem senha** como `deploy@srv...`.
+
+### 4.2 Script na VPS
+
+Após `git pull` no repositório:
+
+```bash
+cd /opt/portalcandidato/app
+cp deploy/vps-deploy.sh /opt/portalcandidato/deploy.sh
 chmod +x /opt/portalcandidato/deploy.sh
 ```
+
+Teste manual: `/opt/portalcandidato/deploy.sh`
+
+O script oficial está em `deploy/vps-deploy.sh` no Git (usa `--env-file .env`, rebuild de app/queue/scheduler).
 
 ### 4.3 Secrets no GitHub
 
@@ -458,36 +416,34 @@ Repositório → **Settings → Secrets and variables → Actions**:
 
 | Secret | Valor |
 |--------|--------|
-| `DEPLOY_HOST` | IP ou domínio da VPS |
+| `DEPLOY_HOST` | `portaldocandidatoproensp.cloud` ou IP |
 | `DEPLOY_USER` | `deploy` |
-| `DEPLOY_SSH_KEY` | chave privada (conteúdo completo) |
+| `DEPLOY_SSH_KEY` | conteúdo completo da chave **privada** |
 
-### 4.4 Workflow — `.github/workflows/deploy.yml`
+### 4.4 Workflow
 
-```yaml
-name: deploy
+Arquivo: `.github/workflows/deploy.yml` (já no repositório).
 
-on:
-  push:
-    branches:
-      - main
+Fluxo: `git push` em `main` → GitHub Actions → SSH → `/opt/portalcandidato/deploy.sh`
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: /opt/portalcandidato/deploy.sh
-```
+Acompanhe: **GitHub → Actions → deploy**
 
-Fluxo: `git push` em `main` → Actions executa testes (se configurado) → SSH → `deploy.sh`.
+---
 
-**Nunca** commite o `.env` com senhas.
+## Solução de problemas
+
+| Sintoma | Causa provável | Solução |
+|---------|----------------|---------|
+| `DB_PASSWORD is missing` | Compose sem `--env-file .env` | Use `docker compose --env-file .env -f docker/compose.prod.yml ...` |
+| `host not found in upstream "app"` | Nginx resolve `app` na subida | `resolver 127.0.0.11` + `$fastcgi_backend` no nginx |
+| **502** após login | Headers/cookies grandes | Buffers `fastcgi_*` no nginx |
+| **500** `No application encryption key` | `.env` não montado ou key vazia | Monte `.env` no compose; `key:generate`; aspas na key |
+| **502** com key ok | `.env` chmod 600, www-data não lê | `chmod 644 .env` |
+| Página **branca** no HTTPS | Assets em `http://` | `ASSET_URL` + `APP_URL` https; `config:cache` |
+| Porta 80 em uso | Nginx do host | `systemctl stop nginx` |
+| `composer.lock` Symfony 8 / PHP 8.4 | `composer update` na VPS | `git checkout -- composer.lock` |
+| `git pull` abortado | Edits manuais na VPS | `git checkout -- .` + `git pull` (`.env` não é afetado) |
+| Build Wayfinder falha | Node sem PHP | Use `Dockerfile` atual (builder com PHP+Node) |
 
 ---
 
@@ -495,31 +451,43 @@ Fluxo: `git push` em `main` → Actions executa testes (se configurado) → SSH 
 
 ```bash
 cd /opt/portalcandidato/app
-C="docker compose -f docker/compose.prod.yml"
+C="docker compose --env-file .env -f docker/compose.prod.yml"
 
 $C ps
 $C logs -f app
 $C logs -f queue
+$C logs -f web
 $C exec app php artisan migrate:status
+$C exec app php artisan config:show app.url
 $C exec app php artisan down
 $C exec app php artisan up
 $C restart queue
-$C down
-$C up -d
+$C up -d --force-recreate web
 ```
 
 ---
 
-## Ordem sugerida em casa (outro PC)
+## Fluxo do dia a dia
 
-1. Clonar o repositório: `git clone ...`
-2. Abrir `docs/DEPLOY-VPS.md` (este arquivo)
-3. Criar pasta `docker/` e arquivos das seções 2.2–2.5 (se ainda não existirem no repo)
-4. `git push` → na VPS: `git pull`
-5. Configurar `.env` na VPS (seção 2.7)
-6. `docker compose build` + `up` + artisan (seções 2.8–2.9)
-7. Testar no IP → Fase 3 (domínio, HTTPS, backup)
-8. Fase 4 quando o site estiver estável
+```text
+PC: editar código → commit → push origin main
+         ↓
+GitHub Actions → /opt/portalcandidato/deploy.sh
+         ↓
+https://portaldocandidatoproensp.cloud atualizado
+
+Alterar .env / SMTP → só na VPS → config:cache → restart app
+```
+
+---
+
+## Melhorias opcionais (pós-deploy)
+
+- Copiar backups `.sql.gz` para fora da VPS
+- Deploy só após CI verde (ligar workflow `deploy` ao `tests`)
+- Monitoramento de uptime (UptimeRobot, etc.)
+- Revogar tokens/chaves expostos acidentalmente
+- Desativar painéis não usados (ex.: CloudPanel na `:8443`) se não forem necessários
 
 ---
 
@@ -527,8 +495,9 @@ $C up -d
 
 - [Laravel — Deployment](https://laravel.com/docs/deployment)
 - [Docker Compose](https://docs.docker.com/compose/)
-- Versões do projeto: `AGENTS.md` e `composer.json` (PHP 8.3, Node 22 no CI)
+- [Caddy — reverse_proxy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)
+- Versões do projeto: `AGENTS.md` e `composer.json` (PHP 8.3, Node 22)
 
 ---
 
-*Documento gerado para continuidade do deploy. Fase 1 concluída; Fases 2–4 pendentes.*
+*Documento atualizado após deploy completo em produção (jun/2026). Todas as fases concluídas.*
