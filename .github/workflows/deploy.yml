@@ -4,15 +4,67 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      debug_only:
+        description: 'true = só testa SSH; false = executa deploy.sh completo'
+        type: boolean
+        default: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to VPS
+      - name: Validar secrets
+        run: |
+          missing=0
+
+          if [ -z "${{ secrets.DEPLOY_HOST }}" ]; then
+            echo "::error::Secret DEPLOY_HOST não está configurado."
+            missing=1
+          else
+            echo "DEPLOY_HOST: configurado"
+          fi
+
+          if [ -z "${{ secrets.DEPLOY_USER }}" ]; then
+            echo "::error::Secret DEPLOY_USER não está configurado."
+            missing=1
+          else
+            echo "DEPLOY_USER: configurado"
+          fi
+
+          if [ -z "${{ secrets.DEPLOY_SSH_KEY }}" ]; then
+            echo "::error::Secret DEPLOY_SSH_KEY não está configurado."
+            missing=1
+          else
+            echo "DEPLOY_SSH_KEY: configurado"
+          fi
+
+          exit "$missing"
+
+      - name: Testar conexão SSH (preflight)
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          debug: true
+          script: |
+            set -e
+            echo "=== Preflight SSH OK ==="
+            whoami
+            hostname
+            test -x /opt/portalcandidato/deploy.sh && echo "deploy.sh: executável" || echo "deploy.sh: AUSENTE ou sem permissão"
+            git -C /opt/portalcandidato/app rev-parse --short HEAD 2>/dev/null || echo "git: não foi possível ler HEAD em /opt/portalcandidato/app"
+
+      - name: Deploy to VPS
+        if: github.event_name == 'push' || inputs.debug_only == false
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          command_timeout: 45m
           script: /opt/portalcandidato/deploy.sh
