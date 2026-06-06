@@ -34,7 +34,9 @@ const page = usePage();
 const policyDialogOpen = ref(false);
 
 const dataController = computed(
-    () => (page.props.lgpd as { data_controller?: string } | undefined)?.data_controller ?? 'esta instituição',
+    () =>
+        (page.props.lgpd as { data_controller?: string } | undefined)
+            ?.data_controller ?? 'esta instituição',
 );
 
 function openPrivacyPolicy(): void {
@@ -61,30 +63,38 @@ function openPrivacyPolicy(): void {
         <AlertDescription class="text-amber-900/90 dark:text-amber-100/90">
             <template v-if="variant === 'compact'">
                 <p>
-                    Tratamos dados pessoais e sensíveis (CPF, documento, foto, endereço e contato)
-                    conforme a
-                    <strong>Lei nº 13.709/2018 (LGPD)</strong>, exclusivamente para o processo seletivo
-                    de {{ dataController }}.
+                    Tratamos dados pessoais e sensíveis (CPF, documento, foto,
+                    endereço e contato) conforme a
+                    <strong>Lei nº 13.709/2018 (LGPD)</strong>, exclusivamente
+                    para o processo seletivo de {{ dataController }}.
                 </p>
             </template>
             <template v-else>
                 <p>
-                    Este portal coleta e trata <strong>dados pessoais e sensíveis</strong>, incluindo
-                    CPF, documento de identidade, foto de perfil, endereço, telefone e e-mail, em
-                    conformidade com a <strong>Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</strong>.
+                    Este portal coleta e trata
+                    <strong>dados pessoais e sensíveis</strong>, incluindo CPF,
+                    documento de identidade, foto de perfil, endereço, telefone
+                    e e-mail, em conformidade com a
+                    <strong
+                        >Lei Geral de Proteção de Dados (LGPD — Lei nº
+                        13.709/2018)</strong
+                    >.
                 </p>
                 <ul class="mt-2 list-disc space-y-1 pl-5">
                     <li>
-                        <strong>Finalidade:</strong> cadastro, identificação e participação em processos
-                        seletivos de {{ dataController }}.
+                        <strong>Finalidade:</strong> cadastro, identificação e
+                        participação em processos seletivos de
+                        {{ dataController }}.
                     </li>
                     <li>
-                        <strong>Segurança:</strong> armazenamento com controle de acesso, criptografia em
-                        trânsito (HTTPS) e medidas técnicas para proteger seus dados.
+                        <strong>Segurança:</strong> armazenamento com controle
+                        de acesso, criptografia em trânsito (HTTPS) e medidas
+                        técnicas para proteger seus dados.
                     </li>
                     <li>
-                        <strong>Seus direitos:</strong> acesso, correção, portabilidade, anonimização,
-                        eliminação e revogação do consentimento, nos termos da LGPD.
+                        <strong>Seus direitos:</strong> acesso, correção,
+                        portabilidade, anonimização, eliminação e revogação do
+                        consentimento, nos termos da LGPD.
                     </li>
                 </ul>
             </template>
@@ -100,5 +110,8 @@ function openPrivacyPolicy(): void {
         </AlertDescription>
     </Alert>
 
-    <LgpdPrivacyPolicyDialog v-if="!externalPolicyDialog" v-model:open="policyDialogOpen" />
+    <LgpdPrivacyPolicyDialog
+        v-if="!externalPolicyDialog"
+        v-model:open="policyDialogOpen"
+    />
 </template>

@@ -96,7 +96,7 @@ const submit = (): void => {
 </script>
 
 <template>
-    <div class="px-4 py-3 sm:px-6 md:px-8 lg:px-10 md:py-4">
+    <div class="px-4 py-3 sm:px-6 md:px-8 md:py-4 lg:px-10">
         <div class="mx-auto flex w-full max-w-[1820px] flex-col gap-5">
             <div class="flex items-start justify-between gap-8 py-3">
                 <Heading
@@ -131,7 +131,9 @@ const submit = (): void => {
                                     <label class="flex flex-col gap-2">
                                         <span class="text-sm"
                                             >Descrição
-                                            <span class="text-red-600">*</span></span
+                                            <span class="text-red-600"
+                                                >*</span
+                                            ></span
                                         >
                                         <InputText
                                             v-model="form.descricao"

@@ -70,15 +70,25 @@ const stageOptions = computed(() =>
 );
 
 const submittedStageIds = computed(
-    () => new Set(props.appeals.map((a) => a.stage?.id).filter((id): id is number => id != null)),
+    () =>
+        new Set(
+            props.appeals
+                .map((a) => a.stage?.id)
+                .filter((id): id is number => id != null),
+        ),
 );
 
 const availableAppealStages = computed(() =>
-    openAppealStages.value.filter((stage) => !submittedStageIds.value.has(stage.id)),
+    openAppealStages.value.filter(
+        (stage) => !submittedStageIds.value.has(stage.id),
+    ),
 );
 
 function formatDate(iso: string | null): string {
-    if (!iso) return '—';
+    if (!iso) {
+        return '—';
+    }
+
     return new Date(iso).toLocaleString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
@@ -102,7 +112,10 @@ function submitAppeal(): void {
     });
 }
 
-const appealStatusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'danger'> = {
+const appealStatusSeverity: Record<
+    string,
+    'secondary' | 'success' | 'warn' | 'danger'
+> = {
     enviado: 'secondary',
     em_analise: 'warn',
     deferido: 'success',
@@ -116,16 +129,23 @@ const appealStatusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'd
         <Card class="rounded-xl border-border/80 shadow-sm">
             <template #title>
                 <div class="flex items-center gap-2">
-                    <ScrollText :size="18" class="text-primary" aria-hidden="true" />
+                    <ScrollText
+                        :size="18"
+                        class="text-primary"
+                        aria-hidden="true"
+                    />
                     Documentos para fins profissionais
                 </div>
             </template>
             <template #subtitle>
-                Emita comprovantes e declarações em PDF para apresentação a empregadores, conselhos e
-                instituições.
+                Emita comprovantes e declarações em PDF para apresentação a
+                empregadores, conselhos e instituições.
             </template>
             <template #content>
-                <div v-if="professionalDocuments.length === 0" class="text-sm text-muted-foreground">
+                <div
+                    v-if="professionalDocuments.length === 0"
+                    class="text-sm text-muted-foreground"
+                >
                     Nenhum documento disponível no momento.
                 </div>
                 <ul v-else class="flex flex-col gap-3">
@@ -135,11 +155,19 @@ const appealStatusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'd
                         class="flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/10 p-4 sm:flex-row sm:items-center sm:justify-between"
                     >
                         <div class="min-w-0">
-                            <p class="font-semibold text-foreground">{{ doc.label }}</p>
-                            <p class="mt-1 text-sm text-muted-foreground">{{ doc.description }}</p>
+                            <p class="font-semibold text-foreground">
+                                {{ doc.label }}
+                            </p>
+                            <p class="mt-1 text-sm text-muted-foreground">
+                                {{ doc.description }}
+                            </p>
                         </div>
                         <div class="flex shrink-0 flex-wrap gap-2">
-                            <a :href="doc.download_url" target="_blank" rel="noopener noreferrer">
+                            <a
+                                :href="doc.download_url"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
                                 <Button
                                     label="Baixar PDF"
                                     icon="pi pi-download"
@@ -171,38 +199,63 @@ const appealStatusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'd
                 </div>
             </template>
             <template #subtitle>
-                Solicite revisão de decisões dentro do prazo previsto para cada etapa do processo.
+                Solicite revisão de decisões dentro do prazo previsto para cada
+                etapa do processo.
             </template>
             <template #content>
-                <Message v-if="!hasOpenRecursoWindow" severity="info" :closable="false" class="mb-4">
-                    Não há prazo de recurso aberto no momento. Quando uma etapa encerrar e o prazo for
-                    configurado, você poderá enviar seu recurso aqui.
+                <Message
+                    v-if="!hasOpenRecursoWindow"
+                    severity="info"
+                    :closable="false"
+                    class="mb-4"
+                >
+                    Não há prazo de recurso aberto no momento. Quando uma etapa
+                    encerrar e o prazo for configurado, você poderá enviar seu
+                    recurso aqui.
                 </Message>
 
                 <div v-if="appeals.length" class="mb-4 space-y-2">
-                    <p class="text-sm font-semibold text-foreground">Recursos enviados</p>
+                    <p class="text-sm font-semibold text-foreground">
+                        Recursos enviados
+                    </p>
                     <ul class="flex flex-col gap-2">
                         <li
                             v-for="appeal in appeals"
                             :key="appeal.id"
                             class="rounded-lg border border-border/70 px-4 py-3 text-sm"
                         >
-                            <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div
+                                class="flex flex-wrap items-center justify-between gap-2"
+                            >
                                 <span class="font-medium">
-                                    {{ appeal.stage?.nome ?? 'Etapa não informada' }}
+                                    {{
+                                        appeal.stage?.nome ??
+                                        'Etapa não informada'
+                                    }}
                                 </span>
                                 <Tag
                                     :value="appeal.status_label"
-                                    :severity="appealStatusSeverity[appeal.status] ?? 'secondary'"
+                                    :severity="
+                                        appealStatusSeverity[appeal.status] ??
+                                        'secondary'
+                                    "
                                 />
                             </div>
-                            <p class="mt-2 whitespace-pre-line text-muted-foreground">{{ appeal.texto }}</p>
+                            <p
+                                class="mt-2 whitespace-pre-line text-muted-foreground"
+                            >
+                                {{ appeal.texto }}
+                            </p>
                             <div
                                 v-if="appeal.resposta"
                                 class="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2"
                             >
-                                <p class="text-xs font-semibold text-primary">Resposta da comissão</p>
-                                <p class="mt-1 whitespace-pre-line text-sm text-foreground">
+                                <p class="text-xs font-semibold text-primary">
+                                    Resposta da comissão
+                                </p>
+                                <p
+                                    class="mt-1 text-sm whitespace-pre-line text-foreground"
+                                >
                                     {{ appeal.resposta }}
                                 </p>
                                 <p
@@ -237,7 +290,9 @@ const appealStatusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'd
                         @submit.prevent="submitAppeal"
                     >
                         <div class="grid gap-2">
-                            <Label for="appeal-stage">Etapa do processo *</Label>
+                            <Label for="appeal-stage"
+                                >Etapa do processo *</Label
+                            >
                             <Dropdown
                                 id="appeal-stage"
                                 v-model="appealForm.process_stage_id"
@@ -247,11 +302,15 @@ const appealStatusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'd
                                 placeholder="Selecione a etapa"
                                 class="w-full"
                             />
-                            <InputError :message="appealForm.errors.process_stage_id" />
+                            <InputError
+                                :message="appealForm.errors.process_stage_id"
+                            />
                         </div>
 
                         <div class="grid gap-2">
-                            <Label for="appeal-texto">Fundamentação do recurso *</Label>
+                            <Label for="appeal-texto"
+                                >Fundamentação do recurso *</Label
+                            >
                             <Textarea
                                 id="appeal-texto"
                                 v-model="appealForm.texto"
@@ -283,8 +342,13 @@ const appealStatusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'd
                     </form>
                 </div>
 
-                <ul v-if="appealStages.length" class="mt-4 space-y-2 border-t border-border pt-4">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <ul
+                    v-if="appealStages.length"
+                    class="mt-4 space-y-2 border-t border-border pt-4"
+                >
+                    <p
+                        class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                    >
                         Prazos por etapa
                     </p>
                     <li
@@ -294,8 +358,14 @@ const appealStatusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'd
                     >
                         <span>{{ stage.ordem }}. {{ stage.nome }}</span>
                         <Tag
-                            :value="stage.recurso_aberto ? 'Recurso aberto' : 'Recurso encerrado'"
-                            :severity="stage.recurso_aberto ? 'success' : 'secondary'"
+                            :value="
+                                stage.recurso_aberto
+                                    ? 'Recurso aberto'
+                                    : 'Recurso encerrado'
+                            "
+                            :severity="
+                                stage.recurso_aberto ? 'success' : 'secondary'
+                            "
                         />
                     </li>
                 </ul>

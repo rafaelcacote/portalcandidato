@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import {
-    Clock,
-    FileText,
-    Lock,
-    LogIn,
-    Mail,
-    Shield,
-} from 'lucide-vue-next';
+import { Clock, FileText, Lock, LogIn, Mail, Shield } from 'lucide-vue-next';
+import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
+import LgpdPrivacyPolicyDialog from '@/components/Lgpd/LgpdPrivacyPolicyDialog.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
@@ -16,11 +11,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import LgpdPrivacyPolicyDialog from '@/components/Lgpd/LgpdPrivacyPolicyDialog.vue';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
-import { ref } from 'vue';
 
 defineOptions({
     layout: {
@@ -44,16 +37,18 @@ const privacyPolicyDialogOpen = ref(false);
     <div>
         <Head title="Entrar" />
 
-        <div class="relative w-full min-w-0 pb-6 pt-4 max-lg:pb-10 sm:pt-6 lg:pb-8 lg:pt-14">
+        <div
+            class="relative w-full min-w-0 pt-4 pb-6 max-lg:pb-10 sm:pt-6 lg:pt-14 lg:pb-8"
+        >
             <div
-                class="relative grid min-w-0 w-full grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-16"
+                class="relative grid w-full min-w-0 grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-16"
             >
                 <!-- Coluna institucional: apenas desktop / tablet largo -->
                 <div
-                    class="mx-auto hidden min-w-0 w-full max-w-xl text-center lg:block lg:mx-0 lg:max-w-none lg:pt-2 lg:text-left"
+                    class="mx-auto hidden w-full max-w-xl min-w-0 text-center lg:mx-0 lg:block lg:max-w-none lg:pt-2 lg:text-left"
                 >
                     <p
-                        class="mb-3 text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-700 sm:mb-4 sm:text-[11px]"
+                        class="mb-3 text-[10px] font-bold tracking-[0.28em] text-emerald-700 uppercase sm:mb-4 sm:text-[11px]"
                     >
                         Realização
                     </p>
@@ -68,7 +63,9 @@ const privacyPolicyDialogOpen = ref(false);
                             loading="eager"
                         />
 
-                        <div class="h-px w-20 shrink-0 rounded-full bg-emerald-600/35 sm:hidden" />
+                        <div
+                            class="h-px w-20 shrink-0 rounded-full bg-emerald-600/35 sm:hidden"
+                        />
 
                         <div
                             class="hidden shrink-0 rounded-full bg-emerald-600/35 sm:block sm:h-16 sm:w-px"
@@ -91,50 +88,68 @@ const privacyPolicyDialogOpen = ref(false);
                     <p
                         class="mx-auto mt-3 max-w-xl text-sm leading-snug text-slate-600 sm:text-base sm:leading-relaxed lg:mx-0"
                     >
-                        Informe seu e-mail e senha para acessar o portal do candidato.
+                        Informe seu e-mail e senha para acessar o portal do
+                        candidato.
                     </p>
 
                     <div
-                        class="mt-3 inline-flex max-w-full items-center gap-2 rounded-full border border-emerald-200/90 bg-white/90 px-3 py-1.5 text-[11px] font-medium leading-snug text-emerald-800 shadow-sm backdrop-blur-sm sm:mt-5 sm:gap-2.5 sm:px-5 sm:text-sm lg:mt-6"
+                        class="mt-3 inline-flex max-w-full items-center gap-2 rounded-full border border-emerald-200/90 bg-white/90 px-3 py-1.5 text-[11px] leading-snug font-medium text-emerald-800 shadow-sm backdrop-blur-sm sm:mt-5 sm:gap-2.5 sm:px-5 sm:text-sm lg:mt-6"
                     >
                         <Shield :size="15" class="shrink-0 text-emerald-700" />
                         <span class="text-left sm:text-center lg:text-left">
-                            Conexão segura (HTTPS). Tratamento de dados conforme a LGPD.
+                            Conexão segura (HTTPS). Tratamento de dados conforme
+                            a LGPD.
                         </span>
                     </div>
 
-                    <ul class="mt-6 space-y-3.5 text-left sm:mt-9 sm:space-y-5 lg:mt-10">
+                    <ul
+                        class="mt-6 space-y-3.5 text-left sm:mt-9 sm:space-y-5 lg:mt-10"
+                    >
                         <li class="flex gap-3 sm:gap-4">
                             <div
-                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#39b4b9]/15 text-[#0a7f84] dark:text-[#7ad6d9] sm:h-10 sm:w-10"
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#39b4b9]/15 text-[#0a7f84] sm:h-10 sm:w-10 dark:text-[#7ad6d9]"
                             >
                                 <Lock :size="18" stroke-width="2.25" />
                             </div>
-                            <p class="text-[13px] leading-relaxed text-slate-600 sm:text-[15px]">
-                                <span class="font-semibold text-slate-900">Proteção de dados (LGPD)</span>
-                                — Dados pessoais e sensíveis tratados com segurança, em conformidade com a
-                                Lei nº 13.709/2018.
+                            <p
+                                class="text-[13px] leading-relaxed text-slate-600 sm:text-[15px]"
+                            >
+                                <span class="font-semibold text-slate-900"
+                                    >Proteção de dados (LGPD)</span
+                                >
+                                — Dados pessoais e sensíveis tratados com
+                                segurança, em conformidade com a Lei nº
+                                13.709/2018.
                             </p>
                         </li>
                         <li class="flex gap-3 sm:gap-4">
                             <div
-                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#39b4b9]/15 text-[#0a7f84] dark:text-[#7ad6d9] sm:h-10 sm:w-10"
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#39b4b9]/15 text-[#0a7f84] sm:h-10 sm:w-10 dark:text-[#7ad6d9]"
                             >
                                 <FileText :size="18" stroke-width="2.25" />
                             </div>
-                            <p class="text-[13px] leading-relaxed text-slate-600 sm:text-[15px]">
-                                <span class="font-semibold text-slate-900">Processo simplificado</span>
-                                — Acompanhe todas as etapas do processo seletivo em um só lugar.
+                            <p
+                                class="text-[13px] leading-relaxed text-slate-600 sm:text-[15px]"
+                            >
+                                <span class="font-semibold text-slate-900"
+                                    >Processo simplificado</span
+                                >
+                                — Acompanhe todas as etapas do processo seletivo
+                                em um só lugar.
                             </p>
                         </li>
                         <li class="flex gap-3 sm:gap-4">
                             <div
-                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#39b4b9]/15 text-[#0a7f84] dark:text-[#7ad6d9] sm:h-10 sm:w-10"
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#39b4b9]/15 text-[#0a7f84] sm:h-10 sm:w-10 dark:text-[#7ad6d9]"
                             >
                                 <Clock :size="18" stroke-width="2.25" />
                             </div>
-                            <p class="text-[13px] leading-relaxed text-slate-600 sm:text-[15px]">
-                                <span class="font-semibold text-slate-900">Progresso claro</span>
+                            <p
+                                class="text-[13px] leading-relaxed text-slate-600 sm:text-[15px]"
+                            >
+                                <span class="font-semibold text-slate-900"
+                                    >Progresso claro</span
+                                >
                                 — Você acompanha onde parou a qualquer momento.
                             </p>
                         </li>
@@ -143,7 +158,7 @@ const privacyPolicyDialogOpen = ref(false);
 
                 <!-- Formulário: no mobile só logos + card -->
                 <div
-                    class="mx-auto min-w-0 w-full max-w-md lg:mx-0 lg:max-w-none lg:justify-self-end xl:max-w-[440px]"
+                    class="mx-auto w-full max-w-md min-w-0 lg:mx-0 lg:max-w-none lg:justify-self-end xl:max-w-[440px]"
                 >
                     <div
                         class="mb-6 flex flex-row flex-nowrap items-center justify-center gap-2.5 sm:mb-8 sm:gap-6 lg:hidden"
@@ -181,7 +196,9 @@ const privacyPolicyDialogOpen = ref(false);
                         <Card
                             class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xl shadow-slate-900/[0.06] dark:border-slate-800 dark:bg-slate-950"
                         >
-                            <CardContent class="space-y-5 p-5 sm:space-y-6 sm:p-7 md:p-8">
+                            <CardContent
+                                class="space-y-5 p-5 sm:space-y-6 sm:p-7 md:p-8"
+                            >
                                 <div class="flex items-start gap-3 sm:gap-4">
                                     <div
                                         class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#39b4b9]/12 text-[#0a7f84] dark:text-[#7ad6d9]"
@@ -189,20 +206,29 @@ const privacyPolicyDialogOpen = ref(false);
                                         <Mail :size="22" stroke-width="2" />
                                     </div>
                                     <div class="min-w-0 pt-0.5 text-left">
-                                        <h2 class="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                                        <h2
+                                            class="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100"
+                                        >
                                             Acesso ao portal do candidato
                                         </h2>
-                                        <p class="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-                                            Use as credenciais do seu cadastro de candidato.
+                                        <p
+                                            class="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400"
+                                        >
+                                            Use as credenciais do seu cadastro
+                                            de candidato.
                                         </p>
                                     </div>
                                 </div>
 
                                 <div class="grid gap-2">
-                                    <Label for="email" class="text-slate-900 dark:text-slate-100">E-mail</Label>
+                                    <Label
+                                        for="email"
+                                        class="text-slate-900 dark:text-slate-100"
+                                        >E-mail</Label
+                                    >
                                     <div class="relative">
                                         <Mail
-                                            class="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-slate-400"
+                                            class="pointer-events-none absolute top-1/2 left-3 size-[18px] -translate-y-1/2 text-slate-400"
                                             aria-hidden="true"
                                         />
                                         <Input
@@ -214,7 +240,7 @@ const privacyPolicyDialogOpen = ref(false);
                                             :tabindex="1"
                                             autocomplete="email"
                                             placeholder="nome@exemplo.com"
-                                            class="h-12 border-slate-200 bg-white pl-10 text-base shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:h-11 md:text-sm"
+                                            class="h-12 border-slate-200 bg-white pl-10 text-base shadow-sm sm:h-11 md:text-sm dark:border-slate-700 dark:bg-slate-900"
                                         />
                                     </div>
                                     <InputError :message="errors.email" />
@@ -246,21 +272,24 @@ const privacyPolicyDialogOpen = ref(false);
                                         :tabindex="2"
                                         autocomplete="current-password"
                                         placeholder="Sua senha"
-                                        class="h-12 border-slate-200 bg-white text-base shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:h-11 md:text-sm"
+                                        class="h-12 border-slate-200 bg-white text-base shadow-sm sm:h-11 md:text-sm dark:border-slate-700 dark:bg-slate-900"
                                     />
                                     <InputError :message="errors.password" />
                                 </div>
 
                                 <Button
                                     type="submit"
-                                    class="h-12 w-full rounded-xl border border-[#39b4b9]/25 bg-[#39b4b9] text-base font-semibold text-white shadow-md transition-transform hover:bg-[#2ea0a6] active:scale-[0.99] focus-visible:border-[#39b4b9]/40 focus-visible:ring-[#39b4b9]/35 sm:h-11 dark:border-[#39b4b9]/40 dark:bg-[#39b4b9] dark:hover:bg-[#4dc8cd]"
+                                    class="h-12 w-full rounded-xl border border-[#39b4b9]/25 bg-[#39b4b9] text-base font-semibold text-white shadow-md transition-transform hover:bg-[#2ea0a6] focus-visible:border-[#39b4b9]/40 focus-visible:ring-[#39b4b9]/35 active:scale-[0.99] sm:h-11 dark:border-[#39b4b9]/40 dark:bg-[#39b4b9] dark:hover:bg-[#4dc8cd]"
                                     :tabindex="3"
                                     :disabled="processing"
                                     data-test="login-button"
                                 >
                                     <Spinner v-if="processing" />
                                     <template v-else>
-                                        <LogIn class="mr-2 size-[18px] shrink-0 opacity-95" aria-hidden="true" />
+                                        <LogIn
+                                            class="mr-2 size-[18px] shrink-0 opacity-95"
+                                            aria-hidden="true"
+                                        />
                                         Entrar
                                     </template>
                                 </Button>
@@ -281,7 +310,9 @@ const privacyPolicyDialogOpen = ref(false);
                             </TextLink>
                         </p>
 
-                        <p class="text-center text-xs text-slate-500 dark:text-slate-400">
+                        <p
+                            class="text-center text-xs text-slate-500 dark:text-slate-400"
+                        >
                             <button
                                 type="button"
                                 class="underline decoration-slate-400/50 underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
@@ -292,7 +323,9 @@ const privacyPolicyDialogOpen = ref(false);
                         </p>
                     </Form>
 
-                    <LgpdPrivacyPolicyDialog v-model:open="privacyPolicyDialogOpen" />
+                    <LgpdPrivacyPolicyDialog
+                        v-model:open="privacyPolicyDialogOpen"
+                    />
                 </div>
             </div>
         </div>

@@ -79,7 +79,7 @@ const toggleTituloStatus = (item: TipoTitulo): void => {
 </script>
 
 <template>
-    <div class="px-4 py-3 sm:px-6 md:px-8 lg:px-10 md:py-4">
+    <div class="px-4 py-3 sm:px-6 md:px-8 md:py-4 lg:px-10">
         <div class="mx-auto flex w-full max-w-[1820px] flex-col gap-5">
             <ConfirmDialog />
 

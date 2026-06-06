@@ -33,7 +33,10 @@ const props = defineProps<{
     isFinalized?: boolean;
 }>();
 
-const docStatusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'danger'> = {
+const docStatusSeverity: Record<
+    string,
+    'secondary' | 'success' | 'warn' | 'danger'
+> = {
     enviado: 'secondary',
     em_analise: 'warn',
     aprovado: 'success',
@@ -63,7 +66,9 @@ function formatScore(value: string | number): string {
         return String(value);
     }
 
-    return n % 1 === 0 ? String(Math.trunc(n)) : n.toFixed(2).replace(/\.?0+$/, '');
+    return n % 1 === 0
+        ? String(Math.trunc(n))
+        : n.toFixed(2).replace(/\.?0+$/, '');
 }
 
 const acceptedFormatsLabel = computed(() => {
@@ -102,7 +107,9 @@ const hasReachedLimit = computed(() => {
     return validUploadedDocs.value.length >= props.item.max_quantity;
 });
 
-const canUploadMore = computed(() => !props.isFinalized && !hasReachedLimit.value);
+const canUploadMore = computed(
+    () => !props.isFinalized && !hasReachedLimit.value,
+);
 
 const counterLabel = computed(() => {
     const sent = validUploadedDocs.value.length;
@@ -169,7 +176,10 @@ function removeDocument(doc: TitleUploadedDoc): void {
     removingDocId.value = doc.id;
 
     router.delete(
-        candidateDocuments.destroy({ application: props.applicationId, document: doc.id }).url,
+        candidateDocuments.destroy({
+            application: props.applicationId,
+            document: doc.id,
+        }).url,
         {
             preserveScroll: true,
             onFinish: () => {
@@ -180,7 +190,10 @@ function removeDocument(doc: TitleUploadedDoc): void {
 }
 
 const cardToneClass = computed(() => {
-    if (refusedUploadedDocs.value.length > 0 && validUploadedDocs.value.length === 0) {
+    if (
+        refusedUploadedDocs.value.length > 0 &&
+        validUploadedDocs.value.length === 0
+    ) {
         return 'border-red-200 bg-red-50/40 dark:border-red-900/60 dark:bg-red-950/15';
     }
 
@@ -207,16 +220,20 @@ const previewScore = computed((): number | null => {
     }
 
     const perUnit = Number(props.item.score_per_unit);
+
     if (!Number.isFinite(perUnit) || perUnit <= 0) {
         return null;
     }
 
     let total = 0;
+
     for (const doc of validUploadedDocs.value) {
         let qty = Math.max(1, Number(doc.quantidade ?? 1));
+
         if (props.item.max_quantity != null) {
             qty = Math.min(qty, props.item.max_quantity);
         }
+
         total += perUnit * qty;
     }
 
@@ -233,10 +250,14 @@ const previewScore = computed((): number | null => {
     >
         <header class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                <p
+                    class="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase"
+                >
                     {{ item.code }}
                 </p>
-                <h5 class="mt-0.5 text-[14.5px] font-semibold leading-snug text-foreground">
+                <h5
+                    class="mt-0.5 text-[14.5px] leading-snug font-semibold text-foreground"
+                >
                     {{ item.title }}
                 </h5>
                 <div class="mt-2 flex flex-wrap items-center gap-1.5">
@@ -307,13 +328,20 @@ const previewScore = computed((): number | null => {
                 aria-hidden="true"
             />
             <div class="min-w-0 flex-1">
-                <p class="text-[12px] font-semibold text-amber-800 dark:text-amber-300">
+                <p
+                    class="text-[12px] font-semibold text-amber-800 dark:text-amber-300"
+                >
                     Pontuação prévia estimada:
-                    <span class="tabular-nums">{{ formatScore(previewScore) }} pts</span>
+                    <span class="tabular-nums"
+                        >{{ formatScore(previewScore) }} pts</span
+                    >
                 </p>
-                <p class="mt-0.5 flex items-center gap-1 text-[11px] text-amber-700/80 dark:text-amber-400/80">
+                <p
+                    class="mt-0.5 flex items-center gap-1 text-[11px] text-amber-700/80 dark:text-amber-400/80"
+                >
                     <Info :size="11" aria-hidden="true" />
-                    Valor estimado com base nos comprovantes enviados. A pontuação final é definida pelo avaliador.
+                    Valor estimado com base nos comprovantes enviados. A
+                    pontuação final é definida pelo avaliador.
                 </p>
             </div>
         </div>
@@ -331,7 +359,11 @@ const previewScore = computed((): number | null => {
                 :key="doc.id"
                 class="flex items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2 dark:bg-background/40"
             >
-                <FileText :size="14" class="shrink-0 text-primary" aria-hidden="true" />
+                <FileText
+                    :size="14"
+                    class="shrink-0 text-primary"
+                    aria-hidden="true"
+                />
                 <p
                     class="min-w-0 flex-1 truncate text-[12.5px] font-medium text-foreground"
                     :title="doc.nome_arquivo"
@@ -378,7 +410,9 @@ const previewScore = computed((): number | null => {
                 aria-hidden="true"
             />
             <div class="min-w-0 flex-1">
-                <p class="truncate text-[12px] font-semibold text-red-700 dark:text-red-300">
+                <p
+                    class="truncate text-[12px] font-semibold text-red-700 dark:text-red-300"
+                >
                     {{ refused.nome_arquivo }} (recusado)
                 </p>
                 <p
@@ -407,7 +441,10 @@ const previewScore = computed((): number | null => {
 
         <div v-if="!isFinalized" class="flex flex-col gap-2">
             <p class="text-[11px] text-muted-foreground">
-                Formatos aceitos: <span class="font-medium text-foreground">{{ acceptedFormatsLabel }}</span>
+                Formatos aceitos:
+                <span class="font-medium text-foreground">{{
+                    acceptedFormatsLabel
+                }}</span>
                 · até {{ item.max_file_size_mb }} MB
             </p>
 
@@ -424,7 +461,11 @@ const previewScore = computed((): number | null => {
                 <span
                     class="flex max-w-full items-center gap-1.5 truncate rounded-lg bg-primary/10 px-3 py-1.5 text-[12.5px] font-medium text-foreground"
                 >
-                    <Paperclip :size="13" class="shrink-0 text-primary" aria-hidden="true" />
+                    <Paperclip
+                        :size="13"
+                        class="shrink-0 text-primary"
+                        aria-hidden="true"
+                    />
                     <span class="truncate">{{ selectedFile.name }}</span>
                 </span>
                 <Button
@@ -448,7 +489,9 @@ const previewScore = computed((): number | null => {
             <div v-else class="flex flex-wrap items-center gap-2">
                 <Button
                     type="button"
-                    :severity="validUploadedDocs.length > 0 ? 'secondary' : 'primary'"
+                    :severity="
+                        validUploadedDocs.length > 0 ? 'secondary' : 'primary'
+                    "
                     :outlined="validUploadedDocs.length > 0"
                     size="small"
                     :disabled="!canUploadMore"
@@ -456,9 +499,17 @@ const previewScore = computed((): number | null => {
                 >
                     <template #default>
                         <span class="flex items-center gap-1.5">
-                            <Plus v-if="validUploadedDocs.length > 0" :size="14" aria-hidden="true" />
+                            <Plus
+                                v-if="validUploadedDocs.length > 0"
+                                :size="14"
+                                aria-hidden="true"
+                            />
                             <CloudUpload v-else :size="14" aria-hidden="true" />
-                            {{ validUploadedDocs.length > 0 ? 'Adicionar comprovante' : 'Enviar comprovante' }}
+                            {{
+                                validUploadedDocs.length > 0
+                                    ? 'Adicionar comprovante'
+                                    : 'Enviar comprovante'
+                            }}
                         </span>
                     </template>
                 </Button>

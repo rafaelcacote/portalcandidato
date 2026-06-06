@@ -10,7 +10,9 @@ use Spatie\Permission\Models\Role;
 class RolesSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Cria os papéis do sistema e o usuário administrador inicial.
+     *
+     * Credenciais: admin@portalcandidato.local / password
      */
     public function run(): void
     {

@@ -14,10 +14,9 @@ import CandidateReadonlyField from '@/components/Candidate/CandidateReadonlyFiel
 import {
     asText,
     formatDateBR,
-    maskCpf
-    
+    maskCpf,
 } from '@/components/Candidate/profileTypes';
-import type {CandidateProfileUser} from '@/components/Candidate/profileTypes';
+import type { CandidateProfileUser } from '@/components/Candidate/profileTypes';
 
 const props = defineProps<{
     user: CandidateProfileUser | null;

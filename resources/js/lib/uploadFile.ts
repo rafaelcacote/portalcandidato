@@ -19,7 +19,9 @@ export function normalizeUploadFile(file: File, fallbackBase = 'upload'): File {
 
     const ext =
         extensionFromMime[file.type] ??
-        (file.type.startsWith('image/') ? file.type.split('/')[1] ?? 'jpg' : 'jpg');
+        (file.type.startsWith('image/')
+            ? (file.type.split('/')[1] ?? 'jpg')
+            : 'jpg');
 
     return new File([file], `${fallbackBase}.${ext}`, {
         type: file.type || 'image/jpeg',

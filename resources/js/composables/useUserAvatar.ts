@@ -1,4 +1,5 @@
-import { computed, type MaybeRefOrGetter, toValue } from 'vue';
+import { computed, toValue } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 
 type UserWithPhoto = {
     avatar?: string | null;
@@ -6,7 +7,9 @@ type UserWithPhoto = {
 };
 
 /** Resolves the best available profile photo URL for avatars in the UI. */
-export function resolveUserAvatarUrl(user: UserWithPhoto | null | undefined): string | null {
+export function resolveUserAvatarUrl(
+    user: UserWithPhoto | null | undefined,
+): string | null {
     if (user === null || user === undefined) {
         return null;
     }
@@ -20,7 +23,9 @@ export function resolveUserAvatarUrl(user: UserWithPhoto | null | undefined): st
     return String(url);
 }
 
-export function useUserAvatar(user: MaybeRefOrGetter<UserWithPhoto | null | undefined>) {
+export function useUserAvatar(
+    user: MaybeRefOrGetter<UserWithPhoto | null | undefined>,
+) {
     const avatarUrl = computed(() => resolveUserAvatarUrl(toValue(user)));
 
     const hasAvatar = computed(() => avatarUrl.value !== null);

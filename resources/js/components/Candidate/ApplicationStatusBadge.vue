@@ -68,7 +68,10 @@ const toneClass = computed(() => {
         class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold tracking-wide shadow-sm"
         :class="toneClass"
     >
-        <span class="size-1.5 shrink-0 rounded-full bg-current opacity-70" aria-hidden="true" />
+        <span
+            class="size-1.5 shrink-0 rounded-full bg-current opacity-70"
+            aria-hidden="true"
+        />
         {{ resolved.label }}
     </span>
 </template>

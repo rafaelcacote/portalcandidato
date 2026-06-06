@@ -69,14 +69,20 @@ const cards = computed(() => [
                     v-if="card.highlight"
                     class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600 ring-1 ring-amber-200"
                 >
-                    <span class="size-1.5 animate-pulse rounded-full bg-amber-500" />
+                    <span
+                        class="size-1.5 animate-pulse rounded-full bg-amber-500"
+                    />
                     Atenção
                 </span>
             </div>
 
             <div class="mt-4">
-                <p class="text-xs font-semibold text-slate-500">{{ card.label }}</p>
-                <p class="mt-1 text-3xl font-bold tabular-nums tracking-tight text-slate-900">
+                <p class="text-xs font-semibold text-slate-500">
+                    {{ card.label }}
+                </p>
+                <p
+                    class="mt-1 text-3xl font-bold tracking-tight text-slate-900 tabular-nums"
+                >
                     {{ card.value }}
                 </p>
                 <p class="mt-0.5 text-[11px] text-slate-400">{{ card.sub }}</p>

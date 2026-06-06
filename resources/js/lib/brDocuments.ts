@@ -50,6 +50,7 @@ export function formatCpfDisplay(value: string | null | undefined): string {
 
 export function formatCepDisplay(digits: string): string {
     const d = cepDigitsOnly(digits);
+
     if (d.length <= 5) {
         return d;
     }

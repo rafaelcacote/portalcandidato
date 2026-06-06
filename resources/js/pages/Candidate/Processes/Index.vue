@@ -21,10 +21,13 @@ import {
 import { computed, ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PulseLoader } from '@/components/ui/pulse-loader';
 import { Input } from '@/components/ui/input';
+import { PulseLoader } from '@/components/ui/pulse-loader';
 import { home } from '@/routes';
-import { show as applicationShow, start } from '@/routes/candidate/applications';
+import {
+    show as applicationShow,
+    start,
+} from '@/routes/candidate/applications';
 import { index as processesIndex, show } from '@/routes/candidate/processes';
 
 type ProcessItem = {
@@ -101,7 +104,9 @@ function clearFilters(): void {
     router.get(processesIndex().url, {}, { preserveState: true });
 }
 
-const hasActiveFilters = computed(() => searchQuery.value !== '' || props.filters.tipo_programa !== '');
+const hasActiveFilters = computed(
+    () => searchQuery.value !== '' || props.filters.tipo_programa !== '',
+);
 
 const tipoOptions = [
     { value: 'mestrado', label: 'Mestrado' },
@@ -109,7 +114,10 @@ const tipoOptions = [
 ];
 
 function formatDate(dateStr: string | null): string {
-    if (!dateStr) return '—';
+    if (!dateStr) {
+        return '—';
+    }
+
     return new Date(dateStr).toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: 'short',
@@ -118,7 +126,10 @@ function formatDate(dateStr: string | null): string {
 }
 
 function formatDateShort(dateStr: string | null): string {
-    if (!dateStr) return '—';
+    if (!dateStr) {
+        return '—';
+    }
+
     return new Date(dateStr).toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: 'short',
@@ -127,35 +138,70 @@ function formatDateShort(dateStr: string | null): string {
 
 function isInscricaoAberta(process: ProcessItem): boolean {
     const now = new Date();
-    const inicio = process.inscricao_inicio_em ? new Date(process.inscricao_inicio_em) : null;
-    const fim = process.inscricao_fim_em ? new Date(process.inscricao_fim_em) : null;
-    if (inicio && now < inicio) return false;
-    if (fim && now > fim) return false;
+    const inicio = process.inscricao_inicio_em
+        ? new Date(process.inscricao_inicio_em)
+        : null;
+    const fim = process.inscricao_fim_em
+        ? new Date(process.inscricao_fim_em)
+        : null;
+
+    if (inicio && now < inicio) {
+        return false;
+    }
+
+    if (fim && now > fim) {
+        return false;
+    }
+
     return process.status === 'ativo';
 }
 
 function daysUntilClose(process: ProcessItem): number | null {
-    const fim = process.inscricao_fim_em ? new Date(process.inscricao_fim_em) : null;
-    if (!fim) return null;
+    const fim = process.inscricao_fim_em
+        ? new Date(process.inscricao_fim_em)
+        : null;
+
+    if (!fim) {
+        return null;
+    }
+
     const now = new Date();
-    if (now > fim) return null;
+
+    if (now > fim) {
+        return null;
+    }
+
     return Math.ceil((fim.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function isClosingSoon(process: ProcessItem): boolean {
     const days = daysUntilClose(process);
+
     return days !== null && days <= 7;
 }
 
 function tipoLabel(tipo: string | null | undefined): string {
-    if (!tipo) return '';
-    const map: Record<string, string> = { mestrado: 'Mestrado', doutorado: 'Doutorado' };
+    if (!tipo) {
+        return '';
+    }
+
+    const map: Record<string, string> = {
+        mestrado: 'Mestrado',
+        doutorado: 'Doutorado',
+    };
+
     return map[tipo] ?? tipo;
 }
 
 function cardAccentClass(process: ProcessItem): string {
-    if (!isInscricaoAberta(process)) return 'bg-muted';
-    if (isClosingSoon(process)) return 'bg-amber-500';
+    if (!isInscricaoAberta(process)) {
+        return 'bg-muted';
+    }
+
+    if (isClosingSoon(process)) {
+        return 'bg-amber-500';
+    }
+
     return 'bg-green-500';
 }
 
@@ -178,7 +224,9 @@ function startApplication(processId: number): void {
                 />
                 <div class="relative flex flex-col gap-5 px-6 py-7 sm:px-8">
                     <!-- Title row -->
-                    <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div
+                        class="flex flex-wrap items-start justify-between gap-4"
+                    >
                         <div class="flex items-center gap-3.5">
                             <div
                                 class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm"
@@ -192,7 +240,8 @@ function startApplication(processId: number): void {
                                     Processos seletivos
                                 </h1>
                                 <p class="mt-0.5 text-sm text-muted-foreground">
-                                    Encontre e inscreva-se nos processos com inscrições abertas
+                                    Encontre e inscreva-se nos processos com
+                                    inscrições abertas
                                 </p>
                             </div>
                         </div>
@@ -227,16 +276,16 @@ function startApplication(processId: number): void {
                         <div class="relative max-w-xl">
                             <Search
                                 :size="15"
-                                class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                                class="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
                             />
                             <Input
                                 v-model="searchQuery"
                                 placeholder="Buscar por título, área ou modalidade..."
-                                class="h-10 pl-9 pr-9"
+                                class="h-10 pr-9 pl-9"
                             />
                             <button
                                 v-if="searchQuery"
-                                class="absolute right-3 top-1/2 -translate-y-1/2 rounded text-muted-foreground transition-colors hover:text-foreground"
+                                class="absolute top-1/2 right-3 -translate-y-1/2 rounded text-muted-foreground transition-colors hover:text-foreground"
                                 type="button"
                                 @click="searchQuery = ''"
                             >
@@ -314,10 +363,7 @@ function startApplication(processId: number): void {
             </div>
 
             <!-- ─── Process Grid ─── -->
-            <div
-                v-else
-                class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-            >
+            <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <article
                     v-for="process in processes.data"
                     :key="process.id"
@@ -325,7 +371,10 @@ function startApplication(processId: number): void {
                 >
                     <!-- Accent top bar -->
                     <div
-                        :class="['h-0.5 w-full shrink-0 transition-all', cardAccentClass(process)]"
+                        :class="[
+                            'h-0.5 w-full shrink-0 transition-all',
+                            cardAccentClass(process),
+                        ]"
                     />
 
                     <!-- Card body -->
@@ -339,10 +388,7 @@ function startApplication(processId: number): void {
                                     v-if="process.tipo_programa === 'doutorado'"
                                     :size="18"
                                 />
-                                <BookOpen
-                                    v-else
-                                    :size="18"
-                                />
+                                <BookOpen v-else :size="18" />
                             </div>
                             <div class="flex flex-wrap justify-end gap-1.5">
                                 <Badge
@@ -372,7 +418,7 @@ function startApplication(processId: number): void {
                         <!-- Title + meta chips -->
                         <div class="space-y-2">
                             <h3
-                                class="line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary"
+                                class="line-clamp-2 text-sm leading-snug font-semibold text-foreground transition-colors group-hover:text-primary"
                             >
                                 {{ process.titulo }}
                             </h3>
@@ -400,8 +446,12 @@ function startApplication(processId: number): void {
                         </div>
 
                         <!-- Description -->
-                        <p class="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                            {{ process.descricao || 'Sem descrição cadastrada.' }}
+                        <p
+                            class="line-clamp-2 text-xs leading-relaxed text-muted-foreground"
+                        >
+                            {{
+                                process.descricao || 'Sem descrição cadastrada.'
+                            }}
                         </p>
 
                         <!-- Date + urgency – pushed to bottom -->
@@ -409,12 +459,14 @@ function startApplication(processId: number): void {
                             <div
                                 class="flex items-center gap-2 rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground"
                             >
-                                <Calendar
-                                    :size="12"
-                                    class="shrink-0"
-                                />
+                                <Calendar :size="12" class="shrink-0" />
                                 <span>
-                                    {{ formatDateShort(process.inscricao_inicio_em) }} →
+                                    {{
+                                        formatDateShort(
+                                            process.inscricao_inicio_em,
+                                        )
+                                    }}
+                                    →
                                     {{ formatDate(process.inscricao_fim_em) }}
                                 </span>
                             </div>
@@ -422,18 +474,21 @@ function startApplication(processId: number): void {
                                 v-if="isClosingSoon(process)"
                                 class="flex items-center gap-1.5 rounded-lg border border-amber-200/70 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/20 dark:text-amber-400"
                             >
-                                <Clock
-                                    :size="11"
-                                    class="shrink-0"
-                                />
+                                <Clock :size="11" class="shrink-0" />
                                 Encerra em {{ daysUntilClose(process) }}
                                 {{
-                                    daysUntilClose(process) === 1 ? 'dia' : 'dias'
+                                    daysUntilClose(process) === 1
+                                        ? 'dia'
+                                        : 'dias'
                                 }}
                             </div>
                             <!-- Draft progress indicator -->
                             <div
-                                v-else-if="draftApplicationIdsByProcessId[process.id] && isInscricaoAberta(process)"
+                                v-else-if="
+                                    draftApplicationIdsByProcessId[
+                                        process.id
+                                    ] && isInscricaoAberta(process)
+                                "
                                 class="flex items-center gap-1.5 rounded-lg border border-blue-200/70 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 dark:border-blue-800/50 dark:bg-blue-950/20 dark:text-blue-400"
                             >
                                 <span
@@ -448,10 +503,7 @@ function startApplication(processId: number): void {
                     <div
                         class="flex items-center gap-1 border-t border-border/60 bg-muted/20 px-4 py-3"
                     >
-                        <Link
-                            :href="show(process.id).url"
-                            class="shrink-0"
-                        >
+                        <Link :href="show(process.id).url" class="shrink-0">
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -490,7 +542,9 @@ function startApplication(processId: number): void {
                                 :href="
                                     applicationShow({
                                         application:
-                                            draftApplicationIdsByProcessId[process.id],
+                                            draftApplicationIdsByProcessId[
+                                                process.id
+                                            ],
                                     }).url
                                 "
                             >
@@ -543,8 +597,11 @@ function startApplication(processId: number): void {
                     <ChevronLeft :size="15" />
                 </button>
 
-                <span class="min-w-[6rem] text-center text-sm text-muted-foreground">
-                    Página {{ processes.current_page }} de {{ processes.last_page }}
+                <span
+                    class="min-w-[6rem] text-center text-sm text-muted-foreground"
+                >
+                    Página {{ processes.current_page }} de
+                    {{ processes.last_page }}
                 </span>
 
                 <button

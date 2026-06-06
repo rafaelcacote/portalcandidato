@@ -21,9 +21,9 @@ const usesRoleShell = computed(() => {
     const roles = page.props.auth?.roles ?? [];
 
     return (
-        roles.includes('admin')
-        || roles.includes('avaliador')
-        || roles.includes('candidato')
+        roles.includes('admin') ||
+        roles.includes('avaliador') ||
+        roles.includes('candidato')
     );
 });
 </script>

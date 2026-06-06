@@ -19,9 +19,13 @@ defineProps<{
 
 function statusLabel(status: string): string {
     return (
-        ({ rascunho: 'Rascunho', ativo: 'Ativo', encerrado: 'Encerrado' } as Record<string, string>)[
-            status
-        ] ?? status
+        (
+            {
+                rascunho: 'Rascunho',
+                ativo: 'Ativo',
+                encerrado: 'Encerrado',
+            } as Record<string, string>
+        )[status] ?? status
     );
 }
 
@@ -51,14 +55,22 @@ function formatDate(dateStr: string | null): string {
 </script>
 
 <template>
-    <div class="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60">
+    <div
+        class="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60"
+    >
         <!-- Header -->
-        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <div
+            class="flex items-center justify-between border-b border-slate-100 px-5 py-4"
+        >
             <div class="flex items-center gap-2">
-                <div class="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500"
+                >
                     <FileText class="size-3.5" />
                 </div>
-                <h2 class="text-sm font-semibold text-slate-900">Últimos processos</h2>
+                <h2 class="text-sm font-semibold text-slate-900">
+                    Últimos processos
+                </h2>
             </div>
             <Link
                 :href="processesIndex().url"
@@ -69,7 +81,10 @@ function formatDate(dateStr: string | null): string {
         </div>
 
         <!-- List -->
-        <ul v-if="processes.length > 0" class="flex-1 divide-y divide-slate-100">
+        <ul
+            v-if="processes.length > 0"
+            class="flex-1 divide-y divide-slate-100"
+        >
             <li
                 v-for="p in processes"
                 :key="p.id"
@@ -120,8 +135,12 @@ function formatDate(dateStr: string | null): string {
                 <FileText class="size-6" />
             </div>
             <div>
-                <p class="text-sm font-semibold text-slate-700">Nenhum processo cadastrado</p>
-                <p class="mt-0.5 text-xs text-slate-400">Crie o primeiro processo seletivo.</p>
+                <p class="text-sm font-semibold text-slate-700">
+                    Nenhum processo cadastrado
+                </p>
+                <p class="mt-0.5 text-xs text-slate-400">
+                    Crie o primeiro processo seletivo.
+                </p>
             </div>
             <Link :href="processCreate().url">
                 <button

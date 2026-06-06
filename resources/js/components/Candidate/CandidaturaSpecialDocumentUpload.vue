@@ -23,7 +23,10 @@ const props = defineProps<{
     isFinalized?: boolean;
 }>();
 
-const docStatusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'danger'> = {
+const docStatusSeverity: Record<
+    string,
+    'secondary' | 'success' | 'warn' | 'danger'
+> = {
     enviado: 'secondary',
     em_analise: 'warn',
     aprovado: 'success',
@@ -54,10 +57,12 @@ function submitUpload(): void {
     if (!selectedFile.value) {
         return;
     }
+
     uploadForm.arquivo = selectedFile.value;
     uploadForm.post(candidateDocuments.store(props.applicationId).url, {
         onSuccess: () => {
             selectedFile.value = null;
+
             if (fileInputRef.value) {
                 fileInputRef.value.value = '';
             }
@@ -67,6 +72,7 @@ function submitUpload(): void {
 
 function cancelSelection(): void {
     selectedFile.value = null;
+
     if (fileInputRef.value) {
         fileInputRef.value.value = '';
     }
@@ -88,35 +94,54 @@ function cancelSelection(): void {
                 <p class="mt-1 text-xs leading-relaxed text-muted-foreground">
                     {{ description }}
                 </p>
-                <p v-if="acceptedHint" class="mt-1 text-xs text-muted-foreground">
+                <p
+                    v-if="acceptedHint"
+                    class="mt-1 text-xs text-muted-foreground"
+                >
                     {{ acceptedHint }}
                 </p>
             </div>
             <div v-if="uploadedDoc" class="shrink-0">
                 <Tag
-                    :value="docStatusLabel[uploadedDoc.status] ?? uploadedDoc.status"
-                    :severity="docStatusSeverity[uploadedDoc.status] ?? 'secondary'"
+                    :value="
+                        docStatusLabel[uploadedDoc.status] ?? uploadedDoc.status
+                    "
+                    :severity="
+                        docStatusSeverity[uploadedDoc.status] ?? 'secondary'
+                    "
                 />
             </div>
         </div>
 
-        <div v-if="uploadedDoc" class="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div
+            v-if="uploadedDoc"
+            class="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"
+        >
             <i class="pi pi-file" />
             <span class="truncate">{{ uploadedDoc.nome_arquivo }}</span>
         </div>
 
         <div
-            v-if="uploadedDoc?.status === 'recusado' && uploadedDoc.motivo_recusa"
+            v-if="
+                uploadedDoc?.status === 'recusado' && uploadedDoc.motivo_recusa
+            "
             class="mt-2 flex items-start gap-1.5 rounded-md bg-red-50 px-3 py-2 dark:bg-red-950/30"
         >
             <AlertTriangle :size="12" class="mt-0.5 shrink-0 text-red-500" />
             <p class="text-xs text-red-600 dark:text-red-400">
-                <strong>Motivo da recusa:</strong> {{ uploadedDoc.motivo_recusa }}
+                <strong>Motivo da recusa:</strong>
+                {{ uploadedDoc.motivo_recusa }}
             </p>
         </div>
 
         <div v-if="!isFinalized" class="mt-3">
-            <input ref="fileInputRef" type="file" class="sr-only" accept=".pdf,.jpg,.jpeg,.png" @change="onFileChange" />
+            <input
+                ref="fileInputRef"
+                type="file"
+                class="sr-only"
+                accept=".pdf,.jpg,.jpeg,.png"
+                @change="onFileChange"
+            />
 
             <div v-if="selectedFile" class="flex flex-wrap items-center gap-2">
                 <span
@@ -144,7 +169,9 @@ function cancelSelection(): void {
 
             <Button
                 v-else
-                :label="uploadedDoc ? 'Substituir arquivo' : 'Selecionar arquivo'"
+                :label="
+                    uploadedDoc ? 'Substituir arquivo' : 'Selecionar arquivo'
+                "
                 :icon="uploadedDoc ? 'pi pi-refresh' : 'pi pi-upload'"
                 :severity="uploadedDoc ? 'secondary' : 'primary'"
                 :outlined="!!uploadedDoc"
@@ -152,10 +179,16 @@ function cancelSelection(): void {
                 @click="fileInputRef?.click()"
             />
 
-            <small v-if="uploadForm.errors.arquivo" class="mt-1 block text-xs text-red-500">
+            <small
+                v-if="uploadForm.errors.arquivo"
+                class="mt-1 block text-xs text-red-500"
+            >
                 {{ uploadForm.errors.arquivo }}
             </small>
-            <small v-if="uploadForm.errors.candidatura_document_kind" class="mt-1 block text-xs text-red-500">
+            <small
+                v-if="uploadForm.errors.candidatura_document_kind"
+                class="mt-1 block text-xs text-red-500"
+            >
                 {{ uploadForm.errors.candidatura_document_kind }}
             </small>
         </div>

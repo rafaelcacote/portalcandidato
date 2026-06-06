@@ -21,7 +21,11 @@ const emit = defineEmits<{
     saved: [documentId: number, status: string];
 }>();
 
-const isRefusal = computed(() => props.pendingStatus === 'recusado' || props.document?.status === 'recusado');
+const isRefusal = computed(
+    () =>
+        props.pendingStatus === 'recusado' ||
+        props.document?.status === 'recusado',
+);
 
 const localObs = ref('');
 const localObsTouched = ref(false);
@@ -82,10 +86,13 @@ function documentHeading(doc: EvaluatorApplicationDocument): string {
     if (doc.required_document?.nome) {
         return doc.required_document.nome;
     }
+
     if (doc.title_item?.title) {
         const code = doc.title_item.code ? `${doc.title_item.code} · ` : '';
+
         return `${code}${doc.title_item.title}`;
     }
+
     return doc.nome_arquivo;
 }
 </script>
@@ -107,17 +114,23 @@ function documentHeading(doc: EvaluatorApplicationDocument): string {
                 <div
                     :class="[
                         'flex size-9 items-center justify-center rounded-xl',
-                        isRefusal ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600',
+                        isRefusal
+                            ? 'bg-red-50 text-red-600'
+                            : 'bg-amber-50 text-amber-600',
                     ]"
                 >
                     <XCircle v-if="isRefusal" class="size-4.5" />
                     <MessageSquare v-else class="size-4.5" />
                 </div>
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    <p
+                        class="text-xs font-semibold tracking-wide text-slate-400 uppercase"
+                    >
                         {{ isRefusal ? 'Recusar documento' : 'Observação' }}
                     </p>
-                    <h3 class="mt-0.5 text-sm font-bold leading-tight text-slate-900">
+                    <h3
+                        class="mt-0.5 text-sm leading-tight font-bold text-slate-900"
+                    >
                         {{ document ? documentHeading(document) : '' }}
                     </h3>
                 </div>
@@ -127,37 +140,58 @@ function documentHeading(doc: EvaluatorApplicationDocument): string {
         <div v-if="document" class="mt-4 flex flex-col gap-4">
             <!-- Status info -->
             <div class="flex items-center gap-2">
-                <span class="text-xs font-medium text-slate-500">Status atual:</span>
+                <span class="text-xs font-medium text-slate-500"
+                    >Status atual:</span
+                >
                 <CandidateStatusBadge :status="document.status" size="sm" />
-                <template v-if="pendingStatus && pendingStatus !== document.status">
+                <template
+                    v-if="pendingStatus && pendingStatus !== document.status"
+                >
                     <span class="text-xs text-slate-400">→</span>
                     <CandidateStatusBadge :status="pendingStatus" size="sm" />
                 </template>
             </div>
 
             <!-- Aviso de recusa -->
-            <div v-if="isRefusal" class="flex items-start gap-2.5 rounded-xl bg-red-50 px-4 py-3 ring-1 ring-red-200/70">
+            <div
+                v-if="isRefusal"
+                class="flex items-start gap-2.5 rounded-xl bg-red-50 px-4 py-3 ring-1 ring-red-200/70"
+            >
                 <XCircle class="mt-0.5 size-4 shrink-0 text-red-500" />
                 <p class="text-xs leading-relaxed text-red-700">
-                    Ao recusar este documento, o candidato será notificado e poderá enviar uma nova versão.
-                    <strong class="font-semibold">Informe obrigatoriamente o motivo</strong> para que ele possa corrigir.
+                    Ao recusar este documento, o candidato será notificado e
+                    poderá enviar uma nova versão.
+                    <strong class="font-semibold"
+                        >Informe obrigatoriamente o motivo</strong
+                    >
+                    para que ele possa corrigir.
                 </p>
             </div>
 
             <!-- Textarea -->
             <div>
-                <label class="mb-1.5 block text-xs font-semibold text-slate-700">
+                <label
+                    class="mb-1.5 block text-xs font-semibold text-slate-700"
+                >
                     {{ isRefusal ? 'Motivo da recusa' : 'Observação' }}
-                    <span v-if="isRefusal" class="ml-1 font-semibold text-red-500">*</span>
-                    <span v-else class="ml-1 font-normal text-slate-400">(opcional)</span>
+                    <span
+                        v-if="isRefusal"
+                        class="ml-1 font-semibold text-red-500"
+                        >*</span
+                    >
+                    <span v-else class="ml-1 font-normal text-slate-400"
+                        >(opcional)</span
+                    >
                 </label>
                 <Textarea
                     v-model="localObs"
                     rows="5"
                     auto-resize
-                    :placeholder="isRefusal
-                        ? 'Ex.: documento ilegível, data divergente, falta assinatura, CPF não confere…'
-                        : 'Ex.: observação sobre este documento…'"
+                    :placeholder="
+                        isRefusal
+                            ? 'Ex.: documento ilegível, data divergente, falta assinatura, CPF não confere…'
+                            : 'Ex.: observação sobre este documento…'
+                    "
                     class="w-full"
                     :pt="{
                         root: {
@@ -171,17 +205,22 @@ function documentHeading(doc: EvaluatorApplicationDocument): string {
                     }"
                     @blur="localObsTouched = true"
                 />
-                <p v-if="obsError" class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                <p
+                    v-if="obsError"
+                    class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"
+                >
                     <XCircle class="size-3.5" />
                     {{ obsError }}
                 </p>
             </div>
 
             <!-- Footer buttons -->
-            <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+            <div
+                class="flex items-center justify-end gap-3 border-t border-slate-100 pt-4"
+            >
                 <button
                     type="button"
-                    class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition-all hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                    class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition-all hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:outline-none"
                     @click="close"
                 >
                     Cancelar
@@ -190,10 +229,10 @@ function documentHeading(doc: EvaluatorApplicationDocument): string {
                     type="button"
                     :disabled="form.processing"
                     :class="[
-                        'inline-flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50',
+                        'inline-flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50',
                         isRefusal
-                            ? 'bg-red-500 hover:bg-red-600 focus-visible:ring-red-400/60 shadow-red-500/25'
-                            : 'bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 focus-visible:ring-teal-400/60 shadow-teal-600/25',
+                            ? 'bg-red-500 shadow-red-500/25 hover:bg-red-600 focus-visible:ring-red-400/60'
+                            : 'bg-gradient-to-r from-teal-600 to-emerald-600 shadow-teal-600/25 hover:from-teal-500 hover:to-emerald-500 focus-visible:ring-teal-400/60',
                     ]"
                     @click="save"
                 >

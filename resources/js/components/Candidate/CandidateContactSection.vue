@@ -3,8 +3,8 @@ import { AtSign, Phone, PhoneCall } from 'lucide-vue-next';
 import { computed } from 'vue';
 import CandidateInfoCard from '@/components/Candidate/CandidateInfoCard.vue';
 import CandidateReadonlyField from '@/components/Candidate/CandidateReadonlyField.vue';
-import { asText  } from '@/components/Candidate/profileTypes';
-import type {CandidateProfileUser} from '@/components/Candidate/profileTypes';
+import { asText } from '@/components/Candidate/profileTypes';
+import type { CandidateProfileUser } from '@/components/Candidate/profileTypes';
 
 const props = defineProps<{
     user: CandidateProfileUser | null;

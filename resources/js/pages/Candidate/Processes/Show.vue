@@ -21,10 +21,13 @@ import { computed } from 'vue';
 import ProcessTitleGroupsSection from '@/components/Candidate/ProcessTitleGroupsSection.vue';
 import type { ProcessTitleGroupRow } from '@/components/Candidate/processTitleTypes';
 import Heading from '@/components/Heading.vue';
-import { edit as profileEdit } from '@/routes/profile';
 import { home } from '@/routes';
-import { start as startApplication, show as applicationShow } from '@/routes/candidate/applications';
-import { index, show } from '@/routes/candidate/processes';
+import {
+    start as startApplication,
+    show as applicationShow,
+} from '@/routes/candidate/applications';
+import { index } from '@/routes/candidate/processes';
+import { edit as profileEdit } from '@/routes/profile';
 
 defineOptions({
     layout: {
@@ -75,7 +78,10 @@ const props = defineProps<{
     draftApplicationId?: number | null;
 }>();
 
-const statusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'danger'> = {
+const statusSeverity: Record<
+    string,
+    'secondary' | 'success' | 'warn' | 'danger'
+> = {
     rascunho: 'secondary',
     ativo: 'success',
     encerrado: 'warn',
@@ -88,7 +94,10 @@ const statusLabel: Record<string, string> = {
 };
 
 function formatDate(dateStr: string | null): string {
-    if (!dateStr) return '—';
+    if (!dateStr) {
+        return '—';
+    }
+
     return new Date(dateStr).toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: 'long',
@@ -104,8 +113,15 @@ function isInscricaoAberta(): boolean {
     const fim = props.selectionProcess.inscricao_fim_em
         ? new Date(props.selectionProcess.inscricao_fim_em)
         : null;
-    if (inicio && now < inicio) return false;
-    if (fim && now > fim) return false;
+
+    if (inicio && now < inicio) {
+        return false;
+    }
+
+    if (fim && now > fim) {
+        return false;
+    }
+
     return props.selectionProcess.status === 'ativo';
 }
 
@@ -119,9 +135,7 @@ const doStartApplication = (): void => {
     router.post(startApplication(props.selectionProcess.id).url);
 };
 
-const timelineEvents = (
-    props.selectionProcess.stages ?? []
-).map((s) => ({
+const timelineEvents = (props.selectionProcess.stages ?? []).map((s) => ({
     status: s.nome,
     date: s.data_inicio ? formatDate(s.data_inicio) : null,
     icon: 'pi pi-check',
@@ -156,7 +170,12 @@ const timelineEvents = (
 
             <!-- Banner de status e prazo -->
             <Message
-                v-if="isInscricaoAberta() && !alreadyApplied && !draftApplicationId && !candidateProfileComplete"
+                v-if="
+                    isInscricaoAberta() &&
+                    !alreadyApplied &&
+                    !draftApplicationId &&
+                    !candidateProfileComplete
+                "
                 severity="warn"
                 :closable="false"
                 class="rounded-xl"
@@ -182,17 +201,28 @@ const timelineEvents = (
                 class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-green-200 bg-green-50 px-5 py-4 dark:border-green-900 dark:bg-green-950/30"
             >
                 <div class="flex items-center gap-3">
-                    <CheckCircle2 :size="20" class="shrink-0 text-green-600 dark:text-green-400" />
+                    <CheckCircle2
+                        :size="20"
+                        class="shrink-0 text-green-600 dark:text-green-400"
+                    />
                     <div>
-                        <p class="font-semibold text-green-800 dark:text-green-300">
+                        <p
+                            class="font-semibold text-green-800 dark:text-green-300"
+                        >
                             Inscrições abertas
                         </p>
                         <p class="text-sm text-green-700 dark:text-green-400">
-                            Prazo: até {{ formatDate(selectionProcess.inscricao_fim_em) }}
+                            Prazo: até
+                            {{ formatDate(selectionProcess.inscricao_fim_em) }}
                         </p>
                     </div>
                 </div>
-                <Link v-if="draftApplicationId" :href="applicationShow({ application: draftApplicationId }).url">
+                <Link
+                    v-if="draftApplicationId"
+                    :href="
+                        applicationShow({ application: draftApplicationId }).url
+                    "
+                >
                     <Button
                         label="Continuar sua inscrição"
                         icon="pi pi-arrow-right"
@@ -220,7 +250,10 @@ const timelineEvents = (
                 v-else-if="selectionProcess.status === 'encerrado'"
                 class="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-900 dark:bg-amber-950/30"
             >
-                <AlertCircle :size="20" class="shrink-0 text-amber-600 dark:text-amber-400" />
+                <AlertCircle
+                    :size="20"
+                    class="shrink-0 text-amber-600 dark:text-amber-400"
+                />
                 <div>
                     <p class="font-semibold text-amber-800 dark:text-amber-300">
                         Inscrições encerradas
@@ -235,21 +268,33 @@ const timelineEvents = (
                 <!-- Coluna principal -->
                 <div class="flex flex-col gap-5 lg:col-span-2">
                     <!-- O que o candidato precisa preparar -->
-                    <Card class="rounded-xl border-primary/20 bg-primary/[0.03] shadow-sm">
+                    <Card
+                        class="rounded-xl border-primary/20 bg-primary/[0.03] shadow-sm"
+                    >
                         <template #title>
                             <div class="flex items-center gap-2">
-                                <ClipboardList :size="16" class="text-primary" />
+                                <ClipboardList
+                                    :size="16"
+                                    class="text-primary"
+                                />
                                 O que você vai precisar
                             </div>
                         </template>
                         <template #content>
-                            <p class="text-sm leading-relaxed text-muted-foreground">
+                            <p
+                                class="text-sm leading-relaxed text-muted-foreground"
+                            >
                                 Antes de iniciar a inscrição, confira os
-                                <strong class="text-foreground">documentos exigidos</strong> na coluna ao
-                                lado e os
-                                <strong class="text-foreground">títulos para pontuação</strong> abaixo
-                                (quando houver). Assim você evita retrabalho e garante que os anexos
-                                estejam nos formatos aceitos.
+                                <strong class="text-foreground"
+                                    >documentos exigidos</strong
+                                >
+                                na coluna ao lado e os
+                                <strong class="text-foreground"
+                                    >títulos para pontuação</strong
+                                >
+                                abaixo (quando houver). Assim você evita
+                                retrabalho e garante que os anexos estejam nos
+                                formatos aceitos.
                             </p>
                         </template>
                     </Card>
@@ -258,22 +303,37 @@ const timelineEvents = (
                     <Card class="rounded-xl shadow-sm">
                         <template #title>
                             <div class="flex items-center gap-2">
-                                <BookOpen :size="16" class="text-muted-foreground" />
+                                <BookOpen
+                                    :size="16"
+                                    class="text-muted-foreground"
+                                />
                                 Sobre o processo
                             </div>
                         </template>
                         <template #content>
-                            <p class="text-sm leading-relaxed text-muted-foreground">
-                                {{ selectionProcess.descricao || 'Sem descrição cadastrada.' }}
+                            <p
+                                class="text-sm leading-relaxed text-muted-foreground"
+                            >
+                                {{
+                                    selectionProcess.descricao ||
+                                    'Sem descrição cadastrada.'
+                                }}
                             </p>
 
                             <template v-if="selectionProcess.regras">
                                 <Divider />
-                                <div class="flex items-center gap-2 font-semibold text-foreground">
-                                    <ShieldCheck :size="16" class="text-muted-foreground" />
+                                <div
+                                    class="flex items-center gap-2 font-semibold text-foreground"
+                                >
+                                    <ShieldCheck
+                                        :size="16"
+                                        class="text-muted-foreground"
+                                    />
                                     Regras
                                 </div>
-                                <p class="mt-2 text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+                                <p
+                                    class="mt-2 text-sm leading-relaxed whitespace-pre-line text-muted-foreground"
+                                >
                                     {{ selectionProcess.regras }}
                                 </p>
                             </template>
@@ -284,12 +344,20 @@ const timelineEvents = (
                     <Card class="rounded-xl shadow-sm">
                         <template #title>
                             <div class="flex items-center gap-2">
-                                <ListChecks :size="16" class="text-muted-foreground" />
+                                <ListChecks
+                                    :size="16"
+                                    class="text-muted-foreground"
+                                />
                                 Etapas do processo
                             </div>
                         </template>
                         <template #content>
-                            <div v-if="(selectionProcess.stages ?? []).length === 0" class="py-6 text-center text-sm text-muted-foreground">
+                            <div
+                                v-if="
+                                    (selectionProcess.stages ?? []).length === 0
+                                "
+                                class="py-6 text-center text-sm text-muted-foreground"
+                            >
                                 Nenhuma etapa cadastrada.
                             </div>
                             <Timeline
@@ -306,11 +374,23 @@ const timelineEvents = (
                                 </template>
                                 <template #content="{ item }">
                                     <div class="pb-4">
-                                        <p class="font-semibold text-foreground">{{ item.status }}</p>
-                                        <p v-if="item.date" class="mt-0.5 text-xs text-muted-foreground">
-                                            <i class="pi pi-calendar mr-1" />{{ item.date }}
+                                        <p
+                                            class="font-semibold text-foreground"
+                                        >
+                                            {{ item.status }}
                                         </p>
-                                        <p v-if="item.description" class="mt-1 text-sm text-muted-foreground">
+                                        <p
+                                            v-if="item.date"
+                                            class="mt-0.5 text-xs text-muted-foreground"
+                                        >
+                                            <i class="pi pi-calendar mr-1" />{{
+                                                item.date
+                                            }}
+                                        </p>
+                                        <p
+                                            v-if="item.description"
+                                            class="mt-1 text-sm text-muted-foreground"
+                                        >
                                             {{ item.description }}
                                         </p>
                                     </div>
@@ -326,7 +406,10 @@ const timelineEvents = (
                     >
                         <template #title>
                             <div class="flex items-center gap-2">
-                                <Star :size="16" class="text-muted-foreground" />
+                                <Star
+                                    :size="16"
+                                    class="text-muted-foreground"
+                                />
                                 Critérios de pontuação
                             </div>
                         </template>
@@ -338,14 +421,28 @@ const timelineEvents = (
                                     class="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0"
                                 >
                                     <div class="min-w-0">
-                                        <p class="font-medium text-foreground">{{ criterion.nome }}</p>
-                                        <p v-if="criterion.descricao" class="mt-0.5 text-sm text-muted-foreground">
+                                        <p class="font-medium text-foreground">
+                                            {{ criterion.nome }}
+                                        </p>
+                                        <p
+                                            v-if="criterion.descricao"
+                                            class="mt-0.5 text-sm text-muted-foreground"
+                                        >
                                             {{ criterion.descricao }}
                                         </p>
                                     </div>
                                     <div class="shrink-0 text-right">
-                                        <span class="text-lg font-bold text-primary">{{ criterion.pontos_maximos }}</span>
-                                        <p class="text-xs text-muted-foreground">pts máx.</p>
+                                        <span
+                                            class="text-lg font-bold text-primary"
+                                            >{{
+                                                criterion.pontos_maximos
+                                            }}</span
+                                        >
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            pts máx.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -364,42 +461,88 @@ const timelineEvents = (
                     <Card class="rounded-xl shadow-sm">
                         <template #title>
                             <div class="flex items-center gap-2">
-                                <ClipboardList :size="16" class="text-muted-foreground" />
+                                <ClipboardList
+                                    :size="16"
+                                    class="text-muted-foreground"
+                                />
                                 Informações
                             </div>
                         </template>
                         <template #content>
                             <div class="flex flex-col gap-4">
                                 <div>
-                                    <p class="text-xs font-medium text-muted-foreground">Status</p>
+                                    <p
+                                        class="text-xs font-medium text-muted-foreground"
+                                    >
+                                        Status
+                                    </p>
                                     <Tag
                                         class="mt-1"
-                                        :value="statusLabel[selectionProcess.status] ?? selectionProcess.status"
-                                        :severity="statusSeverity[selectionProcess.status] ?? 'secondary'"
+                                        :value="
+                                            statusLabel[
+                                                selectionProcess.status
+                                            ] ?? selectionProcess.status
+                                        "
+                                        :severity="
+                                            statusSeverity[
+                                                selectionProcess.status
+                                            ] ?? 'secondary'
+                                        "
                                     />
                                 </div>
                                 <div v-if="selectionProcess.orgao">
-                                    <p class="text-xs font-medium text-muted-foreground">Órgão</p>
-                                    <p class="mt-0.5 text-sm font-medium text-foreground">{{ selectionProcess.orgao }}</p>
+                                    <p
+                                        class="text-xs font-medium text-muted-foreground"
+                                    >
+                                        Órgão
+                                    </p>
+                                    <p
+                                        class="mt-0.5 text-sm font-medium text-foreground"
+                                    >
+                                        {{ selectionProcess.orgao }}
+                                    </p>
                                 </div>
                                 <div v-if="selectionProcess.area">
-                                    <p class="text-xs font-medium text-muted-foreground">Área</p>
-                                    <p class="mt-0.5 text-sm font-medium text-foreground">{{ selectionProcess.area }}</p>
+                                    <p
+                                        class="text-xs font-medium text-muted-foreground"
+                                    >
+                                        Área
+                                    </p>
+                                    <p
+                                        class="mt-0.5 text-sm font-medium text-foreground"
+                                    >
+                                        {{ selectionProcess.area }}
+                                    </p>
                                 </div>
                                 <div v-if="selectionProcess.tipo_programa">
-                                    <p class="text-xs font-medium text-muted-foreground">Programa</p>
-                                    <p class="mt-0.5 text-sm font-medium text-foreground">
+                                    <p
+                                        class="text-xs font-medium text-muted-foreground"
+                                    >
+                                        Programa
+                                    </p>
+                                    <p
+                                        class="mt-0.5 text-sm font-medium text-foreground"
+                                    >
                                         {{
-                                            selectionProcess.tipo_programa === 'doutorado'
+                                            selectionProcess.tipo_programa ===
+                                            'doutorado'
                                                 ? 'Doutorado'
                                                 : 'Mestrado'
                                         }}
                                     </p>
                                 </div>
-                                <div v-if="selectionProcess.edital_download_url">
-                                    <p class="text-xs font-medium text-muted-foreground">Edital</p>
+                                <div
+                                    v-if="selectionProcess.edital_download_url"
+                                >
+                                    <p
+                                        class="text-xs font-medium text-muted-foreground"
+                                    >
+                                        Edital
+                                    </p>
                                     <a
-                                        :href="selectionProcess.edital_download_url"
+                                        :href="
+                                            selectionProcess.edital_download_url
+                                        "
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         class="mt-2 inline-flex"
@@ -414,17 +557,37 @@ const timelineEvents = (
                                     </a>
                                 </div>
                                 <div>
-                                    <p class="text-xs font-medium text-muted-foreground">Início das inscrições</p>
-                                    <p class="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+                                    <p
+                                        class="text-xs font-medium text-muted-foreground"
+                                    >
+                                        Início das inscrições
+                                    </p>
+                                    <p
+                                        class="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-foreground"
+                                    >
                                         <Calendar :size="12" />
-                                        {{ formatDate(selectionProcess.inscricao_inicio_em) }}
+                                        {{
+                                            formatDate(
+                                                selectionProcess.inscricao_inicio_em,
+                                            )
+                                        }}
                                     </p>
                                 </div>
                                 <div>
-                                    <p class="text-xs font-medium text-muted-foreground">Prazo final</p>
-                                    <p class="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+                                    <p
+                                        class="text-xs font-medium text-muted-foreground"
+                                    >
+                                        Prazo final
+                                    </p>
+                                    <p
+                                        class="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-foreground"
+                                    >
                                         <Calendar :size="12" />
-                                        {{ formatDate(selectionProcess.inscricao_fim_em) }}
+                                        {{
+                                            formatDate(
+                                                selectionProcess.inscricao_fim_em,
+                                            )
+                                        }}
                                     </p>
                                 </div>
                             </div>
@@ -435,12 +598,21 @@ const timelineEvents = (
                     <Card class="rounded-xl shadow-sm">
                         <template #title>
                             <div class="flex items-center gap-2">
-                                <FileText :size="16" class="text-muted-foreground" />
+                                <FileText
+                                    :size="16"
+                                    class="text-muted-foreground"
+                                />
                                 Documentos exigidos
                             </div>
                         </template>
                         <template #content>
-                            <div v-if="!(selectionProcess.required_documents ?? []).length" class="py-4 text-center text-sm text-muted-foreground">
+                            <div
+                                v-if="
+                                    !(selectionProcess.required_documents ?? [])
+                                        .length
+                                "
+                                class="py-4 text-center text-sm text-muted-foreground"
+                            >
                                 Nenhum documento exigido.
                             </div>
                             <ul v-else class="flex flex-col gap-2">
@@ -450,12 +622,25 @@ const timelineEvents = (
                                     class="flex items-start gap-2 rounded-lg border border-border p-3"
                                 >
                                     <i
-                                        :class="doc.obrigatorio ? 'pi pi-file text-primary' : 'pi pi-file text-muted-foreground'"
+                                        :class="
+                                            doc.obrigatorio
+                                                ? 'pi pi-file text-primary'
+                                                : 'pi pi-file text-muted-foreground'
+                                        "
                                         class="mt-0.5 shrink-0 text-sm"
                                     />
                                     <div class="min-w-0">
-                                        <p class="text-sm font-medium text-foreground">{{ doc.nome }}</p>
-                                        <p v-if="doc.descricao" class="mt-0.5 text-xs text-muted-foreground">{{ doc.descricao }}</p>
+                                        <p
+                                            class="text-sm font-medium text-foreground"
+                                        >
+                                            {{ doc.nome }}
+                                        </p>
+                                        <p
+                                            v-if="doc.descricao"
+                                            class="mt-0.5 text-xs text-muted-foreground"
+                                        >
+                                            {{ doc.descricao }}
+                                        </p>
                                         <Tag
                                             v-if="doc.obrigatorio"
                                             value="Obrigatório"
@@ -476,10 +661,22 @@ const timelineEvents = (
 
                     <!-- CTA mobile -->
                     <div
-                        v-if="isInscricaoAberta() && (draftApplicationId || (!alreadyApplied && candidateProfileComplete))"
+                        v-if="
+                            isInscricaoAberta() &&
+                            (draftApplicationId ||
+                                (!alreadyApplied && candidateProfileComplete))
+                        "
                         class="lg:hidden"
                     >
-                        <Link v-if="draftApplicationId" :href="applicationShow({ application: draftApplicationId }).url" class="block w-full">
+                        <Link
+                            v-if="draftApplicationId"
+                            :href="
+                                applicationShow({
+                                    application: draftApplicationId,
+                                }).url
+                            "
+                            class="block w-full"
+                        >
                             <Button
                                 label="Continuar sua inscrição"
                                 icon="pi pi-arrow-right"
@@ -497,10 +694,22 @@ const timelineEvents = (
                         />
                     </div>
                     <div
-                        v-if="isInscricaoAberta() && (draftApplicationId || (!alreadyApplied && candidateProfileComplete))"
+                        v-if="
+                            isInscricaoAberta() &&
+                            (draftApplicationId ||
+                                (!alreadyApplied && candidateProfileComplete))
+                        "
                         class="hidden lg:block"
                     >
-                        <Link v-if="draftApplicationId" :href="applicationShow({ application: draftApplicationId }).url" class="block w-full">
+                        <Link
+                            v-if="draftApplicationId"
+                            :href="
+                                applicationShow({
+                                    application: draftApplicationId,
+                                }).url
+                            "
+                            class="block w-full"
+                        >
                             <Button
                                 label="Continuar sua inscrição"
                                 icon="pi pi-arrow-right"

@@ -31,9 +31,13 @@ const pathD = computed(() => {
         return [x, y] as const;
     });
 
-    const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
-    const area =
-        `${line} L ${points[points.length - 1]![0].toFixed(1)} ${viewH - pad} L ${points[0]![0].toFixed(1)} ${viewH - pad} Z`;
+    const line = points
+        .map(
+            (p, i) =>
+                `${i === 0 ? 'M' : 'L'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`,
+        )
+        .join(' ');
+    const area = `${line} L ${points[points.length - 1]![0].toFixed(1)} ${viewH - pad} L ${points[0]![0].toFixed(1)} ${viewH - pad} Z`;
 
     return { line, area };
 });

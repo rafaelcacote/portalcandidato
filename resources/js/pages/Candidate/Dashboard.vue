@@ -19,7 +19,7 @@ defineOptions({
     },
 });
 
-const props = defineProps<{
+defineProps<{
     summary: {
         inscricoes_em_andamento: number;
         pendencias: number;
@@ -80,7 +80,9 @@ const displayName = computed(() => {
             <CandidateDashboardQuickActions />
 
             <div class="grid gap-5 lg:grid-cols-2">
-                <CandidateDashboardOngoingList :applications="inscricoes_em_andamento" />
+                <CandidateDashboardOngoingList
+                    :applications="inscricoes_em_andamento"
+                />
                 <CandidateDashboardPendenciesList
                     :pendencias-inscricao="pendencias_inscricao"
                     :documentos-recusados="documentos_recusados"

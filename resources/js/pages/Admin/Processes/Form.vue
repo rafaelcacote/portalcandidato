@@ -157,7 +157,7 @@ const submit = (): void => {
 </script>
 
 <template>
-    <div class="px-4 py-3 sm:px-6 md:px-8 lg:px-10 md:py-4">
+    <div class="px-4 py-3 sm:px-6 md:px-8 md:py-4 lg:px-10">
         <div class="mx-auto flex w-full max-w-[1820px] flex-col gap-5">
             <div class="flex items-start justify-between gap-8 py-3">
                 <Heading
@@ -188,13 +188,17 @@ const submit = (): void => {
                                     <label class="flex flex-col gap-2">
                                         <span class="text-sm"
                                             >Título
-                                            <span class="text-red-600">*</span></span
+                                            <span class="text-red-600"
+                                                >*</span
+                                            ></span
                                         >
                                         <InputText
                                             v-model="form.titulo"
                                             placeholder="Título do processo"
                                             :invalid="fieldInvalid('titulo')"
-                                            @update:model-value="touchField('titulo')"
+                                            @update:model-value="
+                                                touchField('titulo')
+                                            "
                                         />
                                         <small
                                             v-if="errorMessage('titulo')"
@@ -205,7 +209,9 @@ const submit = (): void => {
                                     <label class="flex flex-col gap-2">
                                         <span class="text-sm"
                                             >Descrição
-                                            <span class="text-red-600">*</span></span
+                                            <span class="text-red-600"
+                                                >*</span
+                                            ></span
                                         >
                                         <Textarea
                                             v-model="form.descricao"
@@ -219,7 +225,9 @@ const submit = (): void => {
                                         <small
                                             v-if="errorMessage('descricao')"
                                             class="text-sm text-red-600"
-                                            >{{ errorMessage('descricao') }}</small
+                                            >{{
+                                                errorMessage('descricao')
+                                            }}</small
                                         >
                                     </label>
                                     <label class="flex flex-col gap-2">
@@ -233,7 +241,9 @@ const submit = (): void => {
                                     <label class="flex flex-col gap-2">
                                         <span class="text-sm"
                                             >Status
-                                            <span class="text-red-600">*</span></span
+                                            <span class="text-red-600"
+                                                >*</span
+                                            ></span
                                         >
                                         <Select
                                             v-model="form.status"
@@ -254,7 +264,9 @@ const submit = (): void => {
                                     <label class="flex flex-col gap-2">
                                         <span class="text-sm"
                                             >Tipo do programa
-                                            <span class="text-red-600">*</span></span
+                                            <span class="text-red-600"
+                                                >*</span
+                                            ></span
                                         >
                                         <Select
                                             v-model="form.tipo_programa"
@@ -262,19 +274,26 @@ const submit = (): void => {
                                             option-label="label"
                                             option-value="value"
                                             placeholder="Selecione"
-                                            :invalid="fieldInvalid('tipo_programa')"
+                                            :invalid="
+                                                fieldInvalid('tipo_programa')
+                                            "
                                             @update:model-value="
                                                 touchField('tipo_programa')
                                             "
                                         />
-                                        <small class="text-xs text-muted-foreground">
-                                            Define a checklist padrão de documentos da inscrição
-                                            (Mestrado ou Doutorado).
+                                        <small
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            Define a checklist padrão de
+                                            documentos da inscrição (Mestrado ou
+                                            Doutorado).
                                         </small>
                                         <small
                                             v-if="errorMessage('tipo_programa')"
                                             class="text-sm text-red-600"
-                                            >{{ errorMessage('tipo_programa') }}</small
+                                            >{{
+                                                errorMessage('tipo_programa')
+                                            }}</small
                                         >
                                     </label>
                                 </div>
@@ -322,9 +341,7 @@ const submit = (): void => {
                                             v-model="form.inscricao_fim_em"
                                             type="datetime-local"
                                             :invalid="
-                                                fieldInvalid(
-                                                    'inscricao_fim_em',
-                                                )
+                                                fieldInvalid('inscricao_fim_em')
                                             "
                                             @update:model-value="
                                                 touchDateFields()
@@ -332,15 +349,11 @@ const submit = (): void => {
                                         />
                                         <small
                                             v-if="
-                                                errorMessage(
-                                                    'inscricao_fim_em',
-                                                )
+                                                errorMessage('inscricao_fim_em')
                                             "
                                             class="text-sm text-red-600"
                                             >{{
-                                                errorMessage(
-                                                    'inscricao_fim_em',
-                                                )
+                                                errorMessage('inscricao_fim_em')
                                             }}</small
                                         >
                                     </label>

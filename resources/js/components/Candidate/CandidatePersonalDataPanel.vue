@@ -10,10 +10,8 @@ import CandidatePersonalInfoSection from '@/components/Candidate/CandidatePerson
 import CandidateProfileCompletion from '@/components/Candidate/CandidateProfileCompletion.vue';
 import CandidateProfileForm from '@/components/Candidate/CandidateProfileForm.vue';
 import CandidateProfileHero from '@/components/Candidate/CandidateProfileHero.vue';
-import {
-    getProfileCompletion,
-    type CandidateProfileUser,
-} from '@/components/Candidate/profileTypes';
+import { getProfileCompletion } from '@/components/Candidate/profileTypes';
+import type { CandidateProfileUser } from '@/components/Candidate/profileTypes';
 
 const props = withDefaults(
     defineProps<{
@@ -79,12 +77,16 @@ defineExpose({
                 />
 
                 <div class="grid grid-cols-12 gap-4 lg:gap-5">
-                    <div class="col-span-12 flex flex-col gap-4 lg:col-span-7 lg:gap-5">
+                    <div
+                        class="col-span-12 flex flex-col gap-4 lg:col-span-7 lg:gap-5"
+                    >
                         <CandidatePersonalInfoSection :user="user" />
                         <CandidateAddressSection :user="user" />
                     </div>
 
-                    <div class="col-span-12 flex flex-col gap-4 lg:col-span-5 lg:gap-5">
+                    <div
+                        class="col-span-12 flex flex-col gap-4 lg:col-span-5 lg:gap-5"
+                    >
                         <CandidateContactSection :user="user" />
                         <CandidateDocumentSection :user="user" />
                     </div>
@@ -94,8 +96,9 @@ defineExpose({
                     class="flex flex-col gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/15 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                 >
                     <p class="text-[12.5px] leading-snug text-muted-foreground">
-                        Revise seus dados abaixo. Se precisar alterar algo, edite aqui mesmo — você
-                        não precisa sair desta inscrição.
+                        Revise seus dados abaixo. Se precisar alterar algo,
+                        edite aqui mesmo — você não precisa sair desta
+                        inscrição.
                     </p>
 
                     <Button
@@ -115,7 +118,9 @@ defineExpose({
                 v-else
                 class="rounded-2xl border border-primary/20 bg-primary/[0.02] p-4 sm:p-5"
             >
-                <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div
+                    class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                >
                     <div class="flex items-center gap-2">
                         <span
                             class="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary"
@@ -124,9 +129,12 @@ defineExpose({
                             <Pencil :size="15" stroke-width="2.2" />
                         </span>
                         <div>
-                            <p class="text-sm font-semibold text-foreground">Editar perfil</p>
+                            <p class="text-sm font-semibold text-foreground">
+                                Editar perfil
+                            </p>
                             <p class="text-xs text-muted-foreground">
-                                Atualize seus dados e salve, ou cancele para continuar sem alterar.
+                                Atualize seus dados e salve, ou cancele para
+                                continuar sem alterar.
                             </p>
                         </div>
                     </div>
@@ -163,10 +171,18 @@ defineExpose({
 
             <div class="grid grid-cols-12 gap-4 lg:gap-5">
                 <div class="col-span-12 lg:col-span-7">
-                    <Skeleton width="100%" height="14rem" class="!rounded-2xl" />
+                    <Skeleton
+                        width="100%"
+                        height="14rem"
+                        class="!rounded-2xl"
+                    />
                 </div>
                 <div class="col-span-12 lg:col-span-5">
-                    <Skeleton width="100%" height="14rem" class="!rounded-2xl" />
+                    <Skeleton
+                        width="100%"
+                        height="14rem"
+                        class="!rounded-2xl"
+                    />
                 </div>
             </div>
         </template>

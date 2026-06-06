@@ -45,9 +45,9 @@ const isCompactLoginBackdrop = computed(
             'relative flex min-h-dvh flex-col items-center justify-start overflow-x-hidden sm:px-6 md:px-8',
             showLoginArtBackdrop
                 ? isCompactLoginBackdrop
-                    ? 'pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(2rem,env(safe-area-inset-bottom,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] sm:px-6 sm:pb-12 sm:pt-7 md:pt-8 lg:px-8 lg:pb-12 lg:pt-10'
-                    : 'pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-[max(5.5rem,env(safe-area-inset-top,0px))] sm:px-6 sm:pb-16 sm:pt-24 md:pt-28 lg:px-8 lg:pb-16 lg:pt-36'
-                : 'px-4 pb-12 pt-6 md:pb-16 md:pt-8',
+                    ? 'pt-[max(1.5rem,env(safe-area-inset-top,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(2rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] sm:px-6 sm:pt-7 sm:pb-12 md:pt-8 lg:px-8 lg:pt-10 lg:pb-12'
+                    : 'pt-[max(5.5rem,env(safe-area-inset-top,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] sm:px-6 sm:pt-24 sm:pb-16 md:pt-28 lg:px-8 lg:pt-36 lg:pb-16'
+                : 'px-4 pt-6 pb-12 md:pt-8 md:pb-16',
             showLoginArtBackdrop
                 ? 'bg-[#eef6f7] dark:bg-slate-950'
                 : 'bg-[#eaf4f5] bg-gradient-to-b from-[#e2f2f3] via-[#eef8f9] to-[#e8f3f4] dark:from-[#061414] dark:via-[#0a1818] dark:to-[#061212]',
@@ -75,12 +75,12 @@ const isCompactLoginBackdrop = computed(
         </template>
 
         <Toaster />
-        <div class="relative z-10 w-full" :class="contentMaxWidth ?? 'max-w-sm'">
+        <div
+            class="relative z-10 w-full"
+            :class="contentMaxWidth ?? 'max-w-sm'"
+        >
             <div class="flex w-full flex-col gap-6">
-                <div
-                    v-if="title || description"
-                    class="space-y-2 text-center"
-                >
+                <div v-if="title || description" class="space-y-2 text-center">
                     <h1
                         v-if="title"
                         class="text-xl font-semibold tracking-tight text-foreground"

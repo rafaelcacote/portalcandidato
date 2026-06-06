@@ -33,17 +33,27 @@ const progressSafe = computed(() =>
                             <Gauge :size="20" aria-hidden="true" />
                         </div>
                         <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            <p
+                                class="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+                            >
                                 Progresso geral
                             </p>
-                            <p class="mt-1 text-2xl font-bold tabular-nums tracking-tight text-foreground">
+                            <p
+                                class="mt-1 text-2xl font-bold tracking-tight text-foreground tabular-nums"
+                            >
                                 {{ progressSafe }}%
                             </p>
-                            <p class="mt-1 text-xs text-muted-foreground">Conclusão da sua ficha de inscrição</p>
+                            <p class="mt-1 text-xs text-muted-foreground">
+                                Conclusão da sua ficha de inscrição
+                            </p>
                         </div>
                     </div>
                 </div>
-                <ProgressBar :value="progressSafe" :show-value="false" class="mt-4 h-2 overflow-hidden rounded-full" />
+                <ProgressBar
+                    :value="progressSafe"
+                    :show-value="false"
+                    class="mt-4 h-2 overflow-hidden rounded-full"
+                />
             </template>
         </Card>
 
@@ -54,10 +64,17 @@ const progressSafe = computed(() =>
             <template #content>
                 <div class="flex items-center gap-2 text-muted-foreground">
                     <FileStack :size="16" aria-hidden="true" />
-                    <span class="text-[11px] font-semibold uppercase tracking-wider">Documentos</span>
+                    <span
+                        class="text-[11px] font-semibold tracking-wider uppercase"
+                        >Documentos</span
+                    >
                 </div>
-                <p class="mt-3 text-2xl font-bold tabular-nums text-foreground">{{ documentsCount }}</p>
-                <p class="mt-1 text-xs text-muted-foreground">Arquivos enviados</p>
+                <p class="mt-3 text-2xl font-bold text-foreground tabular-nums">
+                    {{ documentsCount }}
+                </p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                    Arquivos enviados
+                </p>
             </template>
         </Card>
 
@@ -68,10 +85,17 @@ const progressSafe = computed(() =>
             <template #content>
                 <div class="flex items-center gap-2 text-muted-foreground">
                     <Award :size="16" aria-hidden="true" />
-                    <span class="text-[11px] font-semibold uppercase tracking-wider">Títulos</span>
+                    <span
+                        class="text-[11px] font-semibold tracking-wider uppercase"
+                        >Títulos</span
+                    >
                 </div>
-                <p class="mt-3 text-2xl font-bold tabular-nums text-foreground">{{ titlesCount }}</p>
-                <p class="mt-1 text-xs text-muted-foreground">Comprovantes opcionais</p>
+                <p class="mt-3 text-2xl font-bold text-foreground tabular-nums">
+                    {{ titlesCount }}
+                </p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                    Comprovantes opcionais
+                </p>
             </template>
         </Card>
 
@@ -82,15 +106,24 @@ const progressSafe = computed(() =>
             <template #content>
                 <div class="flex items-center gap-2 text-muted-foreground">
                     <AlertCircle :size="16" aria-hidden="true" />
-                    <span class="text-[11px] font-semibold uppercase tracking-wider">Pendências</span>
+                    <span
+                        class="text-[11px] font-semibold tracking-wider uppercase"
+                        >Pendências</span
+                    >
                 </div>
                 <p
                     class="mt-3 text-2xl font-bold tabular-nums"
-                    :class="pendingCount > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-foreground'"
+                    :class="
+                        pendingCount > 0
+                            ? 'text-amber-700 dark:text-amber-400'
+                            : 'text-foreground'
+                    "
                 >
                     {{ pendingCount }}
                 </p>
-                <p class="mt-1 text-xs text-muted-foreground">Itens a resolver</p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                    Itens a resolver
+                </p>
             </template>
         </Card>
     </div>

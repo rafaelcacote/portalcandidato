@@ -41,7 +41,8 @@ const tooltipContent = computed<string>(() => {
     }
 
     const head = props.missing.slice(0, 6).join(' · ');
-    const extra = props.missing.length > 6 ? ` (+${props.missing.length - 6})` : '';
+    const extra =
+        props.missing.length > 6 ? ` (+${props.missing.length - 6})` : '';
 
     return `Faltam preencher: ${head}${extra}`;
 });
@@ -67,11 +68,19 @@ const tooltipContent = computed<string>(() => {
 
         <div class="min-w-0 flex-1">
             <div class="flex items-baseline justify-between gap-3">
-                <p class="truncate text-[13px] font-semibold tracking-tight text-foreground">
-                    {{ isComplete ? 'Perfil completo' : 'Completude do perfil' }}
+                <p
+                    class="truncate text-[13px] font-semibold tracking-tight text-foreground"
+                >
+                    {{
+                        isComplete ? 'Perfil completo' : 'Completude do perfil'
+                    }}
                 </p>
-                <p class="shrink-0 text-[12px] tabular-nums text-muted-foreground">
-                    <span class="text-[15px] font-bold text-foreground">{{ percent }}%</span>
+                <p
+                    class="shrink-0 text-[12px] text-muted-foreground tabular-nums"
+                >
+                    <span class="text-[15px] font-bold text-foreground"
+                        >{{ percent }}%</span
+                    >
                     <span class="ml-1.5 hidden sm:inline">
                         · {{ filled }}/{{ total }}
                     </span>
@@ -88,13 +97,21 @@ const tooltipContent = computed<string>(() => {
                 />
             </div>
 
-            <p v-if="!isComplete" class="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+            <p
+                v-if="!isComplete"
+                class="mt-1.5 text-[11px] leading-snug text-muted-foreground"
+            >
                 <span class="font-medium text-foreground">{{ remaining }}</span>
                 campo(s) ainda
-                <span class="hidden sm:inline">precisam ser preenchidos no seu perfil.</span>
+                <span class="hidden sm:inline"
+                    >precisam ser preenchidos no seu perfil.</span
+                >
                 <span class="sm:hidden">a preencher.</span>
             </p>
-            <p v-else class="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+            <p
+                v-else
+                class="mt-1.5 text-[11px] leading-snug text-muted-foreground"
+            >
                 Tudo certo — seus dados estão prontos para a inscrição.
             </p>
         </div>

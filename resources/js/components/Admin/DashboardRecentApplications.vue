@@ -85,19 +85,30 @@ const avatarPalettes = [
 ];
 
 function avatarClass(idx: number): string {
-    return avatarPalettes[idx % avatarPalettes.length] ?? 'bg-slate-100 text-slate-500';
+    return (
+        avatarPalettes[idx % avatarPalettes.length] ??
+        'bg-slate-100 text-slate-500'
+    );
 }
 </script>
 
 <template>
-    <div class="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60">
+    <div
+        class="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60"
+    >
         <!-- Header -->
-        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <div
+            class="flex items-center justify-between border-b border-slate-100 px-5 py-4"
+        >
             <div class="flex items-center gap-2">
-                <div class="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500"
+                >
                     <ClipboardList class="size-3.5" />
                 </div>
-                <h2 class="text-sm font-semibold text-slate-900">Últimas inscrições</h2>
+                <h2 class="text-sm font-semibold text-slate-900">
+                    Últimas inscrições
+                </h2>
             </div>
             <Link
                 :href="processesIndex().url"
@@ -108,7 +119,10 @@ function avatarClass(idx: number): string {
         </div>
 
         <!-- List -->
-        <ul v-if="applications.length > 0" class="flex-1 divide-y divide-slate-100">
+        <ul
+            v-if="applications.length > 0"
+            class="flex-1 divide-y divide-slate-100"
+        >
             <li
                 v-for="(a, i) in applications"
                 :key="a.id"
@@ -137,11 +151,16 @@ function avatarClass(idx: number): string {
                 <!-- Right: date + badge -->
                 <div class="flex shrink-0 flex-col items-end gap-1">
                     <span
-                        :class="['rounded-full px-2 py-0.5 text-[11px] font-semibold', statusClasses(a.status)]"
+                        :class="[
+                            'rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                            statusClasses(a.status),
+                        ]"
                     >
                         {{ statusLabel(a.status) }}
                     </span>
-                    <p class="text-[10px] text-slate-400">{{ formatDateTime(a.updated_at) }}</p>
+                    <p class="text-[10px] text-slate-400">
+                        {{ formatDateTime(a.updated_at) }}
+                    </p>
                 </div>
             </li>
         </ul>
@@ -157,7 +176,9 @@ function avatarClass(idx: number): string {
                 <ClipboardList class="size-6" />
             </div>
             <div>
-                <p class="text-sm font-semibold text-slate-700">Nenhuma inscrição ainda</p>
+                <p class="text-sm font-semibold text-slate-700">
+                    Nenhuma inscrição ainda
+                </p>
                 <p class="mt-0.5 text-xs text-slate-400">
                     As inscrições dos candidatos aparecerão aqui.
                 </p>

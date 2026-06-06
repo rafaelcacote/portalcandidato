@@ -49,17 +49,17 @@ const isMissing = computed<boolean>(() => display.value === props.placeholder);
 
         <div class="min-w-0 flex-1">
             <p
-                class="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+                class="text-[10.5px] font-semibold tracking-[0.08em] text-muted-foreground uppercase"
             >
                 {{ label }}
             </p>
 
             <p
-                class="mt-0.5 break-words text-[15px] font-semibold leading-snug"
+                class="mt-0.5 text-[15px] leading-snug font-semibold break-words"
                 :class="[
                     mono ? 'font-mono tracking-tight' : '',
                     isMissing
-                        ? 'italic font-medium text-muted-foreground/70'
+                        ? 'font-medium text-muted-foreground/70 italic'
                         : 'text-foreground',
                 ]"
                 :title="display"

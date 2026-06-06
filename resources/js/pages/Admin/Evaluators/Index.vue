@@ -106,7 +106,7 @@ const confirmRemoveEvaluator = (evaluator: Evaluator): void => {
 </script>
 
 <template>
-    <div class="px-4 py-3 sm:px-6 md:px-8 lg:px-10 md:py-4">
+    <div class="px-4 py-3 sm:px-6 md:px-8 md:py-4 lg:px-10">
         <div class="mx-auto flex w-full max-w-[1820px] flex-col gap-5">
             <ConfirmDialog />
 
@@ -217,9 +217,11 @@ const confirmRemoveEvaluator = (evaluator: Evaluator): void => {
                             body-class="px-4 py-3 min-w-0 align-top"
                         >
                             <template #body="{ data }">
-                                <div class="flex min-w-0 flex-col gap-0.5 py-0.5">
+                                <div
+                                    class="flex min-w-0 flex-col gap-0.5 py-0.5"
+                                >
                                     <span
-                                        class="truncate text-sm font-medium leading-tight text-foreground"
+                                        class="truncate text-sm leading-tight font-medium text-foreground"
                                     >
                                         {{ data.name }}
                                     </span>

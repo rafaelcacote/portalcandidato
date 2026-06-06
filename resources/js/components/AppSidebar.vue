@@ -18,7 +18,11 @@ import { toast } from 'vue-sonner';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -47,9 +51,9 @@ import { dashboard as candidateDashboard } from '@/routes/candidate';
 import { index as candidateApplicationsIndex } from '@/routes/candidate/applications';
 import { index as candidateDocumentsIndex } from '@/routes/candidate/documents';
 import { index as candidateProcessesIndex } from '@/routes/candidate/processes';
-import { edit as profileEdit } from '@/routes/profile';
 import { dashboard as evaluatorDashboard } from '@/routes/evaluator';
 import { index as evaluatorProcessesIndex } from '@/routes/evaluator/processes';
+import { edit as profileEdit } from '@/routes/profile';
 import type { NavItem, NavSection } from '@/types';
 import type { Auth } from '@/types/auth';
 
@@ -59,11 +63,17 @@ const { avatarUrl: userAvatarUrl, hasAvatar: hasUserAvatar } = useUserAvatar(
     () => page.props.auth?.user,
 );
 
-const isAdmin = computed(() => page.props.auth?.roles?.includes('admin') ?? false);
+const isAdmin = computed(
+    () => page.props.auth?.roles?.includes('admin') ?? false,
+);
 
-const isEvaluator = computed(() => page.props.auth?.roles?.includes('avaliador') ?? false);
+const isEvaluator = computed(
+    () => page.props.auth?.roles?.includes('avaliador') ?? false,
+);
 
-const isCandidate = computed(() => page.props.auth?.roles?.includes('candidato') ?? false);
+const isCandidate = computed(
+    () => page.props.auth?.roles?.includes('candidato') ?? false,
+);
 
 const usesRoleSidebar = computed(
     () => isAdmin.value || isEvaluator.value || isCandidate.value,
@@ -105,9 +115,21 @@ const adminNavSections = computed<NavSection[]>(() => [
     {
         label: 'Principal',
         items: [
-            { title: 'Dashboard', href: adminDashboard.url(), icon: LayoutGrid },
-            { title: 'Processos Seletivos', href: adminProcessesIndex.url(), icon: FileText },
-            { title: 'Avaliadores', href: adminEvaluatorsIndex.url(), icon: Users },
+            {
+                title: 'Dashboard',
+                href: adminDashboard.url(),
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Processos Seletivos',
+                href: adminProcessesIndex.url(),
+                icon: FileText,
+            },
+            {
+                title: 'Avaliadores',
+                href: adminEvaluatorsIndex.url(),
+                icon: Users,
+            },
             {
                 title: 'Relatórios',
                 href: adminReportsIndex.url(),
@@ -124,8 +146,14 @@ const adminNavSections = computed<NavSection[]>(() => [
                 href: adminDocumentTypesIndex.url(),
                 icon: Settings2,
                 children: [
-                    { title: 'Tipos de Documentos', href: adminDocumentTypesIndex.url() },
-                    { title: 'Tipos de Títulos', href: adminTitleTypesIndex.url() },
+                    {
+                        title: 'Tipos de Documentos',
+                        href: adminDocumentTypesIndex.url(),
+                    },
+                    {
+                        title: 'Tipos de Títulos',
+                        href: adminTitleTypesIndex.url(),
+                    },
                 ],
             },
         ],
@@ -143,14 +171,26 @@ const candidateNavSections = computed<NavSection[]>(() => [
     {
         label: 'Principal',
         items: [
-            { title: 'Dashboard', href: candidateDashboard.url(), icon: LayoutGrid },
-            { title: 'Processos abertos', href: candidateProcessesIndex.url(), icon: FileText },
+            {
+                title: 'Dashboard',
+                href: candidateDashboard.url(),
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Processos abertos',
+                href: candidateProcessesIndex.url(),
+                icon: FileText,
+            },
             {
                 title: 'Minhas inscrições',
                 href: candidateApplicationsIndex.url(),
                 icon: ClipboardCheck,
             },
-            { title: 'Meus documentos', href: candidateDocumentsIndex.url(), icon: FolderOpen },
+            {
+                title: 'Meus documentos',
+                href: candidateDocumentsIndex.url(),
+                icon: FolderOpen,
+            },
             { title: 'Meu perfil', href: profileEdit().url, icon: UserCircle },
         ],
     },
@@ -172,7 +212,10 @@ const roleShortcutLinks = computed(() => {
     if (isEvaluator.value) {
         return [
             { title: 'Dashboard', href: evaluatorDashboard.url() },
-            { title: 'Processos atribuídos', href: evaluatorProcessesIndex().url },
+            {
+                title: 'Processos atribuídos',
+                href: evaluatorProcessesIndex().url,
+            },
         ];
     }
 
@@ -187,8 +230,16 @@ const evaluatorNavSections = computed<NavSection[]>(() => [
     {
         label: 'Principal',
         items: [
-            { title: 'Dashboard', href: evaluatorDashboard.url(), icon: LayoutGrid },
-            { title: 'Processos Atribuídos', href: evaluatorProcessesIndex().url, icon: ClipboardCheck },
+            {
+                title: 'Dashboard',
+                href: evaluatorDashboard.url(),
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Processos Atribuídos',
+                href: evaluatorProcessesIndex().url,
+                icon: ClipboardCheck,
+            },
         ],
     },
 ]);
@@ -222,7 +273,7 @@ const mainNavItems = computed<NavItem[]>(() => {
 <template>
     <Sidebar collapsible="icon" variant="inset">
         <!-- ── Logo ─────────────────────────────────────────────────────── -->
-        <SidebarHeader class="px-3 pb-2 pt-4">
+        <SidebarHeader class="px-3 pt-4 pb-2">
             <SidebarMenu>
                 <SidebarMenuItem>
                     <template v-if="usesRoleSidebar">
@@ -231,7 +282,10 @@ const mainNavItems = computed<NavItem[]>(() => {
                             as-child
                             class="h-auto rounded-xl px-2.5 py-2.5 transition-all hover:!bg-white/5"
                         >
-                            <Link :href="roleSidebarHomeUrl" class="flex flex-col gap-1.5">
+                            <Link
+                                :href="roleSidebarHomeUrl"
+                                class="flex flex-col gap-1.5"
+                            >
                                 <!-- Expanded: logos PROENSP + UEA -->
                                 <div
                                     class="flex min-w-0 flex-wrap items-center gap-2.5 group-data-[collapsible=icon]:hidden"
@@ -239,12 +293,12 @@ const mainNavItems = computed<NavItem[]>(() => {
                                     <img
                                         src="/img/logo_pro_little.svg"
                                         alt="PROENSP"
-                                        class="h-7 w-auto max-w-[9rem] shrink object-contain object-left brightness-0 invert opacity-90"
+                                        class="h-7 w-auto max-w-[9rem] shrink object-contain object-left opacity-90 brightness-0 invert"
                                     />
                                     <img
                                         src="/img/uea_00.svg"
                                         alt="UEA"
-                                        class="h-8 w-8 shrink-0 object-contain brightness-0 invert opacity-90"
+                                        class="h-8 w-8 shrink-0 object-contain opacity-90 brightness-0 invert"
                                     />
                                 </div>
                                 <!-- Collapsed: icon fallback -->
@@ -254,7 +308,7 @@ const mainNavItems = computed<NavItem[]>(() => {
                                     <Sparkles class="size-4" />
                                 </span>
                                 <span
-                                    class="text-[0.58rem] font-bold uppercase tracking-[0.14em] text-slate-500 group-data-[collapsible=icon]:hidden"
+                                    class="text-[0.58rem] font-bold tracking-[0.14em] text-slate-500 uppercase group-data-[collapsible=icon]:hidden"
                                 >
                                     {{ roleSidebarSubtitle }}
                                 </span>
@@ -283,20 +337,26 @@ const mainNavItems = computed<NavItem[]>(() => {
         </SidebarContent>
 
         <!-- ── Footer (admin / avaliador / candidato) ───────────────────── -->
-        <SidebarFooter v-if="usesRoleSidebar && page.props.auth?.user" class="px-3 pb-4 pt-2">
+        <SidebarFooter
+            v-if="usesRoleSidebar && page.props.auth?.user"
+            class="px-3 pt-2 pb-4"
+        >
             <div class="mb-2 h-px w-full bg-white/5" />
 
             <!-- Quick shortcuts -->
             <Collapsible v-slot="{ open }" class="mb-2">
                 <CollapsibleTrigger
-                    class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-slate-400 outline-none transition-all hover:bg-white/5 hover:text-slate-200 focus-visible:ring-1 focus-visible:ring-sidebar-ring"
+                    class="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-slate-400 transition-all outline-none hover:bg-white/5 hover:text-slate-200 focus-visible:ring-1 focus-visible:ring-sidebar-ring"
                 >
                     <span
                         class="flex size-6 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/15"
                     >
                         <Zap class="size-3.5" />
                     </span>
-                    <span class="flex-1 truncate group-data-[collapsible=icon]:hidden">Atalhos rápidos</span>
+                    <span
+                        class="flex-1 truncate group-data-[collapsible=icon]:hidden"
+                        >Atalhos rápidos</span
+                    >
                     <ChevronRight
                         class="size-3.5 shrink-0 text-slate-600 transition-transform group-data-[collapsible=icon]:hidden"
                         :class="open ? 'rotate-90' : ''"
@@ -312,7 +372,9 @@ const mainNavItems = computed<NavItem[]>(() => {
                                 class="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-300"
                                 @click="showComingSoonShortcut(link.title)"
                             >
-                                <span class="size-1 shrink-0 rounded-full bg-slate-700" />
+                                <span
+                                    class="size-1 shrink-0 rounded-full bg-slate-700"
+                                />
                                 {{ link.title }}
                             </button>
                             <Link
@@ -320,7 +382,9 @@ const mainNavItems = computed<NavItem[]>(() => {
                                 :href="link.href"
                                 class="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-300"
                             >
-                                <span class="size-1 rounded-full bg-slate-700" />
+                                <span
+                                    class="size-1 rounded-full bg-slate-700"
+                                />
                                 {{ link.title }}
                             </Link>
                         </li>
@@ -345,7 +409,9 @@ const mainNavItems = computed<NavItem[]>(() => {
                     </AvatarFallback>
                 </Avatar>
 
-                <div class="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+                <div
+                    class="min-w-0 flex-1 group-data-[collapsible=icon]:hidden"
+                >
                     <p class="truncate text-xs font-semibold text-slate-200">
                         {{ page.props.auth.user.name }}
                     </p>
@@ -358,7 +424,7 @@ const mainNavItems = computed<NavItem[]>(() => {
                     <DropdownMenuTrigger as-child>
                         <button
                             type="button"
-                            class="rounded-lg p-1 text-slate-500 outline-none ring-sidebar-ring transition-colors hover:bg-white/10 hover:text-slate-300 focus-visible:ring-1 group-data-[collapsible=icon]:hidden"
+                            class="rounded-lg p-1 text-slate-500 ring-sidebar-ring transition-colors outline-none group-data-[collapsible=icon]:hidden hover:bg-white/10 hover:text-slate-300 focus-visible:ring-1"
                             aria-label="Menu do usuário"
                         >
                             <MoreHorizontal class="size-4" />

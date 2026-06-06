@@ -11,6 +11,8 @@ export type UseAppearanceReturn = {
 };
 
 export function updateTheme(value: Appearance): void {
+    void value;
+
     if (typeof window === 'undefined') {
         return;
     }
@@ -31,18 +33,6 @@ const setCookie = (name: string, value: string, days = 365) => {
 
 const mediaQuery = () => {
     return null;
-};
-
-const getStoredAppearance = () => {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-
-    return localStorage.getItem('appearance') as Appearance | null;
-};
-
-const prefersDark = (): boolean => {
-    return false;
 };
 
 const handleSystemThemeChange = () => {
@@ -76,6 +66,8 @@ export function useAppearance(): UseAppearanceReturn {
     });
 
     function updateAppearance(value: Appearance) {
+        void value;
+
         appearance.value = 'light';
 
         // Store in localStorage for client-side persistence...

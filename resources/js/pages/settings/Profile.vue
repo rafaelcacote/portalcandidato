@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { Form, Head, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import CandidateProfileForm from '@/components/Candidate/CandidateProfileForm.vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
+import CandidateProfileForm from '@/components/Candidate/CandidateProfileForm.vue';
+import type { CandidateProfileUser } from '@/components/Candidate/profileTypes';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { CandidateProfileUser } from '@/components/Candidate/profileTypes';
 import { send } from '@/routes/verification';
 
 type Props = {
@@ -19,7 +19,7 @@ type Props = {
     profile?: CandidateProfileUser | null;
 };
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
     isCandidate: false,
     ufs: () => [],
     profile: null,
@@ -32,7 +32,9 @@ const user = computed(() => page.props.auth.user);
 <template>
     <Head :title="isCandidate ? 'Meu perfil' : 'Configurações de perfil'" />
 
-    <h1 class="sr-only">{{ isCandidate ? 'Meu perfil' : 'Configurações de perfil' }}</h1>
+    <h1 class="sr-only">
+        {{ isCandidate ? 'Meu perfil' : 'Configurações de perfil' }}
+    </h1>
 
     <div class="space-y-6">
         <Heading
@@ -100,7 +102,8 @@ const user = computed(() => page.props.auth.user);
                                 as="button"
                                 class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                             >
-                                Clique aqui para reenviar o e-mail de verificação.
+                                Clique aqui para reenviar o e-mail de
+                                verificação.
                             </Link>
                         </p>
 
@@ -108,19 +111,25 @@ const user = computed(() => page.props.auth.user);
                             v-if="status === 'verification-link-sent'"
                             class="mt-2 rounded-md bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
                         >
-                            Um novo link de verificação foi enviado para o seu e-mail.
+                            Um novo link de verificação foi enviado para o seu
+                            e-mail.
                         </div>
                     </div>
 
                     <div class="flex items-center gap-4">
-                        <Button :disabled="processing" data-test="update-profile-button">
+                        <Button
+                            :disabled="processing"
+                            data-test="update-profile-button"
+                        >
                             Salvar alterações
                         </Button>
                     </div>
                 </Form>
             </section>
 
-            <section class="rounded-xl border bg-muted/20 p-4 text-sm text-muted-foreground">
+            <section
+                class="rounded-xl border bg-muted/20 p-4 text-sm text-muted-foreground"
+            >
                 A exclusão de conta está desabilitada no sistema.
             </section>
         </template>

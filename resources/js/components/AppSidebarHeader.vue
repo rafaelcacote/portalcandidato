@@ -34,7 +34,6 @@ const usesStaffHeader = computed(() => {
 
     return roles.includes('admin') || roles.includes('avaliador');
 });
-
 </script>
 
 <template>
@@ -51,7 +50,9 @@ const usesStaffHeader = computed(() => {
                             class="h-auto max-w-full gap-2 rounded-xl px-2 py-1.5 hover:bg-slate-100"
                             data-test="header-user-menu"
                         >
-                            <Avatar class="size-8 shrink-0 overflow-hidden rounded-lg">
+                            <Avatar
+                                class="size-8 shrink-0 overflow-hidden rounded-lg"
+                            >
                                 <AvatarImage
                                     v-if="hasAvatar"
                                     :src="avatarUrl!"
@@ -93,7 +94,9 @@ const usesStaffHeader = computed(() => {
                             class="h-auto max-w-full gap-2 rounded-lg px-2 py-1.5 hover:bg-accent"
                             data-test="header-user-menu"
                         >
-                            <Avatar class="size-8 shrink-0 overflow-hidden rounded-lg">
+                            <Avatar
+                                class="size-8 shrink-0 overflow-hidden rounded-lg"
+                            >
                                 <AvatarImage
                                     v-if="hasAvatar"
                                     :src="avatarUrl!"

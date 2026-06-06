@@ -31,7 +31,12 @@ const paths = computed(() => {
         return [x, y] as const;
     });
 
-    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+    const line = pts
+        .map(
+            (p, i) =>
+                `${i === 0 ? 'M' : 'L'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`,
+        )
+        .join(' ');
     const last = pts[pts.length - 1]!;
     const first = pts[0]!;
     const area = `${line} L ${last[0].toFixed(1)} ${viewH - padY} L ${first[0].toFixed(1)} ${viewH - padY} Z`;
@@ -50,8 +55,16 @@ const paths = computed(() => {
     >
         <defs>
             <linearGradient :id="gradientId" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stop-color="rgb(16 185 129)" stop-opacity="0.35" />
-                <stop offset="100%" stop-color="rgb(16 185 129)" stop-opacity="0" />
+                <stop
+                    offset="0%"
+                    stop-color="rgb(16 185 129)"
+                    stop-opacity="0.35"
+                />
+                <stop
+                    offset="100%"
+                    stop-color="rgb(16 185 129)"
+                    stop-opacity="0"
+                />
             </linearGradient>
         </defs>
         <path :d="paths.area" :fill="`url(#${gradientId})`" stroke="none" />

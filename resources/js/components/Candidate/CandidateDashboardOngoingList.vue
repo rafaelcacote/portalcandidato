@@ -34,13 +34,21 @@ function statusClasses(status: string): string {
 </script>
 
 <template>
-    <div class="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60">
-        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+    <div
+        class="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60"
+    >
+        <div
+            class="flex items-center justify-between border-b border-slate-100 px-5 py-4"
+        >
             <div class="flex items-center gap-2">
-                <div class="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500"
+                >
                     <ClipboardList class="size-3.5" />
                 </div>
-                <h2 class="text-sm font-semibold text-slate-900">Inscrições em andamento</h2>
+                <h2 class="text-sm font-semibold text-slate-900">
+                    Inscrições em andamento
+                </h2>
             </div>
             <Link
                 :href="applicationsIndex.url()"
@@ -62,10 +70,15 @@ function statusClasses(status: string): string {
                 >
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="truncate text-sm font-semibold text-slate-900 group-hover:text-teal-700">
+                            <p
+                                class="truncate text-sm font-semibold text-slate-900 group-hover:text-teal-700"
+                            >
                                 {{ row.process_title }}
                             </p>
-                            <p v-if="row.numero_protocolo" class="mt-0.5 text-xs text-slate-400">
+                            <p
+                                v-if="row.numero_protocolo"
+                                class="mt-0.5 text-xs text-slate-400"
+                            >
                                 {{ row.numero_protocolo }}
                             </p>
                         </div>
@@ -84,12 +97,17 @@ function statusClasses(status: string): string {
             v-else
             class="flex flex-col items-center justify-center px-6 py-14 text-center"
         >
-            <div class="flex size-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+            <div
+                class="flex size-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400"
+            >
                 <ClipboardList class="size-6" />
             </div>
-            <p class="mt-4 text-sm font-semibold text-slate-700">Nenhuma inscrição em andamento</p>
+            <p class="mt-4 text-sm font-semibold text-slate-700">
+                Nenhuma inscrição em andamento
+            </p>
             <p class="mt-1 max-w-xs text-xs text-slate-400">
-                Quando você iniciar ou tiver inscrições em análise, elas aparecerão aqui.
+                Quando você iniciar ou tiver inscrições em análise, elas
+                aparecerão aqui.
             </p>
         </div>
     </div>

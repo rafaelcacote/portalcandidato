@@ -11,8 +11,8 @@ import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Label } from '@/components/ui/label';
 import { formatDateTimeBR } from '@/lib/utils';
-import { show as applicationShow } from '@/routes/candidate/applications';
 import { update as updateAppeal } from '@/routes/admin/processes/appeals';
+import { show as applicationShow } from '@/routes/candidate/applications';
 
 export type ProcessAppealRow = {
     id: number;
@@ -51,7 +51,10 @@ const respondForm = useForm({
     resposta: '',
 });
 
-const statusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'danger'> = {
+const statusSeverity: Record<
+    string,
+    'secondary' | 'success' | 'warn' | 'danger'
+> = {
     enviado: 'secondary',
     em_analise: 'warn',
     deferido: 'success',
@@ -59,19 +62,25 @@ const statusSeverity: Record<string, 'secondary' | 'success' | 'warn' | 'danger'
 };
 
 function formatDate(iso: string | null | undefined): string {
-    if (!iso) return '—';
+    if (!iso) {
+        return '—';
+    }
+
     return formatDateTimeBR(iso, { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function openRespond(appeal: ProcessAppealRow): void {
     selectedAppeal.value = appeal;
-    respondForm.status = appeal.status === 'enviado' ? 'em_analise' : appeal.status;
+    respondForm.status =
+        appeal.status === 'enviado' ? 'em_analise' : appeal.status;
     respondForm.resposta = appeal.resposta ?? '';
     respondDialogOpen.value = true;
 }
 
 function submitResponse(): void {
-    if (!selectedAppeal.value) return;
+    if (!selectedAppeal.value) {
+        return;
+    }
 
     respondForm.put(
         updateAppeal({
@@ -100,9 +109,12 @@ function submitResponse(): void {
                     <Gavel :size="20" />
                 </div>
                 <div>
-                    <h2 class="text-lg font-semibold">Recursos dos candidatos</h2>
+                    <h2 class="text-lg font-semibold">
+                        Recursos dos candidatos
+                    </h2>
                     <p class="text-sm text-muted-foreground">
-                        Analise os recursos enviados e registre a decisão com resposta ao candidato.
+                        Analise os recursos enviados e registre a decisão com
+                        resposta ao candidato.
                     </p>
                 </div>
             </div>
@@ -115,7 +127,8 @@ function submitResponse(): void {
             <i class="pi pi-inbox text-3xl text-muted-foreground" />
             <p class="text-sm font-medium">Nenhum recurso recebido</p>
             <p class="max-w-sm text-xs text-muted-foreground">
-                Quando candidatos enviarem recursos nas etapas com prazo aberto, eles aparecerão aqui.
+                Quando candidatos enviarem recursos nas etapas com prazo aberto,
+                eles aparecerão aqui.
             </p>
         </div>
 
@@ -133,17 +146,24 @@ function submitResponse(): void {
                         </span>
                         <Tag
                             :value="appeal.status_label"
-                            :severity="statusSeverity[appeal.status] ?? 'secondary'"
+                            :severity="
+                                statusSeverity[appeal.status] ?? 'secondary'
+                            "
                         />
                     </div>
                     <p class="text-xs text-muted-foreground">
                         {{ appeal.application.user_email }}
                         <span v-if="appeal.application.numero_protocolo">
-                            · Protocolo {{ appeal.application.numero_protocolo }}
+                            · Protocolo
+                            {{ appeal.application.numero_protocolo }}
                         </span>
-                        <span v-if="appeal.stage"> · Etapa: {{ appeal.stage.nome }}</span>
+                        <span v-if="appeal.stage">
+                            · Etapa: {{ appeal.stage.nome }}</span
+                        >
                     </p>
-                    <p class="whitespace-pre-line text-sm text-foreground">{{ appeal.texto }}</p>
+                    <p class="text-sm whitespace-pre-line text-foreground">
+                        {{ appeal.texto }}
+                    </p>
                     <Message
                         v-if="appeal.resposta"
                         severity="info"
@@ -151,8 +171,13 @@ function submitResponse(): void {
                         class="text-sm"
                     >
                         <p class="font-medium">Resposta da comissão</p>
-                        <p class="mt-1 whitespace-pre-line">{{ appeal.resposta }}</p>
-                        <p v-if="appeal.respondido_em" class="mt-2 text-xs opacity-80">
+                        <p class="mt-1 whitespace-pre-line">
+                            {{ appeal.resposta }}
+                        </p>
+                        <p
+                            v-if="appeal.respondido_em"
+                            class="mt-2 text-xs opacity-80"
+                        >
                             Respondido em {{ formatDate(appeal.respondido_em) }}
                             <span v-if="appeal.respondido_por">
                                 por {{ appeal.respondido_por.name }}
@@ -165,7 +190,11 @@ function submitResponse(): void {
                 </div>
                 <div class="flex shrink-0 flex-wrap gap-2">
                     <Link
-                        :href="applicationShow({ application: appeal.application.id }).url"
+                        :href="
+                            applicationShow({
+                                application: appeal.application.id,
+                            }).url
+                        "
                         class="inline-flex"
                     >
                         <Button
@@ -193,10 +222,16 @@ function submitResponse(): void {
             :style="{ width: 'min(100%, 32rem)' }"
             :draggable="false"
         >
-            <form v-if="selectedAppeal" class="space-y-4" @submit.prevent="submitResponse">
+            <form
+                v-if="selectedAppeal"
+                class="space-y-4"
+                @submit.prevent="submitResponse"
+            >
                 <p class="text-sm text-muted-foreground">
                     Candidato:
-                    <strong class="text-foreground">{{ selectedAppeal.application.user_name }}</strong>
+                    <strong class="text-foreground">{{
+                        selectedAppeal.application.user_name
+                    }}</strong>
                     <span v-if="selectedAppeal.stage">
                         — {{ selectedAppeal.stage.nome }}
                     </span>

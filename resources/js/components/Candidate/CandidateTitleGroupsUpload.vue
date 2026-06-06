@@ -7,7 +7,10 @@ import AccordionPanel from 'primevue/accordionpanel';
 import { computed, ref } from 'vue';
 import CandidateTitleItemUpload from '@/components/Candidate/CandidateTitleItemUpload.vue';
 import type { TitleUploadedDoc } from '@/components/Candidate/CandidateTitleItemUpload.vue';
-import type { ProcessTitleGroupRow, ProcessTitleItemRow } from '@/components/Candidate/processTitleTypes';
+import type {
+    ProcessTitleGroupRow,
+    ProcessTitleItemRow,
+} from '@/components/Candidate/processTitleTypes';
 
 const props = defineProps<{
     titleGroups: ProcessTitleGroupRow[];
@@ -22,7 +25,8 @@ const activeAccordionValues = ref<string[]>([]);
 function getUploadedDocs(itemId: number): TitleUploadedDoc[] {
     return props.documents.filter(
         (d) =>
-            typeof d.process_title_item_id === 'number' && d.process_title_item_id === itemId,
+            typeof d.process_title_item_id === 'number' &&
+            d.process_title_item_id === itemId,
     );
 }
 
@@ -33,7 +37,9 @@ function formatScore(value: string | number): string {
         return String(value);
     }
 
-    return n % 1 === 0 ? String(Math.trunc(n)) : n.toFixed(2).replace(/\.?0+$/, '');
+    return n % 1 === 0
+        ? String(Math.trunc(n))
+        : n.toFixed(2).replace(/\.?0+$/, '');
 }
 
 const totalItems = computed(() => {
@@ -51,7 +57,9 @@ const itemsWithUploadCount = computed(() => {
 
     for (const g of props.titleGroups) {
         for (const i of g.items) {
-            const hasValidUpload = getUploadedDocs(i.id).some((d) => d.status !== 'recusado');
+            const hasValidUpload = getUploadedDocs(i.id).some(
+                (d) => d.status !== 'recusado',
+            );
 
             if (hasValidUpload) {
                 count += 1;
@@ -67,7 +75,9 @@ const totalUploadedFiles = computed(() => {
 
     for (const g of props.titleGroups) {
         for (const i of g.items) {
-            count += getUploadedDocs(i.id).filter((d) => d.status !== 'recusado').length;
+            count += getUploadedDocs(i.id).filter(
+                (d) => d.status !== 'recusado',
+            ).length;
         }
     }
 
@@ -80,23 +90,31 @@ function getGroupItemsWithUpload(group: ProcessTitleGroupRow): number {
     ).length;
 }
 
-function computeItemPreviewScore(item: ProcessTitleItemRow, docs: TitleUploadedDoc[]): number {
+function computeItemPreviewScore(
+    item: ProcessTitleItemRow,
+    docs: TitleUploadedDoc[],
+): number {
     const validDocs = docs.filter((d) => d.status !== 'recusado');
+
     if (validDocs.length === 0) {
         return 0;
     }
 
     const perUnit = Number(item.score_per_unit);
+
     if (!Number.isFinite(perUnit) || perUnit <= 0) {
         return 0;
     }
 
     let total = 0;
+
     for (const doc of validDocs) {
         let qty = Math.max(1, Number(doc.quantidade ?? 1));
+
         if (item.max_quantity != null) {
             qty = Math.min(qty, item.max_quantity);
         }
+
         total += perUnit * qty;
     }
 
@@ -105,11 +123,13 @@ function computeItemPreviewScore(item: ProcessTitleItemRow, docs: TitleUploadedD
 
 function computeGroupPreviewScore(group: ProcessTitleGroupRow): number {
     let groupTotal = 0;
+
     for (const item of group.items) {
         groupTotal += computeItemPreviewScore(item, getUploadedDocs(item.id));
     }
 
     const groupMax = Number(group.max_score);
+
     if (Number.isFinite(groupMax) && groupMax > 0) {
         groupTotal = Math.min(groupTotal, groupMax);
     }
@@ -139,6 +159,7 @@ const groupPreviewScoreMap = computed((): Record<number, number> => {
 
 const totalPreviewScore = computed(() => {
     const total = groupPreviewScores.value.reduce((sum, g) => sum + g.score, 0);
+
     return Math.round(total * 100) / 100;
 });
 
@@ -154,19 +175,28 @@ const hasAnyUploads = computed(() =>
             v-if="totalItems > 0"
             class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 dark:bg-muted/10"
         >
-            <div class="flex items-center gap-2 text-[13px] text-muted-foreground">
+            <div
+                class="flex items-center gap-2 text-[13px] text-muted-foreground"
+            >
                 <Award :size="16" class="text-primary" aria-hidden="true" />
                 <span>
-                    <span class="font-semibold text-foreground tabular-nums">{{ itemsWithUploadCount }}</span>
+                    <span class="font-semibold text-foreground tabular-nums">{{
+                        itemsWithUploadCount
+                    }}</span>
                     de
-                    <span class="font-semibold text-foreground tabular-nums">{{ totalItems }}</span>
+                    <span class="font-semibold text-foreground tabular-nums">{{
+                        totalItems
+                    }}</span>
                     item(ns) com comprovantes ·
-                    <span class="font-semibold text-foreground tabular-nums">{{ totalUploadedFiles }}</span>
+                    <span class="font-semibold text-foreground tabular-nums">{{
+                        totalUploadedFiles
+                    }}</span>
                     arquivo(s) no total
                 </span>
             </div>
             <p class="text-[11.5px] text-muted-foreground">
-                Você pode enviar mais de um arquivo por item, respeitando o limite do edital.
+                Você pode enviar mais de um arquivo por item, respeitando o
+                limite do edital.
             </p>
         </div>
 
@@ -183,8 +213,11 @@ const hasAnyUploads = computed(() =>
                     class="shrink-0 text-amber-700 dark:text-amber-400"
                     aria-hidden="true"
                 />
-                <p class="text-[12.5px] font-semibold text-amber-900 dark:text-amber-200">
-                    Prévia de pontuação — estimativa com base nos comprovantes enviados
+                <p
+                    class="text-[12.5px] font-semibold text-amber-900 dark:text-amber-200"
+                >
+                    Prévia de pontuação — estimativa com base nos comprovantes
+                    enviados
                 </p>
             </div>
 
@@ -195,12 +228,18 @@ const hasAnyUploads = computed(() =>
                         :key="g.id"
                         class="flex items-center justify-between gap-3 text-[12px]"
                     >
-                        <span class="min-w-0 truncate text-amber-800 dark:text-amber-300">
+                        <span
+                            class="min-w-0 truncate text-amber-800 dark:text-amber-300"
+                        >
                             {{ g.name }}
                         </span>
-                        <span class="shrink-0 font-semibold tabular-nums text-amber-900 dark:text-amber-200">
+                        <span
+                            class="shrink-0 font-semibold text-amber-900 tabular-nums dark:text-amber-200"
+                        >
                             {{ formatScore(g.score) }}
-                            <span class="font-normal text-amber-700/70 dark:text-amber-400/70">
+                            <span
+                                class="font-normal text-amber-700/70 dark:text-amber-400/70"
+                            >
                                 / {{ formatScore(g.maxScore) }} pts
                             </span>
                         </span>
@@ -216,11 +255,15 @@ const hasAnyUploads = computed(() =>
                             class="shrink-0 text-amber-700 dark:text-amber-400"
                             aria-hidden="true"
                         />
-                        <span class="text-[12.5px] font-semibold text-amber-900 dark:text-amber-200">
+                        <span
+                            class="text-[12.5px] font-semibold text-amber-900 dark:text-amber-200"
+                        >
                             Total estimado
                         </span>
                     </div>
-                    <span class="text-sm font-bold tabular-nums text-amber-900 dark:text-amber-100">
+                    <span
+                        class="text-sm font-bold text-amber-900 tabular-nums dark:text-amber-100"
+                    >
                         {{ formatScore(totalPreviewScore) }} pts
                     </span>
                 </div>
@@ -228,8 +271,14 @@ const hasAnyUploads = computed(() =>
                 <p
                     class="mt-2.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-amber-700/80 dark:text-amber-400/80"
                 >
-                    <Info :size="12" class="mt-0.5 shrink-0" aria-hidden="true" />
-                    Esta é apenas uma estimativa. A pontuação final será atribuída pelo avaliador após análise dos comprovantes, podendo ser diferente desta prévia.
+                    <Info
+                        :size="12"
+                        class="mt-0.5 shrink-0"
+                        aria-hidden="true"
+                    />
+                    Esta é apenas uma estimativa. A pontuação final será
+                    atribuída pelo avaliador após análise dos comprovantes,
+                    podendo ser diferente desta prévia.
                 </p>
             </div>
         </div>
@@ -239,13 +288,17 @@ const hasAnyUploads = computed(() =>
             v-if="titleGroups.length === 0"
             class="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border/70 bg-muted/10 px-6 py-10 text-center"
         >
-            <Inbox :size="22" class="text-muted-foreground" aria-hidden="true" />
+            <Inbox
+                :size="22"
+                class="text-muted-foreground"
+                aria-hidden="true"
+            />
             <p class="text-sm font-semibold text-foreground">
                 Nenhum item de título configurado
             </p>
             <p class="max-w-md text-[12.5px] text-muted-foreground">
-                Este processo seletivo não possui tabela de títulos para pontuação. Você pode
-                avançar para a próxima etapa.
+                Este processo seletivo não possui tabela de títulos para
+                pontuação. Você pode avançar para a próxima etapa.
             </p>
         </div>
 
@@ -266,37 +319,47 @@ const hasAnyUploads = computed(() =>
                     <div class="flex min-w-0 flex-1 items-center gap-3 pr-2">
                         <!-- Badge do código do grupo -->
                         <span
-                            class="shrink-0 rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-primary"
+                            class="shrink-0 rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-primary uppercase"
                         >
                             {{ group.code }}
                         </span>
 
                         <!-- Nome do grupo -->
-                        <p class="min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-snug text-foreground">
+                        <p
+                            class="min-w-0 flex-1 truncate text-[13.5px] leading-snug font-semibold text-foreground"
+                        >
                             {{ group.name }}
                         </p>
 
                         <!-- Estatísticas do grupo -->
-                        <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                        <div
+                            class="flex shrink-0 flex-wrap items-center justify-end gap-2"
+                        >
                             <!-- Contagem de itens preenchidos -->
                             <span
-                                class="hidden text-[11px] tabular-nums text-muted-foreground sm:inline"
+                                class="hidden text-[11px] text-muted-foreground tabular-nums sm:inline"
                             >
-                                {{ getGroupItemsWithUpload(group) }}/{{ group.items.length }} itens
+                                {{ getGroupItemsWithUpload(group) }}/{{
+                                    group.items.length
+                                }}
+                                itens
                             </span>
 
                             <!-- Prévia de pontuação do grupo -->
                             <span
                                 v-if="groupPreviewScoreMap[group.id] > 0"
-                                class="inline-flex items-center gap-1 rounded-lg border border-amber-200/70 bg-amber-50/80 px-2 py-0.5 text-[10.5px] font-semibold tabular-nums text-amber-800 dark:border-amber-800/40 dark:bg-amber-950/20 dark:text-amber-300"
+                                class="inline-flex items-center gap-1 rounded-lg border border-amber-200/70 bg-amber-50/80 px-2 py-0.5 text-[10.5px] font-semibold text-amber-800 tabular-nums dark:border-amber-800/40 dark:bg-amber-950/20 dark:text-amber-300"
                             >
                                 <TrendingUp :size="10" aria-hidden="true" />
-                                ~{{ formatScore(groupPreviewScoreMap[group.id]) }} pts
+                                ~{{
+                                    formatScore(groupPreviewScoreMap[group.id])
+                                }}
+                                pts
                             </span>
 
                             <!-- Pontuação máxima do grupo -->
                             <span
-                                class="shrink-0 rounded-lg border border-border/50 bg-background/70 px-2 py-0.5 text-[10.5px] tabular-nums text-muted-foreground"
+                                class="shrink-0 rounded-lg border border-border/50 bg-background/70 px-2 py-0.5 text-[10.5px] text-muted-foreground tabular-nums"
                             >
                                 máx {{ formatScore(group.max_score) }} pts
                             </span>
@@ -305,7 +368,8 @@ const hasAnyUploads = computed(() =>
                             <CheckCircle2
                                 v-if="
                                     group.items.length > 0 &&
-                                    getGroupItemsWithUpload(group) === group.items.length
+                                    getGroupItemsWithUpload(group) ===
+                                        group.items.length
                                 "
                                 :size="15"
                                 class="shrink-0 text-emerald-600 dark:text-emerald-400"

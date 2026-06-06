@@ -23,7 +23,9 @@ watch(
     },
 );
 
-const showPhoto = computed(() => Boolean(props.photoUrl) && !photoErrored.value);
+const showPhoto = computed(
+    () => Boolean(props.photoUrl) && !photoErrored.value,
+);
 
 const sizeClasses = computed(() => {
     const map = {
@@ -31,6 +33,7 @@ const sizeClasses = computed(() => {
         md: 'size-16 rounded-2xl text-lg sm:size-20 sm:text-xl',
         lg: 'size-24 rounded-2xl text-2xl sm:size-28 sm:text-3xl',
     };
+
     return map[props.size];
 });
 
@@ -40,7 +43,7 @@ const initials = computed(() => getInitials(props.name));
 <template>
     <div
         :class="[
-            'relative shrink-0 overflow-hidden ring-2 ring-white shadow-md ring-offset-1 ring-offset-white',
+            'relative shrink-0 overflow-hidden shadow-md ring-2 ring-white ring-offset-1 ring-offset-white',
             sizeClasses,
         ]"
     >

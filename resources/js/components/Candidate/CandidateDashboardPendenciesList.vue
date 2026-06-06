@@ -24,10 +24,16 @@ defineProps<{
 </script>
 
 <template>
-    <div class="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60">
-        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+    <div
+        class="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60"
+    >
+        <div
+            class="flex items-center justify-between border-b border-slate-100 px-5 py-4"
+        >
             <div class="flex items-center gap-2">
-                <div class="flex size-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600"
+                >
                     <AlertTriangle class="size-3.5" />
                 </div>
                 <h2 class="text-sm font-semibold text-slate-900">Pendências</h2>
@@ -45,7 +51,9 @@ defineProps<{
             class="divide-y divide-slate-100"
         >
             <div v-if="pendenciasInscricao.length" class="px-5 py-4">
-                <p class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p
+                    class="mb-2 text-[10px] font-bold tracking-wider text-slate-400 uppercase"
+                >
                     Inscrições
                 </p>
                 <ul class="space-y-2">
@@ -60,7 +68,10 @@ defineProps<{
                         >
                             {{ row.process_title }}
                         </Link>
-                        <p v-if="row.numero_protocolo" class="text-xs text-amber-700/80">
+                        <p
+                            v-if="row.numero_protocolo"
+                            class="text-xs text-amber-700/80"
+                        >
                             {{ row.numero_protocolo }}
                         </p>
                     </li>
@@ -68,7 +79,9 @@ defineProps<{
             </div>
 
             <div v-if="documentosRecusados.length" class="px-5 py-4">
-                <p class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p
+                    class="mb-2 text-[10px] font-bold tracking-wider text-slate-400 uppercase"
+                >
                     Documentos recusados
                 </p>
                 <ul class="space-y-2">
@@ -105,12 +118,17 @@ defineProps<{
             v-else
             class="flex flex-col items-center justify-center px-6 py-14 text-center"
         >
-            <div class="flex size-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500">
+            <div
+                class="flex size-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500"
+            >
                 <AlertTriangle class="size-6" />
             </div>
-            <p class="mt-4 text-sm font-semibold text-slate-700">Nenhuma pendência</p>
+            <p class="mt-4 text-sm font-semibold text-slate-700">
+                Nenhuma pendência
+            </p>
             <p class="mt-1 max-w-xs text-xs text-slate-400">
-                Você não possui inscrições em pendência nem documentos recusados no momento.
+                Você não possui inscrições em pendência nem documentos recusados
+                no momento.
             </p>
         </div>
     </div>

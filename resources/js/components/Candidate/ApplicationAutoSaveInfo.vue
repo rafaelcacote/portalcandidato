@@ -72,10 +72,17 @@ const tooltip = computed(() => {
             class="shrink-0 animate-spin text-primary"
             aria-hidden="true"
         />
-        <CloudUpload v-else :size="14" class="shrink-0 text-primary/80" aria-hidden="true" />
+        <CloudUpload
+            v-else
+            :size="14"
+            class="shrink-0 text-primary/80"
+            aria-hidden="true"
+        />
 
         <span class="min-w-0 truncate">
-            <span class="font-medium text-foreground">Salvamento automático</span>
+            <span class="font-medium text-foreground"
+                >Salvamento automático</span
+            >
             <span class="text-muted-foreground"> · {{ relativeLabel }}</span>
         </span>
     </div>

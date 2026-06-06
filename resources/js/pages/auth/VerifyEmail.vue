@@ -38,7 +38,10 @@ const props = defineProps<{
 const page = usePage();
 
 const displayEmail = computed(
-    () => props.email ?? (page.props.auth?.user?.email as string | undefined) ?? '',
+    () =>
+        props.email ??
+        (page.props.auth?.user?.email as string | undefined) ??
+        '',
 );
 
 const linkJustSent = computed(() => props.status === 'verification-link-sent');
@@ -52,17 +55,13 @@ function handleLogout(): void {
     <div>
         <Head title="Confirme seu e-mail" />
 
-        <CandidateHeader
-            compact
-            :show-notice="false"
-            class="mb-3 sm:mb-4"
-        />
+        <CandidateHeader compact :show-notice="false" class="mb-3 sm:mb-4" />
 
         <Card
             class="overflow-hidden border-border/80 shadow-lg shadow-primary/5 transition-shadow"
         >
             <CardHeader
-                class="space-y-4 border-b border-border/60 bg-gradient-to-br from-primary/8 via-transparent to-emerald-500/5 pb-6 pt-6"
+                class="space-y-4 border-b border-border/60 bg-gradient-to-br from-primary/8 via-transparent to-emerald-500/5 pt-6 pb-6"
             >
                 <div
                     class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/12 text-primary ring-1 ring-primary/20"
@@ -71,12 +70,17 @@ function handleLogout(): void {
                 </div>
 
                 <div class="space-y-2 text-center">
-                    <CardTitle class="text-xl font-semibold tracking-tight sm:text-2xl">
+                    <CardTitle
+                        class="text-xl font-semibold tracking-tight sm:text-2xl"
+                    >
                         Confirme seu e-mail
                     </CardTitle>
-                    <CardDescription class="text-sm leading-relaxed sm:text-base">
-                        Enviamos um link de confirmação para o endereço cadastrado. Abra sua
-                        caixa de entrada e clique no botão para liberar o acesso ao portal.
+                    <CardDescription
+                        class="text-sm leading-relaxed sm:text-base"
+                    >
+                        Enviamos um link de confirmação para o endereço
+                        cadastrado. Abra sua caixa de entrada e clique no botão
+                        para liberar o acesso ao portal.
                     </CardDescription>
                 </div>
             </CardHeader>
@@ -92,10 +96,14 @@ function handleLogout(): void {
                         <Inbox :size="20" />
                     </div>
                     <div class="min-w-0 text-left">
-                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        <p
+                            class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                        >
                             E-mail cadastrado
                         </p>
-                        <p class="truncate text-sm font-semibold text-foreground sm:text-base">
+                        <p
+                            class="truncate text-sm font-semibold text-foreground sm:text-base"
+                        >
                             {{ displayEmail }}
                         </p>
                     </div>
@@ -106,26 +114,32 @@ function handleLogout(): void {
                     class="flex items-start gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-4 py-3.5 text-sm text-emerald-800 dark:text-emerald-200"
                     role="status"
                 >
-                    <CheckCircle2 class="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <CheckCircle2
+                        class="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                    />
                     <p>
-                        Um novo link de confirmação foi enviado. Verifique também a pasta de
-                        spam ou promoções.
+                        Um novo link de confirmação foi enviado. Verifique
+                        também a pasta de spam ou promoções.
                     </p>
                 </div>
 
                 <ul class="grid gap-3 text-sm text-muted-foreground">
                     <li class="flex items-start gap-2.5">
-                        <ShieldCheck class="mt-0.5 size-4 shrink-0 text-primary" />
+                        <ShieldCheck
+                            class="mt-0.5 size-4 shrink-0 text-primary"
+                        />
                         <span>
-                            Enquanto o e-mail não for confirmado, o acesso às áreas do portal
-                            permanece bloqueado.
+                            Enquanto o e-mail não for confirmado, o acesso às
+                            áreas do portal permanece bloqueado.
                         </span>
                     </li>
                     <li class="flex items-start gap-2.5">
-                        <RefreshCw class="mt-0.5 size-4 shrink-0 text-primary" />
+                        <RefreshCw
+                            class="mt-0.5 size-4 shrink-0 text-primary"
+                        />
                         <span>
-                            Não recebeu o e-mail? Aguarde alguns minutos ou solicite o reenvio
-                            abaixo.
+                            Não recebeu o e-mail? Aguarde alguns minutos ou
+                            solicite o reenvio abaixo.
                         </span>
                     </li>
                 </ul>
@@ -137,7 +151,7 @@ function handleLogout(): void {
                 >
                     <Button
                         type="submit"
-                        class="h-11 w-full rounded-lg border border-[#39b4b9]/25 bg-[#39b4b9] text-base font-semibold text-white shadow-md transition-transform hover:bg-[#2ea0a6] active:scale-[0.99] focus-visible:border-[#39b4b9]/40 focus-visible:ring-[#39b4b9]/35 dark:border-[#39b4b9]/40 dark:bg-[#39b4b9] dark:hover:bg-[#4dc8cd]"
+                        class="h-11 w-full rounded-lg border border-[#39b4b9]/25 bg-[#39b4b9] text-base font-semibold text-white shadow-md transition-transform hover:bg-[#2ea0a6] focus-visible:border-[#39b4b9]/40 focus-visible:ring-[#39b4b9]/35 active:scale-[0.99] dark:border-[#39b4b9]/40 dark:bg-[#39b4b9] dark:hover:bg-[#4dc8cd]"
                         :disabled="processing"
                         data-test="resend-verification-button"
                     >

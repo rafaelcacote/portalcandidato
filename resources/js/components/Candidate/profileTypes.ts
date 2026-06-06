@@ -257,11 +257,19 @@ export type ProfileCompletionState = {
 };
 
 /** Computes how complete the candidate profile is, plus what is still missing. */
-export function getProfileCompletion(user: CandidateProfileUser | null): ProfileCompletionState {
+export function getProfileCompletion(
+    user: CandidateProfileUser | null,
+): ProfileCompletionState {
     const total = PROFILE_COMPLETION_FIELDS.length;
 
     if (user === null) {
-        return { filled: 0, total, percent: 0, missing: PROFILE_COMPLETION_FIELDS.map((f) => f.label), isComplete: false };
+        return {
+            filled: 0,
+            total,
+            percent: 0,
+            missing: PROFILE_COMPLETION_FIELDS.map((f) => f.label),
+            isComplete: false,
+        };
     }
 
     const missing: string[] = [];

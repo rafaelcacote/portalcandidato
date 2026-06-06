@@ -43,14 +43,20 @@ function submit(): void {
 
 <template>
     <Dialog v-model:open="open">
-        <DialogContent class="sm:max-w-md" @interact-outside="form.processing ? $event.preventDefault() : undefined">
+        <DialogContent
+            class="sm:max-w-md"
+            @interact-outside="
+                form.processing ? $event.preventDefault() : undefined
+            "
+        >
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-2">
                     <KeyRound class="size-5 text-primary" aria-hidden="true" />
                     Alterar senha
                 </DialogTitle>
                 <DialogDescription>
-                    Informe sua senha atual e escolha uma nova senha segura para proteger sua conta.
+                    Informe sua senha atual e escolha uma nova senha segura para
+                    proteger sua conta.
                 </DialogDescription>
             </DialogHeader>
 
@@ -80,7 +86,9 @@ function submit(): void {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="dialog-password_confirmation">Confirmar nova senha</Label>
+                    <Label for="dialog-password_confirmation"
+                        >Confirmar nova senha</Label
+                    >
                     <PasswordInput
                         id="dialog-password_confirmation"
                         v-model="form.password_confirmation"
@@ -100,7 +108,11 @@ function submit(): void {
                     >
                         Cancelar
                     </Button>
-                    <Button type="submit" :disabled="form.processing" data-test="update-password-dialog-button">
+                    <Button
+                        type="submit"
+                        :disabled="form.processing"
+                        data-test="update-password-dialog-button"
+                    >
                         {{ form.processing ? 'Salvando…' : 'Salvar senha' }}
                     </Button>
                 </DialogFooter>

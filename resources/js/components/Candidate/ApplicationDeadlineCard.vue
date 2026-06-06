@@ -20,13 +20,18 @@ defineProps<{
             <CalendarClock :size="20" aria-hidden="true" />
         </div>
         <div class="min-w-0">
-            <p class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <p
+                class="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+            >
                 {{ label }}
             </p>
             <p class="mt-1 text-sm font-semibold text-foreground">
                 {{ deadlineText }}
             </p>
-            <p v-if="hint" class="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+            <p
+                v-if="hint"
+                class="mt-0.5 text-xs leading-relaxed text-muted-foreground"
+            >
                 {{ hint }}
             </p>
         </div>
