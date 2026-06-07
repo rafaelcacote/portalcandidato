@@ -11,6 +11,7 @@ import {
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Checkbox from 'primevue/checkbox';
+import ConfirmDialog from 'primevue/confirmdialog';
 import Message from 'primevue/message';
 import StepPanel from 'primevue/steppanel';
 import Tag from 'primevue/tag';
@@ -63,6 +64,39 @@ type ApplicationDocumentRow = {
 const personalDataPanelRef = ref<InstanceType<
     typeof CandidatePersonalDataPanel
 > | null>(null);
+
+const titleGroupsUploadRef = ref<InstanceType<
+    typeof CandidateTitleGroupsUpload
+> | null>(null);
+
+const requiredDocumentsListRef = ref<InstanceType<
+    typeof RequiredDocumentsStatusList
+> | null>(null);
+
+const showTitlesPendingUploadWarning = ref(false);
+const titlesPendingUploadLabels = ref<string[]>([]);
+const showRequiredPendingUploadWarning = ref(false);
+const requiredPendingUploadLabels = ref<string[]>([]);
+
+function onTitlesPendingUploadsChange(pending: boolean): void {
+    titlesPendingUploadLabels.value = pending
+        ? (titleGroupsUploadRef.value?.getPendingUploadItems() ?? [])
+        : [];
+
+    if (!pending) {
+        showTitlesPendingUploadWarning.value = false;
+    }
+}
+
+function onRequiredPendingUploadsChange(pending: boolean): void {
+    requiredPendingUploadLabels.value = pending
+        ? (requiredDocumentsListRef.value?.getPendingUploadItems() ?? [])
+        : [];
+
+    if (!pending) {
+        showRequiredPendingUploadWarning.value = false;
+    }
+}
 
 const props = withDefaults(
     defineProps<{
@@ -136,6 +170,41 @@ function resolveInitialActiveStep(): string {
 }
 
 const activeStep = ref(resolveInitialActiveStep());
+
+function goToEnrollmentStep(step: string): void {
+    const targetStep = Number.parseInt(step, 10) || 1;
+    const currentStep = Number.parseInt(activeStep.value, 10) || 1;
+
+    if (
+        currentStep === 3 &&
+        step !== '3' &&
+        targetStep > 3 &&
+        !isFinalized.value &&
+        titleGroupsUploadRef.value?.hasPendingUploads()
+    ) {
+        showTitlesPendingUploadWarning.value = true;
+        titlesPendingUploadLabels.value =
+            titleGroupsUploadRef.value?.getPendingUploadItems() ?? [];
+        return;
+    }
+
+    if (
+        currentStep === 4 &&
+        step !== '4' &&
+        targetStep > 4 &&
+        !isFinalized.value &&
+        requiredDocumentsListRef.value?.hasPendingUploads()
+    ) {
+        showRequiredPendingUploadWarning.value = true;
+        requiredPendingUploadLabels.value =
+            requiredDocumentsListRef.value?.getPendingUploadItems() ?? [];
+        return;
+    }
+
+    showTitlesPendingUploadWarning.value = false;
+    showRequiredPendingUploadWarning.value = false;
+    activeStep.value = step;
+}
 
 const step1Data = (props.application.dados_inscricao?.step_1 ?? {}) as {
     concorre_vagas_pcd?: boolean;
@@ -619,9 +688,10 @@ function formatDate(dateStr: string | null | undefined): string {
                 </template>
                 <template #content>
                     <ApplicationModernStepper
-                        v-model="activeStep"
+                        :model-value="activeStep"
                         :step-states="stepNavigatorStates"
                         :is-read-only="isFinalized"
+                        @update:model-value="goToEnrollmentStep"
                     >
                         <!-- Etapa 1: PcD -->
                         <StepPanel value="1">
@@ -845,6 +915,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                 </div>
 
                                 <CandidateTitleGroupsUpload
+                                    ref="titleGroupsUploadRef"
                                     :title-groups="
                                         application.selection_process
                                             ?.title_groups ?? []
@@ -852,7 +923,31 @@ function formatDate(dateStr: string | null | undefined): string {
                                     :documents="application.documents ?? []"
                                     :application-id="application.id"
                                     :is-finalized="isFinalized"
+                                    @pending-uploads-change="
+                                        onTitlesPendingUploadsChange
+                                    "
                                 />
+
+                                <Message
+                                    v-if="showTitlesPendingUploadWarning"
+                                    severity="warn"
+                                    :closable="false"
+                                    class="mt-4"
+                                >
+                                    Você selecionou um comprovante, mas ainda
+                                    não clicou em <strong>Enviar</strong>.
+                                    Conclua o upload antes de avançar para a
+                                    próxima etapa.
+                                    <span
+                                        v-if="titlesPendingUploadLabels.length"
+                                        class="mt-1 block"
+                                    >
+                                        Pendente:
+                                        {{
+                                            titlesPendingUploadLabels.join('; ')
+                                        }}
+                                    </span>
+                                </Message>
 
                                 <div
                                     class="mt-6 flex justify-between gap-2 border-t border-border/60 pt-5"
@@ -863,7 +958,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         severity="secondary"
                                         outlined
                                         size="small"
-                                        @click="activeStep = '2'"
+                                        @click="goToEnrollmentStep('2')"
                                     />
                                     <Button
                                         label="Próximo"
@@ -871,7 +966,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         icon-pos="right"
                                         size="small"
                                         :disabled="isFinalized"
-                                        @click="activeStep = '4'"
+                                        @click="goToEnrollmentStep('4')"
                                     />
                                 </div>
                             </div>
@@ -893,6 +988,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                 </p>
 
                                 <RequiredDocumentsStatusList
+                                    ref="requiredDocumentsListRef"
                                     :documents="
                                         application.selection_process
                                             ?.required_documents ?? []
@@ -900,7 +996,32 @@ function formatDate(dateStr: string | null | undefined): string {
                                     :uploaded-docs="application.documents ?? []"
                                     :application-id="application.id"
                                     :is-finalized="isFinalized"
+                                    @pending-uploads-change="
+                                        onRequiredPendingUploadsChange
+                                    "
                                 />
+
+                                <Message
+                                    v-if="showRequiredPendingUploadWarning"
+                                    severity="warn"
+                                    :closable="false"
+                                    class="mt-4"
+                                >
+                                    Você selecionou um documento, mas ainda não
+                                    clicou em <strong>Enviar</strong>. Conclua o
+                                    upload antes de revisar a inscrição.
+                                    <span
+                                        v-if="requiredPendingUploadLabels.length"
+                                        class="mt-1 block"
+                                    >
+                                        Pendente:
+                                        {{
+                                            requiredPendingUploadLabels.join(
+                                                '; ',
+                                            )
+                                        }}
+                                    </span>
+                                </Message>
 
                                 <div class="mt-6 flex justify-between gap-2">
                                     <Button
@@ -909,14 +1030,14 @@ function formatDate(dateStr: string | null | undefined): string {
                                         severity="secondary"
                                         outlined
                                         size="small"
-                                        @click="activeStep = '3'"
+                                        @click="goToEnrollmentStep('3')"
                                     />
                                     <Button
                                         label="Revisar inscrição"
                                         icon="pi pi-arrow-right"
                                         icon-pos="right"
                                         size="small"
-                                        @click="activeStep = '5'"
+                                        @click="goToEnrollmentStep('5')"
                                     />
                                 </div>
                             </div>
@@ -1456,5 +1577,7 @@ function formatDate(dateStr: string | null | undefined): string {
                 :has-open-recurso-window="hasOpenRecursoWindow"
             />
         </div>
+
+        <ConfirmDialog />
     </div>
 </template>

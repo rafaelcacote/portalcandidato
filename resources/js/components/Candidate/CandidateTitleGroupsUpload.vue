@@ -19,6 +19,10 @@ const props = defineProps<{
     isFinalized?: boolean;
 }>();
 
+const emit = defineEmits<{
+    pendingUploadsChange: [pending: boolean];
+}>();
+
 /** Todos os painéis fechados por padrão. */
 const activeAccordionValues = ref<string[]>([]);
 
@@ -166,6 +170,38 @@ const totalPreviewScore = computed(() => {
 const hasAnyUploads = computed(() =>
     props.documents.some((d) => d.status !== 'recusado'),
 );
+
+const pendingUploadByItemId = ref(new Map<number, string>());
+
+function onItemPendingChange(
+    itemId: number,
+    label: string,
+    pending: boolean,
+): void {
+    const next = new Map(pendingUploadByItemId.value);
+
+    if (pending) {
+        next.set(itemId, label);
+    } else {
+        next.delete(itemId);
+    }
+
+    pendingUploadByItemId.value = next;
+    emit('pendingUploadsChange', next.size > 0);
+}
+
+function hasPendingUploads(): boolean {
+    return pendingUploadByItemId.value.size > 0;
+}
+
+function getPendingUploadItems(): string[] {
+    return [...pendingUploadByItemId.value.values()];
+}
+
+defineExpose({
+    hasPendingUploads,
+    getPendingUploadItems,
+});
 </script>
 
 <template>
@@ -405,6 +441,7 @@ const hasAnyUploads = computed(() =>
                             :application-id="applicationId"
                             :uploaded-docs="getUploadedDocs(item.id)"
                             :is-finalized="isFinalized"
+                            @pending-change="onItemPendingChange"
                         />
                     </div>
                 </AccordionContent>

@@ -431,3 +431,156 @@ test('candidate application page exposes linked document titles on uploaded docu
                 ->and($titleDoc['title_item']['code'])->toBe('A.1');
         });
 });
+
+test('candidate can view an uploaded document from their application', function (): void {
+    Storage::fake('local');
+    $candidate = createCandidateForTitleUpload();
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Edital com títulos',
+        'descricao' => 'Descricao',
+        'status' => 'ativo',
+    ]);
+    $application = Application::query()->create([
+        'selection_process_id' => $process->id,
+        'user_id' => $candidate->id,
+        'status' => 'rascunho',
+    ]);
+    $item = createTitleItemForApplication($application);
+
+    $this->actingAs($candidate)
+        ->post(route('candidate.documents.store', $application), [
+            'process_title_item_id' => $item->id,
+            'arquivo' => UploadedFile::fake()->create('comprovante.pdf', 200, 'application/pdf'),
+        ])
+        ->assertRedirect();
+
+    $document = ApplicationDocument::query()->firstOrFail();
+
+    $this->actingAs($candidate)
+        ->get(route('candidate.documents.show', [
+            'application' => $application,
+            'document' => $document,
+        ]))
+        ->assertSuccessful()
+        ->assertHeader('content-disposition');
+});
+
+test('candidate cannot view another candidates document', function (): void {
+    Storage::fake('local');
+    $owner = createCandidateForTitleUpload();
+    $intruder = createCandidateForTitleUpload();
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Edital com títulos',
+        'descricao' => 'Descricao',
+        'status' => 'ativo',
+    ]);
+    $application = Application::query()->create([
+        'selection_process_id' => $process->id,
+        'user_id' => $owner->id,
+        'status' => 'rascunho',
+    ]);
+    $item = createTitleItemForApplication($application);
+
+    $this->actingAs($owner)
+        ->post(route('candidate.documents.store', $application), [
+            'process_title_item_id' => $item->id,
+            'arquivo' => UploadedFile::fake()->create('comprovante.pdf', 200, 'application/pdf'),
+        ])
+        ->assertRedirect();
+
+    $document = ApplicationDocument::query()->firstOrFail();
+
+    $this->actingAs($intruder)
+        ->get(route('candidate.documents.show', [
+            'application' => $application,
+            'document' => $document,
+        ]))
+        ->assertForbidden();
+});
+
+test('candidate can delete a required document and upload a replacement', function (): void {
+    Storage::fake('local');
+    $candidate = createCandidateForTitleUpload();
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Edital com documentos',
+        'descricao' => 'Descricao',
+        'status' => 'ativo',
+    ]);
+    $application = Application::query()->create([
+        'selection_process_id' => $process->id,
+        'user_id' => $candidate->id,
+        'status' => 'rascunho',
+    ]);
+    $required = ProcessRequiredDocument::query()->create([
+        'selection_process_id' => $process->id,
+        'nome' => 'RG (frente e verso)',
+        'obrigatorio' => true,
+    ]);
+
+    $this->actingAs($candidate)
+        ->post(route('candidate.documents.store', $application), [
+            'process_required_document_id' => $required->id,
+            'arquivo' => UploadedFile::fake()->create('rg-antigo.pdf', 100, 'application/pdf'),
+        ])
+        ->assertRedirect();
+
+    $document = ApplicationDocument::query()->firstOrFail();
+
+    $this->actingAs($candidate)
+        ->delete(route('candidate.documents.destroy', [
+            'application' => $application,
+            'document' => $document,
+        ]))
+        ->assertRedirect();
+
+    expect(ApplicationDocument::query()->count())->toBe(0);
+
+    $this->actingAs($candidate)
+        ->post(route('candidate.documents.store', $application), [
+            'process_required_document_id' => $required->id,
+            'arquivo' => UploadedFile::fake()->create('rg-novo.pdf', 100, 'application/pdf'),
+        ])
+        ->assertRedirect();
+
+    $replacement = ApplicationDocument::query()->firstOrFail();
+
+    expect($replacement->process_required_document_id)->toBe($required->id)
+        ->and($replacement->nome_arquivo)->toBe('rg-novo.pdf');
+});
+
+test('candidate cannot view a document that belongs to another application', function (): void {
+    Storage::fake('local');
+    $candidate = createCandidateForTitleUpload();
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Edital com títulos',
+        'descricao' => 'Descricao',
+        'status' => 'ativo',
+    ]);
+    $applicationA = Application::query()->create([
+        'selection_process_id' => $process->id,
+        'user_id' => $candidate->id,
+        'status' => 'rascunho',
+    ]);
+    $applicationB = Application::query()->create([
+        'selection_process_id' => $process->id,
+        'user_id' => $candidate->id,
+        'status' => 'rascunho',
+    ]);
+    $item = createTitleItemForApplication($applicationA);
+
+    $this->actingAs($candidate)
+        ->post(route('candidate.documents.store', $applicationA), [
+            'process_title_item_id' => $item->id,
+            'arquivo' => UploadedFile::fake()->create('comprovante.pdf', 200, 'application/pdf'),
+        ])
+        ->assertRedirect();
+
+    $document = ApplicationDocument::query()->firstOrFail();
+
+    $this->actingAs($candidate)
+        ->get(route('candidate.documents.show', [
+            'application' => $applicationB,
+            'document' => $document,
+        ]))
+        ->assertNotFound();
+});

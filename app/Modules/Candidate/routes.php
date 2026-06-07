@@ -29,5 +29,6 @@ Route::middleware(['auth', 'verified', 'role:candidato'])
             ->name('applications.appeals.store');
         Route::get('documents', [DocumentController::class, 'index'])->name('documents.index');
         Route::post('applications/{application}/documents', [DocumentController::class, 'store'])->name('documents.store');
+        Route::get('applications/{application}/documents/{document}/view', [DocumentController::class, 'show'])->name('documents.show');
         Route::delete('applications/{application}/documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
     });

@@ -10,9 +10,11 @@ use App\Modules\Candidate\Enums\CandidaturaSpecialDocumentKind;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller
 {
@@ -109,6 +111,15 @@ class DocumentController extends Controller
         ]);
 
         return back()->with('success', 'Documento enviado.');
+    }
+
+    public function show(Application $application, ApplicationDocument $document): StreamedResponse|HttpResponse
+    {
+        abort_if($application->user_id !== auth()->id(), 403);
+        abort_if($document->application_id !== $application->id, 404);
+        abort_unless(Storage::exists($document->caminho), 404);
+
+        return Storage::response($document->caminho, $document->nome_arquivo);
     }
 
     public function destroy(Application $application, ApplicationDocument $document): RedirectResponse
