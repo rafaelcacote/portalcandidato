@@ -34,6 +34,7 @@ class StoreSelectionProcessEditalRequest extends FormRequest
             'edital.file' => 'O edital deve ser um arquivo válido.',
             'edital.mimes' => 'O edital deve estar no formato PDF.',
             'edital.max' => 'O arquivo do edital não pode ultrapassar 20 MB.',
+            'edital.uploaded' => 'O arquivo do edital não pode ultrapassar 20 MB.',
         ];
     }
 }

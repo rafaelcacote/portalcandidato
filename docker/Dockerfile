@@ -45,6 +45,7 @@ RUN rm -rf node_modules \
     && chmod -R 775 storage bootstrap/cache
 
 COPY docker/php-fpm/99-app-env.conf /usr/local/etc/php-fpm.d/99-app-env.conf
+COPY docker/php-fpm/conf.d/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
