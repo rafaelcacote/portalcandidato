@@ -5,6 +5,11 @@ if [ ! -f /var/www/html/public/build/manifest.json ]; then
     cp -a /opt/public-seed/. /var/www/html/public/
 fi
 
+# Sincroniza assets quando o volume public já existe (deploys seguintes)
+if [ -f /opt/public-seed/build/manifest.json ]; then
+    cp -a /opt/public-seed/build/. /var/www/html/public/build/
+fi
+
 chown -R www-data:www-data storage bootstrap/cache public
 chmod -R 775 storage bootstrap/cache
 
