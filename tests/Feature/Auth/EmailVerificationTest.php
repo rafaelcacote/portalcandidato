@@ -79,6 +79,29 @@ test('guest can verify email via signed link without being logged in first', fun
     $this->assertAuthenticatedAs($user);
 });
 
+test('email verification ignores stale intended admin url in session', function () {
+    Role::findOrCreate('candidato', 'web');
+    Role::findOrCreate('admin', 'web');
+
+    $user = User::factory()->unverified()->create();
+    $user->assignRole('candidato');
+
+    Event::fake();
+
+    $verificationUrl = URL::temporarySignedRoute(
+        'verification.verify',
+        now()->addMinutes(60),
+        ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())],
+    );
+
+    $this->withSession(['url.intended' => route('admin.dashboard')])
+        ->get($verificationUrl)
+        ->assertRedirect(route('candidate.dashboard', absolute: false).'?verified=1');
+
+    Event::assertDispatched(Verified::class);
+    expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
+});
+
 test('email can be verified', function () {
     Role::findOrCreate('candidato', 'web');
 
