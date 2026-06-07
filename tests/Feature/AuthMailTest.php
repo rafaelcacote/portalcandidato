@@ -28,6 +28,8 @@ test('password reset email uses proensp logo template', function () {
 test('email verification notification uses proensp logo template', function () {
     $this->skipUnlessFortifyHas(Features::emailVerification());
 
+    config(['app.name' => 'Portal Candidato ProEnSP']);
+
     Notification::fake();
 
     $user = User::factory()->unverified()->create();
@@ -38,7 +40,9 @@ test('email verification notification uses proensp logo template', function () {
         $mail = $notification->toMail($user);
 
         expect($mail->markdown)->toBe('emails.auth-mail')
-            ->and($mail->viewData['logoUrl'])->toContain('logo_proensp_email.png');
+            ->and($mail->viewData['logoUrl'])->toContain('logo_proensp_email.png')
+            ->and($mail->subject)->toBe('Confirme seu e-mail — Portal Candidato ProEnSP')
+            ->and($mail->introLines)->toContain('Obrigado por se cadastrar no Portal Candidato ProEnSP.');
 
         return true;
     });

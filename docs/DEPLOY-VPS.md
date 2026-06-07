@@ -153,7 +153,7 @@ chmod 644 .env   # www-data precisa ler (volume montado no container)
 **Valores mínimos (Fase 2 — teste no IP):**
 
 ```env
-APP_NAME="Portal Candidato ProEns"
+APP_NAME="Portal Candidato ProEnSP"
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=http://IP-DA-VPS
