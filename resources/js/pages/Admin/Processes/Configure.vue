@@ -143,6 +143,9 @@ const confirm = useConfirm();
 
 /* ─── Edital ─────────────────────────────────────────────── */
 
+const MAX_EDITAL_SIZE_MB = 20;
+const MAX_EDITAL_SIZE_BYTES = MAX_EDITAL_SIZE_MB * 1024 * 1024;
+
 const editalForm = useForm({
     edital: null as File | null,
 });
@@ -154,10 +157,37 @@ const hasEditalPdf = computed(() =>
 
 const onEditalFileChange = (event: Event): void => {
     const input = event.target as HTMLInputElement;
-    editalForm.edital = input.files?.[0] ?? null;
+    const file = input.files?.[0] ?? null;
+
+    editalForm.clearErrors('edital');
+
+    if (file !== null && file.size > MAX_EDITAL_SIZE_BYTES) {
+        editalForm.setError(
+            'edital',
+            `O arquivo do edital não pode ultrapassar ${MAX_EDITAL_SIZE_MB} MB.`,
+        );
+        input.value = '';
+        editalForm.edital = null;
+
+        return;
+    }
+
+    editalForm.edital = file;
 };
 
 const submitEditalPdf = (): void => {
+    if (
+        editalForm.edital !== null &&
+        editalForm.edital.size > MAX_EDITAL_SIZE_BYTES
+    ) {
+        editalForm.setError(
+            'edital',
+            `O arquivo do edital não pode ultrapassar ${MAX_EDITAL_SIZE_MB} MB.`,
+        );
+
+        return;
+    }
+
     editalForm.post(storeEdital(props.selectionProcess.id).url, {
         forceFormData: true,
         preserveScroll: true,
@@ -1123,7 +1153,8 @@ const completionDoneCount = computed(
                             >
                                 <span
                                     class="text-center text-xs text-muted-foreground"
-                                    >Clique para selecionar o PDF</span
+                                    >Clique para selecionar o PDF (até
+                                    {{ MAX_EDITAL_SIZE_MB }} MB)</span
                                 >
                                 <input
                                     :key="editalInputKey"
