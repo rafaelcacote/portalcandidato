@@ -8,4 +8,7 @@ fi
 chown -R www-data:www-data storage bootstrap/cache public
 chmod -R 775 storage bootstrap/cache
 
+# Symlink public/storage → storage/app/public (fotos de candidatos em /storage/...)
+php artisan storage:link --force --no-interaction
+
 exec "$@"

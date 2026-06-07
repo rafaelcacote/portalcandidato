@@ -444,8 +444,44 @@ Acompanhe: **GitHub → Actions → deploy**
 | `composer.lock` Symfony 8 / PHP 8.4 | `composer update` na VPS | `git checkout -- composer.lock` |
 | `git pull` abortado | Edits manuais na VPS | `git checkout -- .` + `git pull` (`.env` não é afetado) |
 | Build Wayfinder falha | Node sem PHP | Use `Dockerfile` atual (builder com PHP+Node) |
+| **Foto do candidato não aparece** | `storage:link` não executado ou Nginx sem volume `app_storage` | Veja seção abaixo |
 
----
+### Foto do candidato não aparece
+
+As fotos ficam em `storage/app/public/candidate-photos/` e são servidas via `/storage/...`. Em produção isso exige:
+
+1. **`php artisan storage:link`** — cria o symlink `public/storage` → `storage/app/public` (não confundir com `key:generate`).
+2. **Volume `app_storage` montado no container `web`** — o Nginx precisa ler os arquivos reais, não só o symlink em `public`.
+
+**Correção imediata na VPS:**
+
+```bash
+cd /opt/portalcandidato/app
+C="docker compose --env-file .env -f docker/compose.prod.yml"
+
+git pull   # traz compose com app_storage no web + entrypoint atualizado
+
+$C exec app php artisan storage:link --force --no-interaction
+
+# Recria o web com o volume de storage (obrigatório após atualizar compose.prod.yml)
+$C up -d --force-recreate web
+```
+
+**Verificar:**
+
+```bash
+# Symlink existe dentro do volume public
+$C exec app ls -la public/storage
+
+# Foto salva no cadastro (substitua USER_ID pelo id do usuário)
+$C exec app ls -la storage/app/public/candidate-photos/
+
+# URL deve retornar 200 (teste no navegador ou curl)
+curl -I "https://portaldocandidatoproensp.cloud/storage/candidate-photos/USER_ID/arquivo.jpg"
+```
+
+Se a pasta `candidate-photos` estiver vazia, a foto não foi gravada no cadastro — peça ao candidato reenviar em **Configurações → Perfil**.
+
 
 ## Comandos úteis (cola rápida)
 
