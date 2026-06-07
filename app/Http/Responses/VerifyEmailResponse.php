@@ -14,6 +14,6 @@ class VerifyEmailResponse implements VerifyEmailResponseContract
             return new JsonResponse('', 204);
         }
 
-        return RedirectsUsersByRole::redirect($request, query: ['verified' => '1']);
+        return RedirectsUsersByRole::redirect($request, intended: false, query: ['verified' => '1']);
     }
 }

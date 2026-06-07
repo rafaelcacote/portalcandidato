@@ -9,6 +9,9 @@ class RegisterResponse implements RegisterResponseContract
 {
     public function toResponse($request): RedirectResponse
     {
+        // Evita redirecionar candidato para URL de admin/avaliador guardada antes do cadastro.
+        $request->session()->forget('url.intended');
+
         return redirect()->route('verification.notice');
     }
 }
