@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
-import { AlertTriangle } from 'lucide-vue-next';
+import { router, useForm } from '@inertiajs/vue3';
+import { AlertTriangle, Eye, Trash2 } from 'lucide-vue-next';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
-import { ref } from 'vue';
-import candidateDocuments from '@/routes/candidate/documents';
+import { useConfirm } from 'primevue/useconfirm';
+import { ref, watch } from 'vue';
+import candidateDocuments, {
+    show as showDocument,
+} from '@/routes/candidate/documents';
 
 export type RequiredDocRow = {
     id: number;
@@ -29,6 +32,10 @@ const props = defineProps<{
     isFinalized?: boolean;
 }>();
 
+const emit = defineEmits<{
+    pendingChange: [docId: number, label: string, pending: boolean];
+}>();
+
 const docStatusSeverity: Record<
     string,
     'secondary' | 'success' | 'warn' | 'danger'
@@ -48,11 +55,21 @@ const docStatusLabel: Record<string, string> = {
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<File | null>(null);
+const removingDocument = ref(false);
+const confirm = useConfirm();
 
 const uploadForm = useForm({
     process_required_document_id: props.doc.id,
     arquivo: null as File | null,
 });
+
+watch(
+    selectedFile,
+    (file) => {
+        emit('pendingChange', props.doc.id, props.doc.nome, file !== null);
+    },
+    { immediate: true },
+);
 
 function onFileChange(event: Event): void {
     const target = event.target as HTMLInputElement;
@@ -72,6 +89,59 @@ function submitUpload(): void {
             if (fileInputRef.value) {
                 fileInputRef.value.value = '';
             }
+        },
+    });
+}
+
+function documentViewUrl(): string | null {
+    if (!props.uploadedDoc) {
+        return null;
+    }
+
+    return showDocument({
+        application: props.applicationId,
+        document: props.uploadedDoc.id,
+    }).url;
+}
+
+function openDocumentView(): void {
+    const url = documentViewUrl();
+
+    if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+    }
+}
+
+function confirmRemoveDocument(): void {
+    if (props.isFinalized || !props.uploadedDoc) {
+        return;
+    }
+
+    const uploadedDoc = props.uploadedDoc;
+
+    confirm.require({
+        header: 'Excluir documento',
+        message: `Deseja excluir o arquivo "${uploadedDoc.nome_arquivo}"? Você poderá enviar um novo arquivo em seguida.`,
+        icon: 'pi pi-exclamation-triangle',
+        rejectLabel: 'Cancelar',
+        acceptLabel: 'Excluir',
+        rejectProps: { outlined: true, icon: 'pi pi-times' },
+        acceptProps: { severity: 'danger', icon: 'pi pi-trash' },
+        accept: () => {
+            removingDocument.value = true;
+
+            router.delete(
+                candidateDocuments.destroy({
+                    application: props.applicationId,
+                    document: uploadedDoc.id,
+                }).url,
+                {
+                    preserveScroll: true,
+                    onFinish: () => {
+                        removingDocument.value = false;
+                    },
+                },
+            );
         },
     });
 }
@@ -146,10 +216,38 @@ function cancelSelection(): void {
 
         <div
             v-if="uploadedDoc"
-            class="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"
+            class="mt-2 flex flex-wrap items-center gap-2"
         >
-            <i class="pi pi-file-pdf" />
-            <span class="truncate">{{ uploadedDoc.nome_arquivo }}</span>
+            <div
+                class="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-muted-foreground"
+            >
+                <i class="pi pi-file-pdf" />
+                <span class="truncate">{{ uploadedDoc.nome_arquivo }}</span>
+            </div>
+            <Button
+                label="Visualizar"
+                severity="secondary"
+                outlined
+                size="small"
+                @click="openDocumentView"
+            >
+                <template #icon>
+                    <Eye :size="14" aria-hidden="true" />
+                </template>
+            </Button>
+            <Button
+                v-if="!isFinalized"
+                label="Excluir"
+                severity="danger"
+                outlined
+                size="small"
+                :loading="removingDocument"
+                @click="confirmRemoveDocument"
+            >
+                <template #icon>
+                    <Trash2 :size="14" aria-hidden="true" />
+                </template>
+            </Button>
         </div>
 
         <div
@@ -198,13 +296,10 @@ function cancelSelection(): void {
             </div>
 
             <Button
-                v-else
-                :label="
-                    uploadedDoc ? 'Substituir arquivo' : 'Selecionar arquivo'
-                "
-                :icon="uploadedDoc ? 'pi pi-refresh' : 'pi pi-upload'"
-                :severity="uploadedDoc ? 'secondary' : 'primary'"
-                :outlined="!!uploadedDoc"
+                v-else-if="!uploadedDoc"
+                label="Selecionar arquivo"
+                icon="pi pi-upload"
+                severity="primary"
                 size="small"
                 @click="fileInputRef?.click()"
             />

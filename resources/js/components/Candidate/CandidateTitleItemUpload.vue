@@ -4,6 +4,7 @@ import {
     AlertTriangle,
     CheckCircle2,
     CloudUpload,
+    Eye,
     FileText,
     Info,
     Paperclip,
@@ -13,9 +14,12 @@ import {
 } from 'lucide-vue-next';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
-import { computed, ref } from 'vue';
+import { useConfirm } from 'primevue/useconfirm';
+import { computed, ref, watch } from 'vue';
 import type { ProcessTitleItemRow } from '@/components/Candidate/processTitleTypes';
-import candidateDocuments from '@/routes/candidate/documents';
+import candidateDocuments, {
+    show as showDocument,
+} from '@/routes/candidate/documents';
 
 export type TitleUploadedDoc = {
     id: number;
@@ -31,6 +35,10 @@ const props = defineProps<{
     applicationId: number;
     uploadedDocs: TitleUploadedDoc[];
     isFinalized?: boolean;
+}>();
+
+const emit = defineEmits<{
+    pendingChange: [itemId: number, label: string, pending: boolean];
 }>();
 
 const docStatusSeverity: Record<
@@ -53,6 +61,7 @@ const docStatusLabel: Record<string, string> = {
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<File | null>(null);
 const removingDocId = ref<number | null>(null);
+const confirm = useConfirm();
 
 const uploadForm = useForm({
     process_title_item_id: props.item.id,
@@ -158,35 +167,47 @@ function cancelSelection(): void {
     }
 }
 
-function removeDocument(doc: TitleUploadedDoc): void {
+function documentViewUrl(doc: TitleUploadedDoc): string {
+    return showDocument({
+        application: props.applicationId,
+        document: doc.id,
+    }).url;
+}
+
+function openDocumentView(doc: TitleUploadedDoc): void {
+    window.open(documentViewUrl(doc), '_blank', 'noopener,noreferrer');
+}
+
+function confirmRemoveDocument(doc: TitleUploadedDoc): void {
     if (props.isFinalized) {
         return;
     }
 
-    if (typeof window !== 'undefined') {
-        const ok = window.confirm(
-            `Remover o comprovante "${doc.nome_arquivo}"? Esta ação não pode ser desfeita.`,
-        );
+    confirm.require({
+        header: 'Excluir comprovante',
+        message: `Deseja excluir o arquivo "${doc.nome_arquivo}"? Esta ação não pode ser desfeita.`,
+        icon: 'pi pi-exclamation-triangle',
+        rejectLabel: 'Cancelar',
+        acceptLabel: 'Excluir',
+        rejectProps: { outlined: true, icon: 'pi pi-times' },
+        acceptProps: { severity: 'danger', icon: 'pi pi-trash' },
+        accept: () => {
+            removingDocId.value = doc.id;
 
-        if (!ok) {
-            return;
-        }
-    }
-
-    removingDocId.value = doc.id;
-
-    router.delete(
-        candidateDocuments.destroy({
-            application: props.applicationId,
-            document: doc.id,
-        }).url,
-        {
-            preserveScroll: true,
-            onFinish: () => {
-                removingDocId.value = null;
-            },
+            router.delete(
+                candidateDocuments.destroy({
+                    application: props.applicationId,
+                    document: doc.id,
+                }).url,
+                {
+                    preserveScroll: true,
+                    onFinish: () => {
+                        removingDocId.value = null;
+                    },
+                },
+            );
         },
-    );
+    });
 }
 
 const cardToneClass = computed(() => {
@@ -214,6 +235,23 @@ const cardToneClass = computed(() => {
  * somada para todos os comprovantes válidos.
  * É somente uma ESTIMATIVA — a pontuação final é definida pelo avaliador.
  */
+const pendingUploadLabel = computed(
+    () => `${props.item.code} – ${props.item.title}`,
+);
+
+watch(
+    selectedFile,
+    (file) => {
+        emit(
+            'pendingChange',
+            props.item.id,
+            pendingUploadLabel.value,
+            file !== null,
+        );
+    },
+    { immediate: true },
+);
+
 const previewScore = computed((): number | null => {
     if (validUploadedDocs.value.length === 0) {
         return null;
@@ -382,6 +420,19 @@ const previewScore = computed((): number | null => {
                     aria-hidden="true"
                 />
                 <Button
+                    type="button"
+                    severity="secondary"
+                    text
+                    rounded
+                    size="small"
+                    aria-label="Visualizar comprovante"
+                    @click="openDocumentView(doc)"
+                >
+                    <template #default>
+                        <Eye :size="14" aria-hidden="true" />
+                    </template>
+                </Button>
+                <Button
                     v-if="!isFinalized"
                     type="button"
                     severity="danger"
@@ -390,7 +441,7 @@ const previewScore = computed((): number | null => {
                     size="small"
                     aria-label="Remover comprovante"
                     :loading="removingDocId === doc.id"
-                    @click="removeDocument(doc)"
+                    @click="confirmRemoveDocument(doc)"
                 >
                     <template #default>
                         <Trash2 :size="14" aria-hidden="true" />
@@ -423,6 +474,19 @@ const previewScore = computed((): number | null => {
                 </p>
             </div>
             <Button
+                type="button"
+                severity="secondary"
+                text
+                rounded
+                size="small"
+                aria-label="Visualizar comprovante recusado"
+                @click="openDocumentView(refused)"
+            >
+                <template #default>
+                    <Eye :size="14" aria-hidden="true" />
+                </template>
+            </Button>
+            <Button
                 v-if="!isFinalized"
                 type="button"
                 severity="danger"
@@ -431,7 +495,7 @@ const previewScore = computed((): number | null => {
                 size="small"
                 aria-label="Remover comprovante recusado"
                 :loading="removingDocId === refused.id"
-                @click="removeDocument(refused)"
+                @click="confirmRemoveDocument(refused)"
             >
                 <template #default>
                     <Trash2 :size="14" aria-hidden="true" />

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import ProgressBar from 'primevue/progressbar';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import RequiredDocumentCard from '@/components/Candidate/RequiredDocumentCard.vue';
 import type {
     RequiredDocRow,
@@ -13,6 +13,42 @@ const props = defineProps<{
     applicationId: number;
     isFinalized?: boolean;
 }>();
+
+const emit = defineEmits<{
+    pendingUploadsChange: [pending: boolean];
+}>();
+
+const pendingUploadByDocId = ref(new Map<number, string>());
+
+function onDocPendingChange(
+    docId: number,
+    label: string,
+    pending: boolean,
+): void {
+    const next = new Map(pendingUploadByDocId.value);
+
+    if (pending) {
+        next.set(docId, label);
+    } else {
+        next.delete(docId);
+    }
+
+    pendingUploadByDocId.value = next;
+    emit('pendingUploadsChange', next.size > 0);
+}
+
+function hasPendingUploads(): boolean {
+    return pendingUploadByDocId.value.size > 0;
+}
+
+function getPendingUploadItems(): string[] {
+    return [...pendingUploadByDocId.value.values()];
+}
+
+defineExpose({
+    hasPendingUploads,
+    getPendingUploadItems,
+});
 
 const requiredDocs = computed(() =>
     props.documents.filter((d) => d.obrigatorio),
@@ -94,6 +130,7 @@ const requiredProgress = computed(() =>
                         :uploaded-doc="getUploadedDoc(doc.id)"
                         :application-id="applicationId"
                         :is-finalized="isFinalized"
+                        @pending-change="onDocPendingChange"
                     />
                 </div>
             </div>
@@ -113,6 +150,7 @@ const requiredProgress = computed(() =>
                         :uploaded-doc="getUploadedDoc(doc.id)"
                         :application-id="applicationId"
                         :is-finalized="isFinalized"
+                        @pending-change="onDocPendingChange"
                     />
                 </div>
             </div>
