@@ -10,10 +10,34 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const fallbackAppName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+function resolveAppName(): string {
+    const appRoot = document.getElementById('app');
+    const rawPage = appRoot?.dataset.page;
+
+    if (rawPage === undefined || rawPage === '') {
+        return fallbackAppName;
+    }
+
+    try {
+        const page = JSON.parse(rawPage) as { props?: { name?: string } };
+        const name = page.props?.name;
+
+        return typeof name === 'string' && name.trim() !== ''
+            ? name
+            : fallbackAppName;
+    } catch {
+        return fallbackAppName;
+    }
+}
 
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) => {
+        const appName = resolveAppName();
+
+        return title ? `${title} - ${appName}` : appName;
+    },
     layout: (name) => {
         switch (true) {
             case name === 'Welcome':
