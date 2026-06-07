@@ -15,6 +15,7 @@ $COMPOSE build app queue scheduler
 $COMPOSE run --rm app php artisan migrate --force
 $COMPOSE up -d --remove-orphans
 
+$COMPOSE exec -T app php artisan storage:link --force --no-interaction
 $COMPOSE exec -T app php artisan config:cache
 $COMPOSE exec -T app php artisan route:cache
 $COMPOSE exec -T app php artisan view:cache
