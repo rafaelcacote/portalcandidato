@@ -36,11 +36,11 @@ test('evaluator can score candidate application', function () {
         'ordem' => 1,
     ]);
 
-    $application = Application::query()->create([
+    $application = Application::query()->create(evaluableApplicationAttributes([
         'user_id' => $candidate->id,
         'selection_process_id' => $process->id,
         'status' => 'em_analise',
-    ]);
+    ]));
 
     $this->actingAs($evaluator)
         ->post(route('evaluator.candidates.score.store', $application), [
@@ -80,11 +80,11 @@ test('evaluator candidate review includes photo url and can view photo', functio
         'status' => 'ativo',
     ]);
 
-    $application = Application::query()->create([
+    $application = Application::query()->create(evaluableApplicationAttributes([
         'user_id' => $candidate->id,
         'selection_process_id' => $process->id,
         'status' => 'em_analise',
-    ]);
+    ]));
 
     $this->actingAs($evaluator)
         ->get(route('evaluator.candidates.show', $application))
@@ -96,4 +96,41 @@ test('evaluator candidate review includes photo url and can view photo', functio
     $this->actingAs($evaluator)
         ->get(route('evaluator.candidates.photo', $application))
         ->assertOk();
+});
+
+test('evaluator candidate review includes research line and advisor summary', function (): void {
+    Role::findOrCreate('candidato', 'web');
+    Role::findOrCreate('avaliador', 'web');
+
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    $evaluator = User::factory()->create(['email_verified_at' => now()]);
+    $evaluator->assignRole('avaliador');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS',
+        'descricao' => 'D',
+        'status' => 'ativo',
+    ]);
+
+    $application = Application::query()->create(evaluableApplicationAttributes([
+        'user_id' => $candidate->id,
+        'selection_process_id' => $process->id,
+        'status' => 'em_analise',
+        'dados_inscricao' => [
+            'step_3' => validApplicationStep3Payload(),
+        ],
+    ]));
+
+    $this->actingAs($evaluator)
+        ->get(route('evaluator.candidates.show', $application))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('application.research_line_summary.linha_pesquisa', 'linha_1')
+            ->where('application.research_line_summary.orientador', 'Dr. Aldalice Aguiar de Souza')
+            ->where(
+                'application.research_line_summary.linha_pesquisa_label',
+                'Linha de Pesquisa 1 - Tecnologias Sociais e Educativas como Instrumentos para Promoção da Saúde',
+            ));
 });

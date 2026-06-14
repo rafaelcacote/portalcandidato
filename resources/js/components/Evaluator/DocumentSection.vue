@@ -12,6 +12,7 @@ const COLLAPSED_LIMIT = 5;
 const props = defineProps<{
     section: EvaluatorDocumentSection;
     applicationId: number;
+    readOnly?: boolean;
     activeStatusFilter: string;
     activeSearch: string;
     documentScores?: Array<{
@@ -181,7 +182,7 @@ const sectionStats = computed(() => {
                             <th
                                 class="min-w-0 py-2.5 pr-5 text-right text-[11px] font-semibold tracking-wide text-slate-400 uppercase"
                             >
-                                Ação
+                                {{ readOnly ? 'Visualizar' : 'Ação' }}
                             </th>
                         </tr>
                     </thead>
@@ -191,7 +192,10 @@ const sectionStats = computed(() => {
                             :key="doc.id"
                             :document="doc"
                             :application-id="applicationId"
-                            :show-title-scoring="section.kind === 'titles'"
+                            :read-only="readOnly"
+                            :show-title-scoring="
+                                !readOnly && section.kind === 'titles'
+                            "
                             :document-scores="documentScores"
                             @open-observation="emit('open-observation', $event)"
                             @open-refuse="emit('open-refuse', $event)"

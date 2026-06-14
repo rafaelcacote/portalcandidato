@@ -4,6 +4,7 @@ import {
     Award,
     CheckCircle2,
     FileText,
+    GraduationCap,
     User,
 } from 'lucide-vue-next';
 import Step from 'primevue/step';
@@ -22,9 +23,14 @@ const props = defineProps<{
 const steps: Array<{ value: string; label: string; icon: Component }> = [
     { value: '1', label: 'Ações afirmativas', icon: Accessibility },
     { value: '2', label: 'Dados pessoais', icon: User },
-    { value: '3', label: 'Formação e títulos', icon: Award },
-    { value: '4', label: 'Documentos obrigatórios', icon: FileText },
-    { value: '5', label: 'Revisão e envio', icon: CheckCircle2 },
+    {
+        value: '3',
+        label: 'Linha de Pesquisa e Orientador',
+        icon: GraduationCap,
+    },
+    { value: '4', label: 'Formação e títulos', icon: Award },
+    { value: '5', label: 'Documentos obrigatórios', icon: FileText },
+    { value: '6', label: 'Revisão e envio', icon: CheckCircle2 },
 ];
 
 function stepValueStr(value: string | number): string {

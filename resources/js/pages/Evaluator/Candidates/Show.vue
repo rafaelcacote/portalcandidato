@@ -70,7 +70,13 @@ const props = defineProps<{
                 pontuacao: number;
             }>;
         }>;
+        research_line_summary?: {
+            linha_pesquisa: string;
+            linha_pesquisa_label: string;
+            orientador: string;
+        } | null;
     };
+    can_evaluate: boolean;
 }>();
 
 // ── Document sections ────────────────────────────────────────────────────────
@@ -334,10 +340,19 @@ function finalize(): void {
 
 <template>
     <div class="flex min-h-screen flex-col bg-slate-50/60">
-        <Head :title="`Avaliação – ${application.user.name}`" />
+        <Head
+            :title="
+                can_evaluate
+                    ? `Avaliação – ${application.user.name}`
+                    : `Visualização – ${application.user.name}`
+            "
+        />
 
         <!-- ── Scrollable content ── -->
-        <div class="flex-1 px-3 pt-4 pb-24 sm:px-6 sm:pt-5 sm:pb-28 lg:px-8">
+        <div
+            class="flex-1 px-3 pt-4 sm:px-6 sm:pt-5 lg:px-8"
+            :class="can_evaluate ? 'pb-24 sm:pb-28' : 'pb-8'"
+        >
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5">
                 <!-- Page header -->
                 <div class="flex flex-col gap-2">
@@ -367,11 +382,18 @@ function finalize(): void {
                                 <h1
                                     class="text-base font-bold tracking-tight text-slate-900 sm:text-lg"
                                 >
-                                    Avaliação de Candidato
+                                    {{
+                                        can_evaluate
+                                            ? 'Avaliação de Candidato'
+                                            : 'Visualização de Candidato'
+                                    }}
                                 </h1>
                                 <p class="text-xs text-slate-500">
-                                    Valide os documentos enviados e registre sua
-                                    avaliação.
+                                    {{
+                                        can_evaluate
+                                            ? 'Valide os documentos enviados e registre sua avaliação.'
+                                            : 'Consulte os dados e documentos enviados até o momento.'
+                                    }}
                                 </p>
                             </div>
                         </div>
@@ -381,6 +403,15 @@ function finalize(): void {
                             size="md"
                         />
                     </div>
+                </div>
+
+                <div
+                    v-if="!can_evaluate"
+                    class="rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200/60"
+                    role="status"
+                >
+                    Inscrição em andamento. A avaliação ficará disponível após
+                    o candidato finalizar a inscrição.
                 </div>
 
                 <!-- Candidate card -->
@@ -405,6 +436,7 @@ function finalize(): void {
                     :key="section.key"
                     :section="section"
                     :application-id="application.id"
+                    :read-only="!can_evaluate"
                     :active-status-filter="statusFilter"
                     :active-search="searchQuery"
                     :document-scores="scoreForm.document_scores"
@@ -422,7 +454,10 @@ function finalize(): void {
 
                 <!-- Score section -->
                 <CandidateScoreSection
-                    v-if="criteria.length > 0 || titulacaoMaxTotal > 0"
+                    v-if="
+                        can_evaluate &&
+                        (criteria.length > 0 || titulacaoMaxTotal > 0)
+                    "
                     :criteria="criteria"
                     :scores="scoreForm.scores"
                     :observacoes="scoreForm.observacoes"
@@ -436,6 +471,7 @@ function finalize(): void {
 
         <!-- ── Sticky footer ── -->
         <CandidateReviewActions
+            v-if="can_evaluate"
             :processing="scoreForm.processing"
             @save-draft="saveDraft"
             @finalize="finalize"
@@ -443,6 +479,7 @@ function finalize(): void {
 
         <!-- ── Observation / refuse dialog ── -->
         <ObservationDialog
+            v-if="can_evaluate"
             :document="obsDocument"
             :application-id="application.id"
             :visible="obsDialogVisible"

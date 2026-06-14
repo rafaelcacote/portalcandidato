@@ -61,4 +61,9 @@ class Application extends Model
             && $this->numero_protocolo !== null
             && $this->status !== 'rascunho';
     }
+
+    public function isEvaluable(): bool
+    {
+        return $this->isFinalizedForDocuments();
+    }
 }

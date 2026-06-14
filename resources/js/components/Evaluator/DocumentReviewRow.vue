@@ -15,6 +15,7 @@ const vTooltip = Tooltip;
 const props = defineProps<{
     document: EvaluatorApplicationDocument;
     applicationId: number;
+    readOnly?: boolean;
     showTitleScoring?: boolean;
     documentScores?: Array<{
         application_document_id: number;
@@ -264,6 +265,7 @@ function getFileIconClass(filename: string): string {
 
                 <!-- Aprovar -->
                 <button
+                    v-if="!readOnly"
                     v-tooltip.top="'Aprovar'"
                     type="button"
                     :disabled="form.processing"
@@ -280,6 +282,7 @@ function getFileIconClass(filename: string): string {
 
                 <!-- Recusar — abre dialog obrigatório -->
                 <button
+                    v-if="!readOnly"
                     v-tooltip.top="'Recusar (requer justificativa)'"
                     type="button"
                     :disabled="form.processing"
@@ -296,6 +299,7 @@ function getFileIconClass(filename: string): string {
 
                 <!-- Observação -->
                 <button
+                    v-if="!readOnly"
                     v-tooltip.top="
                         hasObservation
                             ? 'Editar observação'

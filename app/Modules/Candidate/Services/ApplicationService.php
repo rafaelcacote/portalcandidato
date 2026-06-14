@@ -5,6 +5,7 @@ namespace App\Modules\Candidate\Services;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\Modules\Candidate\Models\ApplicationDocument;
 use App\Modules\Candidate\Enums\CandidaturaSpecialDocumentKind;
+use App\Modules\Candidate\Support\ResearchLineCatalog;
 use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -44,6 +45,8 @@ class ApplicationService
     private function assertSubmitRequirements(Application $application): void
     {
         $data = $application->dados_inscricao ?? [];
+        $this->assertAcademicFieldsPresent($data);
+
         $declaraPcd = ($data['step_1']['concorre_vagas_pcd'] ?? false) === true;
         if (! $declaraPcd) {
             return;
@@ -63,6 +66,28 @@ class ApplicationService
                     'submit' => 'Envie a declaração PcD e o laudo médico ou carteira PcD antes de finalizar a inscrição.',
                 ]);
             }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function assertAcademicFieldsPresent(array $data): void
+    {
+        $step3 = is_array($data['step_3'] ?? null) ? $data['step_3'] : [];
+        $linhaPesquisa = trim((string) ($step3['linha_pesquisa'] ?? ''));
+        $orientador = trim((string) ($step3['orientador'] ?? ''));
+
+        if ($linhaPesquisa === '' || $orientador === '') {
+            throw ValidationException::withMessages([
+                'submit' => 'Selecione a linha de pesquisa e o orientador antes de finalizar a inscrição.',
+            ]);
+        }
+
+        if (! ResearchLineCatalog::isValidAdvisor($linhaPesquisa, $orientador)) {
+            throw ValidationException::withMessages([
+                'submit' => 'A linha de pesquisa e o orientador informados não são válidos. Revise a etapa correspondente.',
+            ]);
         }
     }
 

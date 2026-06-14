@@ -35,10 +35,18 @@ test('candidate can start and submit application flow', function () {
         ->assertRedirect();
 
     $this->actingAs($candidate)
+        ->post(route('candidate.applications.step.store', ['application' => $application, 'step' => 3]), [
+            'payload' => validApplicationStep3Payload(),
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($candidate)
         ->post(route('candidate.applications.submit', $application))
         ->assertRedirect();
 
     $application->refresh();
     expect($application->status)->toBe('inscrita')
-        ->and($application->numero_protocolo)->not->toBeNull();
+        ->and($application->numero_protocolo)->not->toBeNull()
+        ->and($application->dados_inscricao['step_3']['linha_pesquisa'])->toBe('linha_1')
+        ->and($application->dados_inscricao['step_3']['orientador'])->toBe('Dr. Aldalice Aguiar de Souza');
 });
