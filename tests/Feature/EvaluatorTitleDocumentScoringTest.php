@@ -49,11 +49,11 @@ test('evaluator can save pontuação for title documents', function (): void {
         'is_active' => true,
     ]);
 
-    $application = Application::query()->create([
+    $application = Application::query()->create(evaluableApplicationAttributes([
         'user_id' => $candidate->id,
         'selection_process_id' => $process->id,
         'status' => 'em_analise',
-    ]);
+    ]));
 
     $document = ApplicationDocument::query()->create([
         'application_id' => $application->id,
@@ -119,11 +119,11 @@ test('evaluator cannot exceed per-row max for a title document', function (): vo
         'is_active' => true,
     ]);
 
-    $application = Application::query()->create([
+    $application = Application::query()->create(evaluableApplicationAttributes([
         'user_id' => $candidate->id,
         'selection_process_id' => $process->id,
         'status' => 'em_analise',
-    ]);
+    ]));
 
     $document = ApplicationDocument::query()->create([
         'application_id' => $application->id,
@@ -195,11 +195,11 @@ test('evaluator cannot exceed group max_score across title documents', function 
         'is_active' => true,
     ]);
 
-    $application = Application::query()->create([
+    $application = Application::query()->create(evaluableApplicationAttributes([
         'user_id' => $candidate->id,
         'selection_process_id' => $process->id,
         'status' => 'em_analise',
-    ]);
+    ]));
 
     $docA = ApplicationDocument::query()->create([
         'application_id' => $application->id,
@@ -271,11 +271,11 @@ test('approving a title document automatically scores the candidate', function (
         'is_active' => true,
     ]);
 
-    $application = Application::query()->create([
+    $application = Application::query()->create(evaluableApplicationAttributes([
         'user_id' => $candidate->id,
         'selection_process_id' => $process->id,
         'status' => 'em_analise',
-    ]);
+    ]));
 
     $document = ApplicationDocument::query()->create([
         'application_id' => $application->id,
@@ -337,11 +337,11 @@ test('rejecting a title document removes its score', function (): void {
         'is_active' => true,
     ]);
 
-    $application = Application::query()->create([
+    $application = Application::query()->create(evaluableApplicationAttributes([
         'user_id' => $candidate->id,
         'selection_process_id' => $process->id,
         'status' => 'em_analise',
-    ]);
+    ]));
 
     $document = ApplicationDocument::query()->create([
         'application_id' => $application->id,

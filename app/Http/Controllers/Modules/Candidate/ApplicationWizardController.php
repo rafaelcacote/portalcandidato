@@ -57,7 +57,9 @@ class ApplicationWizardController extends Controller
             InertiaToast::success("Etapa {$step} salva.");
         }
 
-        return back();
+        return redirect()->to(
+            route('candidate.applications.show', $application).'?step='.$step
+        );
     }
 
     public function submit(Application $application): RedirectResponse

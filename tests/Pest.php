@@ -48,6 +48,32 @@ expect()->extend('toBeOne', function () {
 /**
  * @return array<string, mixed>
  */
+/**
+ * @return array<string, string>
+ */
+function validApplicationStep3Payload(): array
+{
+    return [
+        'linha_pesquisa' => 'linha_1',
+        'orientador' => 'Dr. Aldalice Aguiar de Souza',
+    ];
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function evaluableApplicationAttributes(array $overrides = []): array
+{
+    static $counter = 0;
+    $counter++;
+
+    return array_merge([
+        'finalizada_em' => now(),
+        'numero_protocolo' => 'PS-TEST-'.str_pad((string) $counter, 6, '0', STR_PAD_LEFT),
+    ], $overrides);
+}
+
 function validCandidateRegistrationPayload(string $email): array
 {
     return [

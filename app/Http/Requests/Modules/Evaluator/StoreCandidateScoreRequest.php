@@ -15,7 +15,10 @@ class StoreCandidateScoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $application = $this->route('application');
+
+        return $application instanceof Application
+            && $application->isEvaluable();
     }
 
     /**

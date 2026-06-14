@@ -7,6 +7,7 @@ use App\Http\Requests\Modules\Evaluator\DecideApplicationDocumentRequest;
 use App\Mail\DocumentoRecusado;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\Modules\Candidate\Models\ApplicationDocument;
+use App\Modules\Candidate\Support\ResearchLineCatalog;
 use App\Modules\Evaluator\Services\DocumentValidationScoringService;
 use App\Modules\Evaluator\Support\CandidatePhotoUrl;
 use App\Modules\Shared\Enums\ApplicationStatus;
@@ -42,8 +43,15 @@ class CandidateReviewController extends Controller
             );
         }
 
+        $step3 = $application->dados_inscricao['step_3'] ?? null;
+        $application->setAttribute(
+            'research_line_summary',
+            ResearchLineCatalog::summaryFromStepData(is_array($step3) ? $step3 : null),
+        );
+
         return Inertia::render('Evaluator/Candidates/Show', [
             'application' => $application,
+            'can_evaluate' => $application->isEvaluable(),
         ]);
     }
 

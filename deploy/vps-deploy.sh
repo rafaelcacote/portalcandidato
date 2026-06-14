@@ -15,6 +15,9 @@ $COMPOSE build app queue scheduler
 $COMPOSE run --rm app php artisan migrate --force
 $COMPOSE up -d --remove-orphans
 
+# public/ fica em volume persistente; copia assets do build atual da imagem
+$COMPOSE exec -T app sh -c 'cp -a /opt/public-seed/. /var/www/html/public/ && chown -R www-data:www-data /var/www/html/public'
+
 $COMPOSE exec -T app php artisan storage:link --force --no-interaction
 $COMPOSE exec -T app php artisan config:cache
 $COMPOSE exec -T app php artisan route:cache

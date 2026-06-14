@@ -7,15 +7,17 @@ import {
     CheckCircle2,
     ClipboardCheck,
     FileText,
+    GraduationCap,
 } from 'lucide-vue-next';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Checkbox from 'primevue/checkbox';
 import ConfirmDialog from 'primevue/confirmdialog';
 import Message from 'primevue/message';
+import Select from 'primevue/select';
 import StepPanel from 'primevue/steppanel';
 import Tag from 'primevue/tag';
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import ApplicationModernStepper from '@/components/Candidate/ApplicationModernStepper.vue';
 import ApplicationProfessionalDocuments from '@/components/Candidate/ApplicationProfessionalDocuments.vue';
 import type {
@@ -77,6 +79,7 @@ const showTitlesPendingUploadWarning = ref(false);
 const titlesPendingUploadLabels = ref<string[]>([]);
 const showRequiredPendingUploadWarning = ref(false);
 const requiredPendingUploadLabels = ref<string[]>([]);
+const showAcademicPendingSaveWarning = ref(false);
 
 function onTitlesPendingUploadsChange(pending: boolean): void {
     titlesPendingUploadLabels.value = pending
@@ -131,6 +134,10 @@ const props = withDefaults(
         appealStages?: AppealStageRow[];
         appeals?: AppealRow[];
         hasOpenRecursoWindow?: boolean;
+        researchLineOptions?: {
+            lines: Array<{ value: string; label: string }>;
+            advisors: Record<string, string[]>;
+        };
     }>(),
     {
         ufs: () => [],
@@ -139,6 +146,7 @@ const props = withDefaults(
         appealStages: () => [],
         appeals: () => [],
         hasOpenRecursoWindow: false,
+        researchLineOptions: () => ({ lines: [], advisors: {} }),
     },
 );
 
@@ -157,12 +165,12 @@ async function openProfileEditOnStep2(): Promise<void> {
 
 function resolveInitialActiveStep(): string {
     if (props.application.status !== 'rascunho') {
-        return '5';
+        return '6';
     }
 
     const stepParam = new URLSearchParams(window.location.search).get('step');
 
-    if (stepParam !== null && /^[1-5]$/.test(stepParam)) {
+    if (stepParam !== null && /^[1-6]$/.test(stepParam)) {
         return stepParam;
     }
 
@@ -170,6 +178,33 @@ function resolveInitialActiveStep(): string {
 }
 
 const activeStep = ref(resolveInitialActiveStep());
+
+function syncEnrollmentStepQueryParam(step: string): void {
+    if (props.application.status !== 'rascunho') {
+        return;
+    }
+
+    const url = new URL(window.location.href);
+
+    if (url.searchParams.get('step') === step) {
+        return;
+    }
+
+    url.searchParams.set('step', step);
+    window.history.replaceState(
+        window.history.state,
+        '',
+        `${url.pathname}${url.search}${url.hash}`,
+    );
+}
+
+watch(activeStep, (step) => {
+    syncEnrollmentStepQueryParam(step);
+});
+
+onMounted(() => {
+    syncEnrollmentStepQueryParam(activeStep.value);
+});
 
 function goToEnrollmentStep(step: string): void {
     const targetStep = Number.parseInt(step, 10) || 1;
@@ -180,6 +215,18 @@ function goToEnrollmentStep(step: string): void {
         step !== '3' &&
         targetStep > 3 &&
         !isFinalized.value &&
+        !canLeaveResearchLineStep.value
+    ) {
+        showAcademicPendingSaveWarning.value = true;
+
+        return;
+    }
+
+    if (
+        currentStep === 4 &&
+        step !== '4' &&
+        targetStep > 4 &&
+        !isFinalized.value &&
         titleGroupsUploadRef.value?.hasPendingUploads()
     ) {
         showTitlesPendingUploadWarning.value = true;
@@ -189,9 +236,9 @@ function goToEnrollmentStep(step: string): void {
     }
 
     if (
-        currentStep === 4 &&
-        step !== '4' &&
-        targetStep > 4 &&
+        currentStep === 5 &&
+        step !== '5' &&
+        targetStep > 5 &&
         !isFinalized.value &&
         requiredDocumentsListRef.value?.hasPendingUploads()
     ) {
@@ -203,6 +250,7 @@ function goToEnrollmentStep(step: string): void {
 
     showTitlesPendingUploadWarning.value = false;
     showRequiredPendingUploadWarning.value = false;
+    showAcademicPendingSaveWarning.value = false;
     activeStep.value = step;
 }
 
@@ -215,6 +263,41 @@ const stepOneForm = useForm({
         concorre_vagas_pcd: step1Data.concorre_vagas_pcd ?? false,
     },
 });
+
+const step3Data = (props.application.dados_inscricao?.step_3 ?? {}) as {
+    linha_pesquisa?: string;
+    orientador?: string;
+};
+
+const stepThreeForm = useForm({
+    payload: {
+        linha_pesquisa: step3Data.linha_pesquisa ?? '',
+        orientador: step3Data.orientador ?? '',
+    },
+});
+
+const researchLineSelectOptions = computed(() => props.researchLineOptions.lines);
+
+const orientadorSelectOptions = computed(() => {
+    const line = stepThreeForm.payload.linha_pesquisa;
+    const advisors = props.researchLineOptions.advisors[line] ?? [];
+
+    return advisors.map((name) => ({
+        label: name,
+        value: name,
+    }));
+});
+
+watch(
+    () => stepThreeForm.payload.linha_pesquisa,
+    (line) => {
+        const advisors = props.researchLineOptions.advisors[line] ?? [];
+
+        if (!advisors.includes(stepThreeForm.payload.orientador)) {
+            stepThreeForm.payload.orientador = '';
+        }
+    },
+);
 
 const confirmDeclaration = ref(false);
 
@@ -303,6 +386,112 @@ const step1Committed = computed(
         ),
 );
 
+const step3Committed = computed(
+    () =>
+        props.application.dados_inscricao != null &&
+        Object.prototype.hasOwnProperty.call(
+            props.application.dados_inscricao,
+            'step_3',
+        ),
+);
+
+const savedResearchLineData = computed(() => {
+    const s3 = (props.application.dados_inscricao?.step_3 ?? {}) as {
+        linha_pesquisa?: string;
+        orientador?: string;
+    };
+
+    return {
+        linha_pesquisa: s3.linha_pesquisa ?? '',
+        orientador: s3.orientador ?? '',
+    };
+});
+
+const isEditingResearchLineStep = ref(!step3Committed.value);
+
+const researchLineHasUnsavedChanges = computed(() => {
+    if (!step3Committed.value) {
+        return true;
+    }
+
+    return (
+        stepThreeForm.payload.linha_pesquisa !==
+            savedResearchLineData.value.linha_pesquisa ||
+        stepThreeForm.payload.orientador !== savedResearchLineData.value.orientador
+    );
+});
+
+const showResearchLineSavedPanel = computed(
+    () =>
+        step3Committed.value &&
+        (!isEditingResearchLineStep.value || isFinalized.value),
+);
+
+const showResearchLineForm = computed(
+    () => !isFinalized.value && isEditingResearchLineStep.value,
+);
+
+const savedResearchLineLabel = computed(() => {
+    const line = savedResearchLineData.value.linha_pesquisa;
+
+    return (
+        props.researchLineOptions.lines.find((item) => item.value === line)
+            ?.label ?? profileText(line)
+    );
+});
+
+const researchLineFormCanSave = computed(() => {
+    const { linha_pesquisa, orientador } = stepThreeForm.payload;
+
+    if (linha_pesquisa === '' || orientador === '') {
+        return false;
+    }
+
+    if (!step3Committed.value) {
+        return true;
+    }
+
+    return researchLineHasUnsavedChanges.value;
+});
+
+const canLeaveResearchLineStep = computed(() => {
+    if (isFinalized.value) {
+        return false;
+    }
+
+    if (!step3Committed.value) {
+        return false;
+    }
+
+    if (isEditingResearchLineStep.value && researchLineHasUnsavedChanges.value) {
+        return false;
+    }
+
+    return true;
+});
+
+function startEditingResearchLine(): void {
+    if (isFinalized.value) {
+        return;
+    }
+
+    stepThreeForm.payload.linha_pesquisa =
+        savedResearchLineData.value.linha_pesquisa;
+    stepThreeForm.payload.orientador = savedResearchLineData.value.orientador;
+    stepThreeForm.clearErrors();
+    isEditingResearchLineStep.value = true;
+    showAcademicPendingSaveWarning.value = false;
+}
+
+function cancelEditingResearchLine(): void {
+    stepThreeForm.payload.linha_pesquisa =
+        savedResearchLineData.value.linha_pesquisa;
+    stepThreeForm.payload.orientador = savedResearchLineData.value.orientador;
+    stepThreeForm.clearErrors();
+    isEditingResearchLineStep.value = false;
+    showAcademicPendingSaveWarning.value = false;
+}
+
 const canLeavePcdStep = computed(() => {
     if (isFinalized.value) {
         return false;
@@ -322,11 +511,16 @@ const aguardandoSalvarOpcaoPcd = computed(
 );
 
 const savePcdStep = (): void => {
+    syncEnrollmentStepQueryParam(activeStep.value);
+
     stepOneForm.post(
         step.store({ application: props.application.id, step: 1 }).url,
         {
             preserveScroll: true,
+            preserveState: true,
             onSuccess: (page) => {
+                activeStep.value = '1';
+
                 const app = page.props.application as typeof props.application;
                 const v = (
                     app.dados_inscricao?.step_1 as
@@ -337,6 +531,38 @@ const savePcdStep = (): void => {
                 if (typeof v === 'boolean') {
                     stepOneForm.payload.concorre_vagas_pcd = v;
                 }
+            },
+        },
+    );
+};
+
+const saveResearchLineStep = (): void => {
+    syncEnrollmentStepQueryParam('3');
+
+    stepThreeForm.post(
+        step.store({ application: props.application.id, step: 3 }).url,
+        {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: (page) => {
+                activeStep.value = '3';
+
+                const app = page.props.application as typeof props.application;
+                const s3 = app.dados_inscricao?.step_3 as
+                    | {
+                          linha_pesquisa?: string;
+                          orientador?: string;
+                      }
+                    | undefined;
+
+                if (s3 !== undefined) {
+                    stepThreeForm.payload.linha_pesquisa =
+                        s3.linha_pesquisa ?? '';
+                    stepThreeForm.payload.orientador = s3.orientador ?? '';
+                }
+
+                isEditingResearchLineStep.value = false;
+                showAcademicPendingSaveWarning.value = false;
             },
         },
     );
@@ -383,6 +609,26 @@ const profileReviewSummary = computed(() => {
         },
         { label: 'Telefone (celular)', value: profileText(u.telefone) },
         { label: 'Telefone fixo', value: profileText(u.telefone_fixo) },
+    ];
+});
+
+const academicReviewSummary = computed(() => {
+    const s3 = (props.application.dados_inscricao?.step_3 ?? {}) as {
+        linha_pesquisa?: string;
+        orientador?: string;
+    };
+
+    const lineLabel =
+        props.researchLineOptions.lines.find(
+            (line) => line.value === s3.linha_pesquisa,
+        )?.label ?? profileText(s3.linha_pesquisa);
+
+    return [
+        {
+            label: 'Linha de pesquisa',
+            value: lineLabel,
+        },
+        { label: 'Orientador', value: profileText(s3.orientador) },
     ];
 });
 
@@ -487,11 +733,12 @@ const enrollmentMilestones = computed((): boolean[] => {
     const cur = Number.parseInt(activeStep.value, 10) || 1;
     const done1 = step1Committed.value && pcdDocsComplete.value;
     const done2 = cur >= 3;
-    const done3 = cur >= 4;
-    const done4 = pendingRequiredDocs.value.length === 0;
-    const done5 = props.application.status !== 'rascunho';
+    const done3 = step3Committed.value;
+    const done4 = cur >= 5;
+    const done5 = pendingRequiredDocs.value.length === 0;
+    const done6 = props.application.status !== 'rascunho';
 
-    return [done1, done2, done3, done4, done5];
+    return [done1, done2, done3, done4, done5, done6];
 });
 
 const completedMilestoneCount = computed(
@@ -499,7 +746,7 @@ const completedMilestoneCount = computed(
 );
 
 const enrollmentProgressPercent = computed(() =>
-    Math.round((completedMilestoneCount.value / 5) * 100),
+    Math.round((completedMilestoneCount.value / 6) * 100),
 );
 
 const hasStartedEnrollment = computed(
@@ -514,7 +761,7 @@ const stepNavigatorStates = computed(
         const m = enrollmentMilestones.value;
         const out: Record<string, 'done' | 'current' | 'upcoming'> = {};
 
-        for (let i = 1; i <= 5; i++) {
+        for (let i = 1; i <= 6; i++) {
             const key = String(i);
 
             if (i === cur) {
@@ -575,7 +822,9 @@ const deadlineHint = computed((): string | undefined => {
     return 'Encerramento das inscrições conforme calendário publicado.';
 });
 
-const isSavingEnrollment = computed(() => stepOneForm.processing);
+const isSavingEnrollment = computed(
+    () => stepOneForm.processing || stepThreeForm.processing,
+);
 
 const showFinalizeEnrollmentReminder = computed(
     () => props.application.status === 'rascunho' && hasStartedEnrollment.value,
@@ -888,8 +1137,309 @@ function formatDate(dateStr: string | null | undefined): string {
                             </div>
                         </StepPanel>
 
-                        <!-- Etapa 3: Títulos para pontuação -->
+                        <!-- Etapa 3: Linha de Pesquisa e Orientador -->
                         <StepPanel value="3">
+                            <div class="py-2">
+                                <div class="mb-5 flex items-center gap-2">
+                                    <GraduationCap
+                                        :size="18"
+                                        class="text-primary"
+                                    />
+                                    <h3 class="text-base font-semibold">
+                                        Linha de Pesquisa e Orientador
+                                    </h3>
+                                </div>
+                                <p class="mb-4 text-sm text-muted-foreground">
+                                    Selecione a linha de pesquisa pretendida e o
+                                    orientador correspondente, conforme o edital
+                                    deste processo seletivo.
+                                </p>
+
+                                <div
+                                    class="flex flex-col gap-4 rounded-xl border border-border bg-muted/15 p-4"
+                                >
+                                    <Message
+                                        v-if="
+                                            showResearchLineSavedPanel &&
+                                            !isFinalized
+                                        "
+                                        severity="success"
+                                        :closable="false"
+                                        icon="pi pi-check-circle"
+                                    >
+                                        Linha de pesquisa e orientador salvos
+                                        com sucesso. Você pode alterar a
+                                        seleção abaixo, se necessário.
+                                    </Message>
+
+                                    <div
+                                        v-if="showResearchLineSavedPanel"
+                                        class="flex flex-col gap-4 rounded-xl border border-emerald-200/80 bg-emerald-50/60 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/20"
+                                    >
+                                        <div
+                                            class="flex items-start gap-2 text-emerald-800 dark:text-emerald-200"
+                                        >
+                                            <CheckCircle2
+                                                :size="18"
+                                                class="mt-0.5 shrink-0"
+                                            />
+                                            <p class="text-sm font-medium">
+                                                Seleção registrada
+                                            </p>
+                                        </div>
+
+                                        <div class="flex flex-col gap-3 text-sm">
+                                            <div>
+                                                <p
+                                                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                                                >
+                                                    Linha de pesquisa
+                                                </p>
+                                                <p
+                                                    class="mt-1 font-medium text-foreground"
+                                                >
+                                                    {{ savedResearchLineLabel }}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p
+                                                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                                                >
+                                                    Orientador
+                                                </p>
+                                                <p
+                                                    class="mt-1 font-medium text-foreground"
+                                                >
+                                                    {{
+                                                        savedResearchLineData.orientador
+                                                    }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            v-if="!isFinalized"
+                                            class="flex justify-end"
+                                        >
+                                            <Button
+                                                label="Alterar seleção"
+                                                icon="pi pi-pencil"
+                                                size="small"
+                                                severity="secondary"
+                                                outlined
+                                                @click="
+                                                    startEditingResearchLine
+                                                "
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <template v-if="showResearchLineForm">
+                                        <div class="flex flex-col gap-2">
+                                            <label
+                                                for="linha-pesquisa"
+                                                class="text-sm font-medium text-foreground"
+                                            >
+                                                Linha de pesquisa
+                                                <span class="text-destructive"
+                                                    >*</span
+                                                >
+                                            </label>
+                                            <Select
+                                                id="linha-pesquisa"
+                                                v-model="
+                                                    stepThreeForm.payload
+                                                        .linha_pesquisa
+                                                "
+                                                :options="
+                                                    researchLineSelectOptions
+                                                "
+                                                option-label="label"
+                                                option-value="value"
+                                                placeholder="Selecione a linha de pesquisa"
+                                                class="w-full"
+                                                :invalid="
+                                                    Boolean(
+                                                        stepThreeForm.errors[
+                                                            'payload.linha_pesquisa'
+                                                        ],
+                                                    )
+                                                "
+                                            />
+                                            <small
+                                                v-if="
+                                                    stepThreeForm.errors[
+                                                        'payload.linha_pesquisa'
+                                                    ]
+                                                "
+                                                class="text-destructive"
+                                            >
+                                                {{
+                                                    stepThreeForm.errors[
+                                                        'payload.linha_pesquisa'
+                                                    ]
+                                                }}
+                                            </small>
+                                        </div>
+
+                                        <div class="flex flex-col gap-2">
+                                            <label
+                                                for="orientador"
+                                                class="text-sm font-medium text-foreground"
+                                            >
+                                                Orientador
+                                                <span class="text-destructive"
+                                                    >*</span
+                                                >
+                                            </label>
+                                            <Select
+                                                id="orientador"
+                                                v-model="
+                                                    stepThreeForm.payload
+                                                        .orientador
+                                                "
+                                                :options="
+                                                    orientadorSelectOptions
+                                                "
+                                                option-label="label"
+                                                option-value="value"
+                                                :placeholder="
+                                                    stepThreeForm.payload
+                                                        .linha_pesquisa
+                                                        ? 'Selecione o orientador'
+                                                        : 'Selecione primeiro a linha de pesquisa'
+                                                "
+                                                class="w-full"
+                                                :disabled="
+                                                    !stepThreeForm.payload
+                                                        .linha_pesquisa
+                                                "
+                                                :invalid="
+                                                    Boolean(
+                                                        stepThreeForm.errors[
+                                                            'payload.orientador'
+                                                        ],
+                                                    )
+                                                "
+                                            />
+                                            <small
+                                                v-if="
+                                                    stepThreeForm.errors[
+                                                        'payload.orientador'
+                                                    ]
+                                                "
+                                                class="text-destructive"
+                                            >
+                                                {{
+                                                    stepThreeForm.errors[
+                                                        'payload.orientador'
+                                                    ]
+                                                }}
+                                            </small>
+                                        </div>
+
+                                        <div class="flex flex-wrap justify-end gap-2">
+                                            <Button
+                                                v-if="step3Committed"
+                                                label="Cancelar alteração"
+                                                icon="pi pi-times"
+                                                size="small"
+                                                severity="secondary"
+                                                text
+                                                @click="cancelEditingResearchLine"
+                                            />
+                                            <Button
+                                                label="Salvar linha e orientador"
+                                                icon="pi pi-save"
+                                                size="small"
+                                                :loading="
+                                                    stepThreeForm.processing
+                                                "
+                                                :disabled="
+                                                    !researchLineFormCanSave
+                                                "
+                                                @click="saveResearchLineStep"
+                                            />
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <Message
+                                    v-if="showAcademicPendingSaveWarning"
+                                    severity="warn"
+                                    :closable="false"
+                                    class="mt-4"
+                                >
+                                    <span v-if="!step3Committed">
+                                        Salve a linha de pesquisa e o orientador
+                                        antes de continuar para a próxima etapa.
+                                    </span>
+                                    <span v-else>
+                                        Você alterou a seleção. Clique em
+                                        <strong>Salvar linha e orientador</strong>
+                                        antes de continuar.
+                                    </span>
+                                </Message>
+
+                                <div
+                                    class="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-5"
+                                >
+                                    <div
+                                        v-if="
+                                            !canLeaveResearchLineStep &&
+                                            !isFinalized
+                                        "
+                                        class="min-w-0 flex-1"
+                                    >
+                                        <Message
+                                            severity="info"
+                                            :closable="false"
+                                        >
+                                            <span v-if="!step3Committed">
+                                                Salve a linha de pesquisa e o
+                                                orientador antes de continuar.
+                                            </span>
+                                            <span
+                                                v-else-if="
+                                                    isEditingResearchLineStep &&
+                                                    researchLineHasUnsavedChanges
+                                                "
+                                            >
+                                                Confirme as alterações com
+                                                <strong>Salvar linha e orientador</strong>
+                                                ou cancele para continuar.
+                                            </span>
+                                        </Message>
+                                    </div>
+                                    <div
+                                        class="flex w-full shrink-0 justify-between gap-2 sm:ml-auto sm:w-auto"
+                                    >
+                                    <Button
+                                        label="Anterior"
+                                        icon="pi pi-arrow-left"
+                                        severity="secondary"
+                                        outlined
+                                        size="small"
+                                        @click="activeStep = '2'"
+                                    />
+                                    <Button
+                                        label="Próximo"
+                                        icon="pi pi-arrow-right"
+                                        icon-pos="right"
+                                        size="small"
+                                        :disabled="
+                                            isFinalized ||
+                                            !canLeaveResearchLineStep
+                                        "
+                                        @click="activeStep = '4'"
+                                    />
+                                    </div>
+                                </div>
+                            </div>
+                        </StepPanel>
+
+                        <!-- Etapa 4: Títulos para pontuação -->
+                        <StepPanel value="4">
                             <div class="py-2">
                                 <div class="mb-5 flex items-start gap-3">
                                     <div
@@ -958,7 +1508,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         severity="secondary"
                                         outlined
                                         size="small"
-                                        @click="goToEnrollmentStep('2')"
+                                        @click="goToEnrollmentStep('3')"
                                     />
                                     <Button
                                         label="Próximo"
@@ -966,14 +1516,14 @@ function formatDate(dateStr: string | null | undefined): string {
                                         icon-pos="right"
                                         size="small"
                                         :disabled="isFinalized"
-                                        @click="goToEnrollmentStep('4')"
+                                        @click="goToEnrollmentStep('5')"
                                     />
                                 </div>
                             </div>
                         </StepPanel>
 
-                        <!-- Etapa 4: Documentos obrigatórios -->
-                        <StepPanel value="4">
+                        <!-- Etapa 5: Documentos obrigatórios -->
+                        <StepPanel value="5">
                             <div class="py-4">
                                 <div class="mb-2 flex items-center gap-2">
                                     <FileText :size="18" class="text-primary" />
@@ -1030,21 +1580,21 @@ function formatDate(dateStr: string | null | undefined): string {
                                         severity="secondary"
                                         outlined
                                         size="small"
-                                        @click="goToEnrollmentStep('3')"
+                                        @click="goToEnrollmentStep('4')"
                                     />
                                     <Button
                                         label="Revisar inscrição"
                                         icon="pi pi-arrow-right"
                                         icon-pos="right"
                                         size="small"
-                                        @click="goToEnrollmentStep('5')"
+                                        @click="goToEnrollmentStep('6')"
                                     />
                                 </div>
                             </div>
                         </StepPanel>
 
-                        <!-- Etapa 5: Revisão e envio -->
-                        <StepPanel value="5">
+                        <!-- Etapa 6: Revisão e envio -->
+                        <StepPanel value="6">
                             <div class="py-4">
                                 <div class="mb-5 flex items-center gap-2">
                                     <CheckCircle2
@@ -1103,7 +1653,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                     size="small"
                                                     severity="warn"
                                                     class="mt-3"
-                                                    @click="activeStep = '4'"
+                                                    @click="activeStep = '5'"
                                                 />
                                             </div>
                                         </div>
@@ -1258,6 +1808,48 @@ function formatDate(dateStr: string | null | undefined): string {
                                             class="mb-3 flex items-center justify-between"
                                         >
                                             <p class="text-sm font-semibold">
+                                                Linha de Pesquisa e Orientador
+                                            </p>
+                                            <Button
+                                                v-if="!isFinalized"
+                                                label="Editar"
+                                                icon="pi pi-pencil"
+                                                text
+                                                size="small"
+                                                @click="activeStep = '3'"
+                                            />
+                                        </div>
+                                        <div
+                                            class="grid gap-2 text-sm sm:grid-cols-2"
+                                        >
+                                            <div
+                                                v-for="row in academicReviewSummary"
+                                                :key="row.label"
+                                                :class="
+                                                    row.label ===
+                                                    'Linha de pesquisa'
+                                                        ? 'sm:col-span-2'
+                                                        : ''
+                                                "
+                                            >
+                                                <span
+                                                    class="text-muted-foreground"
+                                                    >{{ row.label }}:
+                                                </span>
+                                                <span class="font-medium">{{
+                                                    row.value
+                                                }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class="rounded-xl border border-border p-4"
+                                    >
+                                        <div
+                                            class="mb-3 flex items-center justify-between"
+                                        >
+                                            <p class="text-sm font-semibold">
                                                 Comprovantes de títulos
                                             </p>
                                             <Button
@@ -1266,7 +1858,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 icon="pi pi-pencil"
                                                 text
                                                 size="small"
-                                                @click="activeStep = '3'"
+                                                @click="activeStep = '4'"
                                             />
                                         </div>
                                         <div
@@ -1323,7 +1915,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 icon="pi pi-upload"
                                                 text
                                                 size="small"
-                                                @click="activeStep = '4'"
+                                                @click="activeStep = '5'"
                                             />
                                         </div>
                                         <div
@@ -1488,7 +2080,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 severity="secondary"
                                                 outlined
                                                 size="small"
-                                                @click="activeStep = '4'"
+                                                @click="activeStep = '5'"
                                             />
                                             <Button
                                                 label="Finalizar inscrição"

@@ -2,24 +2,20 @@
 
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
-use App\Models\Modules\Candidate\Models\ApplicationDocument;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
-test('candidate cannot upload pcd document before saving concorre_vagas_pcd as true', function () {
-    Storage::fake('local');
+test('candidate can save research line and advisor on step 3', function () {
     Role::findOrCreate('candidato', 'web');
     $candidate = User::factory()
         ->completeCandidateProfile()
         ->create(['email_verified_at' => now()]);
     $candidate->assignRole('candidato');
     $process = SelectionProcess::query()->create([
-        'titulo' => 'Edital PcD',
+        'titulo' => 'Edital Acadêmico',
         'descricao' => 'Descricao',
         'status' => 'ativo',
     ]);
@@ -29,26 +25,27 @@ test('candidate cannot upload pcd document before saving concorre_vagas_pcd as t
         'status' => 'rascunho',
     ]);
 
-    $file = UploadedFile::fake()->create('decl.pdf', 100, 'application/pdf');
+    $payload = validApplicationStep3Payload();
 
     $this->actingAs($candidate)
-        ->post(route('candidate.documents.store', $application), [
-            'candidatura_document_kind' => 'pcd_declaracao',
-            'arquivo' => $file,
+        ->post(route('candidate.applications.step.store', ['application' => $application, 'step' => 3]), [
+            'payload' => $payload,
         ])
-        ->assertSessionHasErrors('candidatura_document_kind');
+        ->assertRedirect();
 
-    expect(ApplicationDocument::query()->count())->toBe(0);
+    $application->refresh();
+
+    expect($application->dados_inscricao['step_3'])->toBe($payload);
 });
 
-test('candidate cannot submit when concorre_vagas_pcd is true without both pcd documents', function () {
+test('candidate cannot submit without research line step', function () {
     Role::findOrCreate('candidato', 'web');
     $candidate = User::factory()
         ->completeCandidateProfile()
         ->create(['email_verified_at' => now()]);
     $candidate->assignRole('candidato');
     $process = SelectionProcess::query()->create([
-        'titulo' => 'Edital PcD',
+        'titulo' => 'Edital Acadêmico',
         'descricao' => 'Descricao',
         'status' => 'ativo',
     ]);
@@ -57,8 +54,7 @@ test('candidate cannot submit when concorre_vagas_pcd is true without both pcd d
         'user_id' => $candidate->id,
         'status' => 'rascunho',
         'dados_inscricao' => [
-            'step_1' => ['concorre_vagas_pcd' => true],
-            'step_3' => validApplicationStep3Payload(),
+            'step_1' => ['concorre_vagas_pcd' => false],
         ],
     ]);
 
@@ -70,15 +66,14 @@ test('candidate cannot submit when concorre_vagas_pcd is true without both pcd d
     expect($application->status)->toBe('rascunho');
 });
 
-test('candidate can submit when concorre_vagas_pcd is true and both pcd documents are uploaded', function () {
-    Storage::fake('local');
+test('step 3 requires valid research line and advisor pair', function () {
     Role::findOrCreate('candidato', 'web');
     $candidate = User::factory()
         ->completeCandidateProfile()
         ->create(['email_verified_at' => now()]);
     $candidate->assignRole('candidato');
     $process = SelectionProcess::query()->create([
-        'titulo' => 'Edital PcD',
+        'titulo' => 'Edital Acadêmico',
         'descricao' => 'Descricao',
         'status' => 'ativo',
     ]);
@@ -86,31 +81,23 @@ test('candidate can submit when concorre_vagas_pcd is true and both pcd document
         'selection_process_id' => $process->id,
         'user_id' => $candidate->id,
         'status' => 'rascunho',
-        'dados_inscricao' => [
-            'step_1' => ['concorre_vagas_pcd' => true],
-            'step_3' => validApplicationStep3Payload(),
-        ],
     ]);
 
     $this->actingAs($candidate)
-        ->post(route('candidate.documents.store', $application), [
-            'candidatura_document_kind' => 'pcd_declaracao',
-            'arquivo' => UploadedFile::fake()->create('decl.pdf', 100, 'application/pdf'),
+        ->post(route('candidate.applications.step.store', ['application' => $application, 'step' => 3]), [
+            'payload' => [
+                'linha_pesquisa' => 'linha_1',
+                'orientador' => 'Dr. Wagner Ferreira Monteiro',
+            ],
         ])
-        ->assertRedirect();
+        ->assertSessionHasErrors('payload.orientador');
 
     $this->actingAs($candidate)
-        ->post(route('candidate.documents.store', $application), [
-            'candidatura_document_kind' => 'pcd_laudo',
-            'arquivo' => UploadedFile::fake()->create('laudo.pdf', 100, 'application/pdf'),
+        ->post(route('candidate.applications.step.store', ['application' => $application, 'step' => 3]), [
+            'payload' => [
+                'linha_pesquisa' => '',
+                'orientador' => '',
+            ],
         ])
-        ->assertRedirect();
-
-    $this->actingAs($candidate)
-        ->post(route('candidate.applications.submit', $application))
-        ->assertRedirect();
-
-    $application->refresh();
-    expect($application->status)->toBe('inscrita')
-        ->and(ApplicationDocument::query()->where('application_id', $application->id)->count())->toBe(2);
+        ->assertSessionHasErrors(['payload.linha_pesquisa', 'payload.orientador']);
 });

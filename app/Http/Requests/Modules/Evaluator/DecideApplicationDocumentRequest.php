@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Modules\Evaluator;
 
+use App\Models\Modules\Candidate\Models\Application;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DecideApplicationDocumentRequest extends FormRequest
@@ -11,7 +12,10 @@ class DecideApplicationDocumentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $application = $this->route('application');
+
+        return $application instanceof Application
+            && $application->isEvaluable();
     }
 
     /**

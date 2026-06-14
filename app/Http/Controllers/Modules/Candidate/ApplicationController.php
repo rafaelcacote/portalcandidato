@@ -8,6 +8,7 @@ use App\Models\Modules\Candidate\Models\Application;
 use App\Modules\Admin\Services\SelectionProcessDocumentTemplateService;
 use App\Modules\Candidate\Services\ApplicationAppealService;
 use App\Modules\Candidate\Services\ApplicationProfessionalDocumentService;
+use App\Modules\Candidate\Support\ResearchLineCatalog;
 use App\Support\BrazilianStates;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\Request;
@@ -86,6 +87,7 @@ class ApplicationController extends Controller
             'appealStages' => $this->appealService->listStagesForApplication($application),
             'appeals' => $this->appealService->listAppealsForApplication($application),
             'hasOpenRecursoWindow' => $this->appealService->hasOpenRecursoWindow($application),
+            'researchLineOptions' => ResearchLineCatalog::forFrontend(),
         ]);
     }
 }

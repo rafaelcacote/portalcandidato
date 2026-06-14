@@ -2,10 +2,12 @@
 import {
     AtSign,
     CalendarDays,
+    GraduationCap,
     Hash,
     IdCard,
     Layers,
     Phone,
+    UserRound,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { maskCpf } from '@/components/Candidate/profileTypes';
@@ -27,6 +29,11 @@ const props = defineProps<{
             photo_url?: string | null;
         };
         selectionProcess?: { titulo: string } | null;
+        research_line_summary?: {
+            linha_pesquisa: string;
+            linha_pesquisa_label: string;
+            orientador: string;
+        } | null;
     };
 }>();
 
@@ -169,6 +176,49 @@ const formattedDate = computed(() => {
                         >
                         <span class="line-clamp-1 font-semibold text-slate-800">
                             {{ application.selectionProcess.titulo }}
+                        </span>
+                    </span>
+
+                    <span
+                        v-if="application.research_line_summary"
+                        class="flex items-start gap-2 rounded-xl bg-violet-50/80 px-3 py-2.5 text-xs text-slate-600 ring-1 ring-violet-100 sm:col-span-2"
+                    >
+                        <GraduationCap
+                            class="mt-0.5 size-3.5 shrink-0 text-violet-500"
+                        />
+                        <span class="min-w-0">
+                            <span class="block font-medium text-slate-500"
+                                >Linha de pesquisa</span
+                            >
+                            <span
+                                class="mt-0.5 block font-semibold text-slate-800"
+                            >
+                                {{
+                                    application.research_line_summary
+                                        .linha_pesquisa_label
+                                }}
+                            </span>
+                        </span>
+                    </span>
+
+                    <span
+                        v-if="application.research_line_summary?.orientador"
+                        class="flex items-start gap-2 rounded-xl bg-violet-50/80 px-3 py-2.5 text-xs text-slate-600 ring-1 ring-violet-100 sm:col-span-2"
+                    >
+                        <UserRound
+                            class="mt-0.5 size-3.5 shrink-0 text-violet-500"
+                        />
+                        <span class="min-w-0">
+                            <span class="block font-medium text-slate-500"
+                                >Orientador</span
+                            >
+                            <span
+                                class="mt-0.5 block font-semibold text-slate-800"
+                            >
+                                {{
+                                    application.research_line_summary.orientador
+                                }}
+                            </span>
                         </span>
                     </span>
                 </div>
