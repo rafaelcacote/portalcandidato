@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modules\Evaluator;
 use App\Http\Controllers\Controller;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
+use App\Modules\Shared\Enums\ApplicationStatus;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,7 +28,10 @@ class EvaluatorDashboardController extends Controller
         $pendingAnalysis = Application::query()
             ->whereIn('selection_process_id', $assignedProcessIds)
             ->whereDoesntHave('evaluations', fn ($q) => $q->where('evaluator_id', $evaluatorId))
-            ->whereIn('status', ['em_analise', 'enviada'])
+            ->whereIn('status', [
+                ApplicationStatus::EmAnalise->value,
+                ApplicationStatus::Inscrita->value,
+            ])
             ->count();
 
         $analysisCompleted = Application::query()
@@ -41,7 +45,10 @@ class EvaluatorDashboardController extends Controller
             ->withCount([
                 'applications as pending_candidates' => fn ($q) => $q
                     ->whereDoesntHave('evaluations', fn ($eq) => $eq->where('evaluator_id', $evaluatorId)->whereNotNull('resultado'))
-                    ->whereIn('status', ['em_analise', 'enviada']),
+                    ->whereIn('status', [
+                        ApplicationStatus::EmAnalise->value,
+                        ApplicationStatus::Inscrita->value,
+                    ]),
             ])
             ->latest()
             ->limit(5)

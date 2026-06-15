@@ -36,17 +36,15 @@ defineProps<{
             inscricao_inicio_em: string | null;
             inscricao_fim_em: string | null;
         }>;
-        meta?: {
-            current_page: number;
-            last_page: number;
-            per_page: number;
-            total: number;
-            links: Array<{
-                url: string | null;
-                label: string;
-                active: boolean;
-            }>;
-        };
+        total: number;
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        links: Array<{
+            url: string | null;
+            label: string;
+            active: boolean;
+        }>;
     };
 }>();
 
@@ -261,11 +259,16 @@ function formatDate(dateStr: string | null): string {
 
             <!-- Pagination -->
             <div
-                v-if="processes.meta && processes.meta.last_page > 1"
-                class="flex items-center justify-center gap-1"
+                v-if="processes.last_page > 1"
+                class="flex flex-col items-center justify-center gap-2"
             >
+                <span class="text-xs font-medium text-slate-500">
+                    Exibindo página {{ processes.current_page }} de
+                    {{ processes.last_page }}
+                </span>
+                <div class="flex items-center justify-center gap-1">
                 <template
-                    v-for="link in processes.meta.links"
+                    v-for="link in processes.links"
                     :key="link.label"
                 >
                     <Link
@@ -286,6 +289,7 @@ function formatDate(dateStr: string | null): string {
                         v-html="link.label"
                     />
                 </template>
+                </div>
             </div>
         </div>
     </div>

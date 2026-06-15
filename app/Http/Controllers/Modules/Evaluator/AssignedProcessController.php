@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Modules\Evaluator\Support\CandidatePhotoUrl;
+use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -22,7 +23,10 @@ class AssignedProcessController extends Controller
             ->withCount([
                 'applications as pending_candidates' => fn ($q) => $q
                     ->whereDoesntHave('evaluations', fn ($eq) => $eq->where('evaluator_id', $evaluatorId)->whereNotNull('resultado'))
-                    ->whereIn('status', ['em_analise', 'enviada']),
+                    ->whereIn('status', [
+                        ApplicationStatus::EmAnalise->value,
+                        ApplicationStatus::Inscrita->value,
+                    ]),
             ])
             ->withCount([
                 'applications as analyzed_candidates' => fn ($q) => $q

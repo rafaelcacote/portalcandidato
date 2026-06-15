@@ -58,16 +58,15 @@ const props = defineProps<{
                 pontuacao_total: number | null;
             }>;
         }>;
-        meta?: {
-            current_page: number;
-            last_page: number;
-            total: number;
-            links: Array<{
-                url: string | null;
-                label: string;
-                active: boolean;
-            }>;
-        };
+        total: number;
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        links: Array<{
+            url: string | null;
+            label: string;
+            active: boolean;
+        }>;
     };
     filters: {
         search: string;
@@ -77,7 +76,7 @@ const props = defineProps<{
 
 const statusFilters = [
     { value: 'all', label: 'Todos' },
-    { value: 'enviada', label: 'Aguardando' },
+    { value: 'inscrita', label: 'Aguardando' },
     { value: 'em_analise', label: 'Em análise' },
     { value: 'pendencia', label: 'Doc. pendentes' },
     { value: 'aprovada', label: 'Aprovado' },
@@ -117,7 +116,7 @@ function candidateStatusLabel(status: string): string {
         (
             {
                 rascunho: 'Rascunho',
-                enviada: 'Aguardando',
+                inscrita: 'Aguardando',
                 em_analise: 'Em análise',
                 pendencia: 'Doc. pendentes',
                 aprovada: 'Aprovado',
@@ -129,7 +128,7 @@ function candidateStatusLabel(status: string): string {
 
 function candidateStatusClasses(status: string): string {
     const map: Record<string, string> = {
-        enviada: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/70',
+        inscrita: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/70',
         em_analise: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/70',
         pendencia: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200/70',
         aprovada: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70',
@@ -197,13 +196,12 @@ function formatDate(dateStr: string | null): string {
 
                 <!-- Total badge -->
                 <div
-                    v-if="candidates.meta"
                     class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-4 py-2 shadow-sm ring-1 ring-slate-200"
                 >
                     <span
                         class="text-2xl font-bold text-slate-900 tabular-nums"
                     >
-                        {{ candidates.meta.total }}
+                        {{ candidates.total }}
                     </span>
                     <span class="text-xs font-medium text-slate-500"
                         >candidatos</span
@@ -350,11 +348,16 @@ function formatDate(dateStr: string | null): string {
 
             <!-- Pagination -->
             <div
-                v-if="candidates.meta && candidates.meta.last_page > 1"
-                class="flex items-center justify-center gap-1"
+                v-if="candidates.last_page > 1"
+                class="flex flex-col items-center justify-center gap-2"
             >
+                <span class="text-xs font-medium text-slate-500">
+                    Exibindo página {{ candidates.current_page }} de
+                    {{ candidates.last_page }}
+                </span>
+                <div class="flex items-center justify-center gap-1">
                 <template
-                    v-for="link in candidates.meta.links"
+                    v-for="link in candidates.links"
                     :key="link.label"
                 >
                     <Link
@@ -375,6 +378,7 @@ function formatDate(dateStr: string | null): string {
                         v-html="link.label"
                     />
                 </template>
+                </div>
             </div>
         </div>
     </div>

@@ -12,7 +12,7 @@ const config = computed(() => {
         string,
         { label: string; classes: string; iconClasses: string; icon: unknown }
     > = {
-        enviada: {
+        inscrita: {
             label: 'Aguardando',
             classes: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/80',
             iconClasses: 'text-sky-500',
