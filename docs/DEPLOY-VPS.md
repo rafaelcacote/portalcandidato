@@ -505,10 +505,12 @@ $C up -d --force-recreate web
 
 ## Fluxo do dia a dia
 
+**Guia passo a passo (develop → main → VPS):** [`ATUALIZAR-PRODUCAO.md`](./ATUALIZAR-PRODUCAO.md)
+
 ```text
-PC: editar código → commit → push origin main
+PC: editar código → commit develop → merge main → push origin main
          ↓
-GitHub Actions → /opt/portalcandidato/deploy.sh
+VPS: /opt/portalcandidato/deploy.sh  (ou passos manuais no guia acima)
          ↓
 https://portaldocandidatoproensp.cloud atualizado
 
