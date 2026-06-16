@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import { BarChart3, ClipboardList, FileText, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AdminSparkline from '@/components/Admin/AdminSparkline.vue';
+import { index as applicationsIndex } from '@/routes/admin/applications';
+import { index as evaluatorsIndex } from '@/routes/admin/evaluators';
+import { index as processesIndex } from '@/routes/admin/processes';
 
 const props = defineProps<{
     stats: {
@@ -39,6 +43,7 @@ const cards = computed(() => [
         fillClass: 'fill-emerald-500/15',
         glowColor: 'rgba(16,185,129,0.08)',
         sparkIdx: 0,
+        href: processesIndex({ query: { status: 'ativo' } }).url,
     },
     {
         label: 'Inscrições',
@@ -51,6 +56,7 @@ const cards = computed(() => [
         fillClass: 'fill-sky-500/15',
         glowColor: 'rgba(14,165,233,0.08)',
         sparkIdx: 1,
+        href: applicationsIndex().url,
     },
     {
         label: 'Avaliadores',
@@ -63,6 +69,7 @@ const cards = computed(() => [
         fillClass: 'fill-violet-500/15',
         glowColor: 'rgba(139,92,246,0.08)',
         sparkIdx: 2,
+        href: evaluatorsIndex().url,
     },
     {
         label: 'Taxa de conversão',
@@ -75,16 +82,22 @@ const cards = computed(() => [
         fillClass: 'fill-orange-500/15',
         glowColor: 'rgba(249,115,22,0.08)',
         sparkIdx: 3,
+        href: null,
     },
 ]);
 </script>
 
 <template>
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div
+        <component
+            :is="card.href ? Link : 'div'"
             v-for="card in cards"
             :key="card.label"
-            class="group relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-slate-300/60"
+            :href="card.href ?? undefined"
+            :class="[
+                'group relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-slate-300/60',
+                card.href ? 'cursor-pointer' : '',
+            ]"
         >
             <!-- Top row -->
             <div class="flex items-start justify-between gap-3">
@@ -125,6 +138,6 @@ const cards = computed(() => [
                 class="pointer-events-none absolute inset-x-0 bottom-0 h-24 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                 :style="`background: linear-gradient(to top, ${card.glowColor}, transparent)`"
             />
-        </div>
+        </component>
     </div>
 </template>

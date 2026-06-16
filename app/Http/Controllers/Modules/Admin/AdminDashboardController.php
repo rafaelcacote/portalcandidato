@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\User;
+use App\Modules\Evaluator\Support\CandidatePhotoUrl;
 use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -94,7 +95,7 @@ class AdminDashboardController extends Controller
         $recentApplications = Application::query()
             ->with([
                 'selectionProcess:id,titulo',
-                'user:id,name,email',
+                'user:id,name,email,foto_path',
             ])
             ->latest('updated_at')
             ->limit(5)
@@ -106,6 +107,10 @@ class AdminDashboardController extends Controller
                 'process_title' => $application->selectionProcess?->titulo ?? '—',
                 'candidate_name' => $application->user?->name ?? '—',
                 'candidate_email' => $application->user?->email ?? '—',
+                'candidate_photo_url' => CandidatePhotoUrl::forApplication(
+                    $application,
+                    'admin.applications.photo',
+                ),
                 'updated_at' => $application->updated_at?->toIso8601String(),
             ])
             ->all();

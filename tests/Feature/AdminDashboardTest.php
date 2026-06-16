@@ -5,6 +5,8 @@ use App\Models\Modules\Candidate\Models\Application;
 use App\Models\User;
 use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 
@@ -94,6 +96,12 @@ test('admin dashboard aggregates counts', function (): void {
         'status' => ApplicationStatus::EmAnalise->value,
     ]);
 
+    Storage::fake('public');
+    $photoPath = UploadedFile::fake()
+        ->image('foto.jpg')
+        ->store('candidate-photos/'.$candidate->id, 'public');
+    $candidate->forceFill(['foto_path' => $photoPath])->save();
+
     $this->actingAs($admin)
         ->get(route('admin.dashboard'))
         ->assertSuccessful()
@@ -117,5 +125,6 @@ test('admin dashboard aggregates counts', function (): void {
             )
             ->has('recent_processes', 4)
             ->has('recent_applications', 2)
+            ->where('recent_applications.0.candidate_photo_url', '/storage/'.$photoPath)
         );
 });

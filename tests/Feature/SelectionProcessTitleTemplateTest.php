@@ -245,8 +245,89 @@ test('each title group has correct number of items', function () {
 
     expect($groups['A']->items_count)->toBe(4)
         ->and($groups['B']->items_count)->toBe(7)
-        ->and($groups['C']->items_count)->toBe(6)
-        ->and($groups['D']->items_count)->toBe(4)
+        ->and($groups['C']->items_count)->toBe(7)
+        ->and($groups['D']->items_count)->toBe(6)
         ->and($groups['E']->items_count)->toBe(8)
         ->and($groups['F']->items_count)->toBe(4);
+});
+
+test('template group C has C1.1 and C1.2 with distinct scores', function () {
+    Role::findOrCreate('admin', 'web');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.processes.store'), [
+            'titulo' => 'PS C1 Split',
+            'descricao' => 'D',
+            'status' => 'rascunho',
+            'tipo_programa' => 'mestrado',
+        ])
+        ->assertRedirect();
+
+    $process = SelectionProcess::query()->where('titulo', 'PS C1 Split')->firstOrFail();
+
+    $groupC = ProcessTitleGroup::query()
+        ->where('selection_process_id', $process->id)
+        ->where('code', 'C')
+        ->firstOrFail();
+
+    $c11 = ProcessTitleItem::query()
+        ->where('process_title_group_id', $groupC->id)
+        ->where('code', 'C1.1')
+        ->firstOrFail();
+
+    $c12 = ProcessTitleItem::query()
+        ->where('process_title_group_id', $groupC->id)
+        ->where('code', 'C1.2')
+        ->firstOrFail();
+
+    expect((float) $c11->score_per_unit)->toBe(0.50)
+        ->and((float) $c12->score_per_unit)->toBe(0.30)
+        ->and(
+            ProcessTitleItem::query()
+                ->where('process_title_group_id', $groupC->id)
+                ->where('code', 'C1')
+                ->exists(),
+        )->toBeFalse();
+});
+
+test('template group D has D4.1 D4.2 and D4.3 with distinct scores', function () {
+    Role::findOrCreate('admin', 'web');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.processes.store'), [
+            'titulo' => 'PS D4 Split',
+            'descricao' => 'D',
+            'status' => 'rascunho',
+            'tipo_programa' => 'mestrado',
+        ])
+        ->assertRedirect();
+
+    $process = SelectionProcess::query()->where('titulo', 'PS D4 Split')->firstOrFail();
+
+    $groupD = ProcessTitleGroup::query()
+        ->where('selection_process_id', $process->id)
+        ->where('code', 'D')
+        ->firstOrFail();
+
+    $scores = ProcessTitleItem::query()
+        ->where('process_title_group_id', $groupD->id)
+        ->whereIn('code', ['D4.1', 'D4.2', 'D4.3'])
+        ->orderBy('order')
+        ->pluck('score_per_unit', 'code')
+        ->map(fn ($score) => (float) $score);
+
+    expect($scores->all())->toBe([
+        'D4.1' => 0.01,
+        'D4.2' => 0.03,
+        'D4.3' => 0.05,
+    ])->and(
+        ProcessTitleItem::query()
+            ->where('process_title_group_id', $groupD->id)
+            ->where('code', 'D4')
+            ->exists(),
+    )->toBeFalse();
 });
