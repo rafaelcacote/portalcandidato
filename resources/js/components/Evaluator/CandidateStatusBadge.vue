@@ -13,7 +13,7 @@ const config = computed(() => {
         { label: string; classes: string; iconClasses: string; icon: unknown }
     > = {
         inscrita: {
-            label: 'Aguardando',
+            label: 'Aguardando avaliação',
             classes: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/80',
             iconClasses: 'text-sky-500',
             icon: Clock,
@@ -25,7 +25,7 @@ const config = computed(() => {
             icon: AlertCircle,
         },
         pendencia: {
-            label: 'Doc. pendentes',
+            label: 'Aguardando Avaliação',
             classes: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200/80',
             iconClasses: 'text-orange-500',
             icon: AlertCircle,
@@ -63,13 +63,13 @@ const config = computed(() => {
             icon: XCircle,
         },
         pendente: {
-            label: 'Pendente',
+            label: 'Pendente de decisão',
             classes: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/80',
             iconClasses: 'text-amber-500',
             icon: Clock,
         },
         enviado: {
-            label: 'Enviado',
+            label: 'A avaliar',
             classes: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200/80',
             iconClasses: 'text-sky-500',
             icon: Clock,

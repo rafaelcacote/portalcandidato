@@ -63,11 +63,13 @@ class CandidateDashboardController extends Controller
         $pendenciasInscricaoCount = Application::query()
             ->where('user_id', $userId)
             ->where('status', ApplicationStatus::Pendencia->value)
+            ->whereNull('finalizada_em')
             ->count();
 
         $pendenciasInscricao = Application::query()
             ->where('user_id', $userId)
             ->where('status', ApplicationStatus::Pendencia->value)
+            ->whereNull('finalizada_em')
             ->with('selectionProcess:id,titulo')
             ->latest('updated_at')
             ->limit(5)
@@ -81,12 +83,16 @@ class CandidateDashboardController extends Controller
 
         $documentosRecusadosCount = ApplicationDocument::query()
             ->where('status', DocumentStatus::Recusado->value)
-            ->whereHas('application', fn ($query) => $query->where('user_id', $userId))
+            ->whereHas('application', fn ($query) => $query
+                ->where('user_id', $userId)
+                ->whereNull('finalizada_em'))
             ->count();
 
         $documentosRecusados = ApplicationDocument::query()
             ->where('status', DocumentStatus::Recusado->value)
-            ->whereHas('application', fn ($query) => $query->where('user_id', $userId))
+            ->whereHas('application', fn ($query) => $query
+                ->where('user_id', $userId)
+                ->whereNull('finalizada_em'))
             ->with([
                 'application.selectionProcess:id,titulo',
                 'requiredDocument:id,nome',

@@ -301,10 +301,10 @@ watch(
 
 const confirmDeclaration = ref(false);
 
-const isFinalized = computed(() =>
-    ['inscrita', 'em_analise', 'aprovada', 'reprovada'].includes(
-        props.application.status,
-    ),
+const isFinalized = computed(
+    () =>
+        props.application.finalizada_em != null &&
+        props.application.status !== 'rascunho',
 );
 
 const concorrePcdAtivo = computed(() => {
@@ -1533,8 +1533,15 @@ function formatDate(dateStr: string | null | undefined): string {
                                 </div>
                                 <p class="mb-5 text-sm text-muted-foreground">
                                     Envie os documentos exigidos pelo processo.
-                                    Documentos recusados precisam ser reenviados
-                                    antes de finalizar a inscrição.
+                                    <template v-if="!isFinalized">
+                                        Documentos recusados precisam ser
+                                        reenviados antes de finalizar a
+                                        inscrição.
+                                    </template>
+                                    <template v-else>
+                                        Após a finalização, os documentos
+                                        enviados não podem mais ser alterados.
+                                    </template>
                                 </p>
 
                                 <RequiredDocumentsStatusList

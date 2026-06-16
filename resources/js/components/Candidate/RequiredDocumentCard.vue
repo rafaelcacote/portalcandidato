@@ -208,10 +208,7 @@ function cancelSelection(): void {
 
             <div class="shrink-0">
                 <Tag
-                    v-if="
-                        uploadedDoc &&
-                        uploadedDoc.status !== 'enviado'
-                    "
+                    v-if="uploadedDoc"
                     :value="
                         docStatusLabel[uploadedDoc.status] ?? uploadedDoc.status
                     "

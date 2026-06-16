@@ -19,7 +19,14 @@ class StoreApplicationDocumentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $application = $this->route('application');
+
+        if (! $application instanceof Application) {
+            return false;
+        }
+
+        return $this->user()?->id === $application->user_id
+            && $application->canModifyDocuments();
     }
 
     /**

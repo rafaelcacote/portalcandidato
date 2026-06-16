@@ -360,6 +360,7 @@ test('finalized application blocks deleting title proofs', function (): void {
     $application->update([
         'status' => 'inscrita',
         'finalizada_em' => now(),
+        'numero_protocolo' => 'PS-TEST-DEL',
     ]);
 
     $this->actingAs($candidate)
@@ -370,6 +371,28 @@ test('finalized application blocks deleting title proofs', function (): void {
         ->assertStatus(422);
 
     expect(ApplicationDocument::query()->find($document->id))->not->toBeNull();
+});
+
+test('candidate cannot upload documents after enrollment is finalized', function (): void {
+    Storage::fake('local');
+    $candidate = createCandidateForTitleUpload();
+    $application = createApplicationForTitleUpload($candidate);
+    $item = createTitleItemForApplication($application);
+
+    $application->update([
+        'status' => 'inscrita',
+        'finalizada_em' => now(),
+        'numero_protocolo' => 'PS-TEST-UP',
+    ]);
+
+    $this->actingAs($candidate)
+        ->post(route('candidate.documents.store', $application), [
+            'process_title_item_id' => $item->id,
+            'arquivo' => UploadedFile::fake()->create('b.pdf', 100, 'application/pdf'),
+        ])
+        ->assertStatus(422);
+
+    expect(ApplicationDocument::query()->count())->toBe(0);
 });
 
 test('candidate application page exposes linked document titles on uploaded documents', function (): void {
