@@ -55,6 +55,7 @@ defineProps<{
         process_title: string;
         candidate_name: string;
         candidate_email: string;
+        candidate_photo_url?: string | null;
         updated_at: string | null;
     }>;
 }>();

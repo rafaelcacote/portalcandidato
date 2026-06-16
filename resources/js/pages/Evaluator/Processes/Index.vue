@@ -198,8 +198,10 @@ function formatDate(dateStr: string | null): string {
                             <span class="font-semibold">{{
                                 process.pending_candidates
                             }}</span>
-                            pendente{{
-                                process.pending_candidates !== 1 ? 's' : ''
+                            {{
+                                process.pending_candidates === 1
+                                    ? 'avaliação pendente'
+                                    : 'avaliações pendentes'
                             }}
                         </div>
                         <div

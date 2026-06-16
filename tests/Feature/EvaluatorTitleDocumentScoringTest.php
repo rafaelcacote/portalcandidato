@@ -378,3 +378,46 @@ test('rejecting a title document removes its score', function (): void {
     expect((float) $evaluation->pontuacao_total)->toBe(0.0)
         ->and((float) ApplicationEvaluationDocumentScore::query()->firstOrFail()->pontuacao)->toBe(0.0);
 });
+
+test('refusing a document on a finalized application does not set pendencia status', function (): void {
+    Role::findOrCreate('candidato', 'web');
+    Role::findOrCreate('avaliador', 'web');
+
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    $evaluator = User::factory()->create(['email_verified_at' => now()]);
+    $evaluator->assignRole('avaliador');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS recusa sem pendência',
+        'descricao' => 'D',
+        'status' => 'ativo',
+    ]);
+
+    $application = Application::query()->create(evaluableApplicationAttributes([
+        'user_id' => $candidate->id,
+        'selection_process_id' => $process->id,
+        'status' => 'inscrita',
+    ]));
+
+    $document = ApplicationDocument::query()->create([
+        'application_id' => $application->id,
+        'process_required_document_id' => null,
+        'process_title_item_id' => null,
+        'caminho' => 'private/test/rg.pdf',
+        'nome_arquivo' => 'rg.pdf',
+        'mime' => 'application/pdf',
+        'status' => 'enviado',
+    ]);
+
+    $this->actingAs($evaluator)
+        ->post(route('evaluator.candidates.documents.decision', [$application, $document]), [
+            'status' => 'recusado',
+            'motivo_recusa' => 'Documento ilegível',
+        ])
+        ->assertRedirect();
+
+    expect($application->fresh()->status)->toBe('inscrita')
+        ->and($document->fresh()->status)->toBe('recusado');
+});

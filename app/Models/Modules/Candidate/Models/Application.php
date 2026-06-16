@@ -62,6 +62,11 @@ class Application extends Model
             && $this->status !== 'rascunho';
     }
 
+    public function canModifyDocuments(): bool
+    {
+        return ! $this->isFinalizedForDocuments();
+    }
+
     public function isEvaluable(): bool
     {
         return $this->isFinalizedForDocuments();

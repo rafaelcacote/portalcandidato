@@ -76,9 +76,9 @@ const props = defineProps<{
 
 const statusFilters = [
     { value: 'all', label: 'Todos' },
-    { value: 'inscrita', label: 'Aguardando' },
+    { value: 'inscrita', label: 'Aguardando avaliação' },
     { value: 'em_analise', label: 'Em análise' },
-    { value: 'pendencia', label: 'Doc. pendentes' },
+    { value: 'pendencia', label: 'Aguardando Avaliação' },
     { value: 'aprovada', label: 'Aprovado' },
     { value: 'reprovada', label: 'Reprovado' },
 ];
@@ -116,9 +116,9 @@ function candidateStatusLabel(status: string): string {
         (
             {
                 rascunho: 'Rascunho',
-                inscrita: 'Aguardando',
+                inscrita: 'Aguardando avaliação',
                 em_analise: 'Em análise',
-                pendencia: 'Doc. pendentes',
+                pendencia: 'Aguardando Avaliação',
                 aprovada: 'Aprovado',
                 reprovada: 'Reprovado',
             } as Record<string, string>
@@ -325,7 +325,7 @@ function formatDate(dateStr: string | null): string {
                                 class="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600"
                             >
                                 <Clock class="size-3" />
-                                Pendente
+                                Avaliação pendente
                             </span>
                         </div>
 

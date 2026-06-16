@@ -4,7 +4,7 @@ import { AlertTriangle, Eye, Trash2 } from 'lucide-vue-next';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
 import { useConfirm } from 'primevue/useconfirm';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import candidateDocuments, {
     show as showDocument,
 } from '@/routes/candidate/documents';
@@ -40,11 +40,16 @@ const docStatusSeverity: Record<
     string,
     'secondary' | 'success' | 'warn' | 'danger'
 > = {
-    enviado: 'secondary',
+    enviado: 'success',
     em_analise: 'warn',
     aprovado: 'success',
     recusado: 'danger',
 };
+
+const isUploaded = computed(
+    () =>
+        props.uploadedDoc !== null && props.uploadedDoc.status !== 'recusado',
+);
 
 const docStatusLabel: Record<string, string> = {
     enviado: 'Enviado',
@@ -175,7 +180,13 @@ function cancelSelection(): void {
                         doc.nome
                     }}</span>
                     <Tag
-                        v-if="doc.obrigatorio"
+                        v-if="isUploaded"
+                        value="Enviado"
+                        severity="success"
+                        class="text-xs"
+                    />
+                    <Tag
+                        v-else-if="doc.obrigatorio"
                         value="Obrigatório"
                         severity="danger"
                         class="text-xs"

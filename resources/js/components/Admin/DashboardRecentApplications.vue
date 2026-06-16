@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { ClipboardList } from 'lucide-vue-next';
-import { index as processesIndex } from '@/routes/admin/processes';
+import CandidateAvatar from '@/components/Evaluator/CandidateAvatar.vue';
+import { index as applicationsIndex } from '@/routes/admin/applications';
 
 defineProps<{
     applications: Array<{
@@ -11,6 +12,7 @@ defineProps<{
         process_title: string;
         candidate_name: string;
         candidate_email: string;
+        candidate_photo_url?: string | null;
         updated_at: string | null;
     }>;
 }>();
@@ -49,20 +51,6 @@ function statusClasses(status: string): string {
     return 'bg-slate-100 text-slate-500 ring-1 ring-slate-200/70';
 }
 
-function initials(name: string): string {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-
-    if (!parts.length) {
-        return '?';
-    }
-
-    if (parts.length === 1) {
-        return parts[0]!.slice(0, 2).toUpperCase();
-    }
-
-    return `${parts[0]![0]}${parts[parts.length - 1]![0]}`.toUpperCase();
-}
-
 function formatDateTime(dateStr: string | null): string {
     if (!dateStr) {
         return '—';
@@ -74,21 +62,6 @@ function formatDateTime(dateStr: string | null): string {
         hour: '2-digit',
         minute: '2-digit',
     });
-}
-
-const avatarPalettes = [
-    'bg-teal-100 text-teal-700',
-    'bg-violet-100 text-violet-700',
-    'bg-sky-100 text-sky-700',
-    'bg-amber-100 text-amber-700',
-    'bg-rose-100 text-rose-700',
-];
-
-function avatarClass(idx: number): string {
-    return (
-        avatarPalettes[idx % avatarPalettes.length] ??
-        'bg-slate-100 text-slate-500'
-    );
 }
 </script>
 
@@ -111,7 +84,7 @@ function avatarClass(idx: number): string {
                 </h2>
             </div>
             <Link
-                :href="processesIndex().url"
+                :href="applicationsIndex().url"
                 class="text-xs font-semibold text-emerald-600 transition-colors hover:text-emerald-700"
             >
                 Ver todas
@@ -124,19 +97,15 @@ function avatarClass(idx: number): string {
             class="flex-1 divide-y divide-slate-100"
         >
             <li
-                v-for="(a, i) in applications"
+                v-for="a in applications"
                 :key="a.id"
                 class="flex items-center gap-3.5 px-5 py-3.5 transition-colors hover:bg-slate-50/70"
             >
-                <!-- Avatar -->
-                <div
-                    :class="[
-                        'flex size-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
-                        avatarClass(i),
-                    ]"
-                >
-                    {{ initials(a.candidate_name) }}
-                </div>
+                <CandidateAvatar
+                    :name="a.candidate_name"
+                    :photo-url="a.candidate_photo_url"
+                    size="sm"
+                />
 
                 <!-- Info -->
                 <div class="min-w-0 flex-1">

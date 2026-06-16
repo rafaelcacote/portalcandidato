@@ -10,7 +10,6 @@ use App\Models\Modules\Candidate\Models\ApplicationDocument;
 use App\Modules\Candidate\Support\ResearchLineCatalog;
 use App\Modules\Evaluator\Services\DocumentValidationScoringService;
 use App\Modules\Evaluator\Support\CandidatePhotoUrl;
-use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Mail;
@@ -100,7 +99,6 @@ class CandidateReviewController extends Controller
         ]);
 
         if ($applicationDocument->status === 'recusado') {
-            $application->update(['status' => ApplicationStatus::Pendencia->value]);
             Mail::to($application->user)->queue(new DocumentoRecusado($applicationDocument));
         }
 

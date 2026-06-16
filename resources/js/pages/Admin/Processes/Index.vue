@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { FileText } from 'lucide-vue-next';
 import Button from 'primevue/button';
 import ButtonGroup from 'primevue/buttongroup';
@@ -40,8 +40,20 @@ const statusSeverity: Record<
 
 const confirm = useConfirm();
 const vTooltip = Tooltip;
+const page = usePage();
 const searchTerm = ref<string>('');
 const selectedStatus = ref<string | null>(null);
+
+const initialStatus = new URL(page.url, window.location.origin).searchParams.get(
+    'status',
+);
+
+if (
+    initialStatus &&
+    ['rascunho', 'ativo', 'encerrado'].includes(initialStatus)
+) {
+    selectedStatus.value = initialStatus;
+}
 
 const statusOptions = [
     { label: 'Todos status', value: null },

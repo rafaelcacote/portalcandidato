@@ -107,7 +107,6 @@ $C exec -T app sh -c 'cp -a /opt/public-seed/. /var/www/html/public/ && chown -R
 ### 8. Comandos Laravel pós-deploy
 
 ```bash
-$C exec -T app php artisan migrate --force
 $C exec -T app php artisan storage:link --force --no-interaction
 $C exec -T app php artisan config:cache
 $C exec -T app php artisan route:cache

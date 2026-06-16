@@ -42,7 +42,7 @@ const stats = computed(() => {
 const statusOptions = [
     { label: 'Todos os status', value: 'all' },
     { label: 'Aprovados', value: 'aprovado' },
-    { label: 'Pendentes', value: 'pendente' },
+    { label: 'A avaliar', value: 'pendente' },
     { label: 'Recusados', value: 'recusado' },
 ];
 </script>
@@ -103,7 +103,7 @@ const statusOptions = [
                         class="text-sm font-bold text-amber-600 tabular-nums"
                         >{{ stats.pending }}</span
                     >
-                    <span class="text-xs text-slate-400">Pendentes</span>
+                    <span class="text-xs text-slate-400">A avaliar</span>
                 </div>
 
                 <!-- Recusados -->

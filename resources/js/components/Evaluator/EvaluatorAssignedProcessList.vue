@@ -106,8 +106,11 @@ function statusClasses(status: string): string {
                             v-if="p.pending_candidates > 0"
                             class="text-[11px] font-medium text-amber-600"
                         >
-                            {{ p.pending_candidates }} pendente{{
-                                p.pending_candidates !== 1 ? 's' : ''
+                            {{ p.pending_candidates }}
+                            {{
+                                p.pending_candidates === 1
+                                    ? 'avaliação pendente'
+                                    : 'avaliações pendentes'
                             }}
                         </span>
                         <span

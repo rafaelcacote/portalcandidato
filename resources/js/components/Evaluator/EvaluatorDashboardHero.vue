@@ -128,10 +128,11 @@ function formatDate(dateStr: string | null): string {
                         <span
                             class="shrink-0 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 ring-1 ring-amber-200"
                         >
-                            {{ highlightProcess.pending_candidates }} pendente{{
-                                highlightProcess.pending_candidates !== 1
-                                    ? 's'
-                                    : ''
+                            {{ highlightProcess.pending_candidates }}
+                            {{
+                                highlightProcess.pending_candidates === 1
+                                    ? 'avaliação pendente'
+                                    : 'avaliações pendentes'
                             }}
                         </span>
                     </div>

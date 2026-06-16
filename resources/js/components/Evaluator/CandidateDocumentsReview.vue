@@ -180,12 +180,7 @@ function sectionIcon(kind: string) {
                                 {{
                                     sectionStats(section.documents).pending
                                 }}
-                                pendente{{
-                                    sectionStats(section.documents).pending !==
-                                    1
-                                        ? 's'
-                                        : ''
-                                }}
+                                a avaliar
                             </span>
                         </div>
                         <p

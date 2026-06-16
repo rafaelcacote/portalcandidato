@@ -54,6 +54,11 @@ class DocumentController extends Controller
     public function store(Application $application, StoreApplicationDocumentRequest $request): RedirectResponse
     {
         abort_if($application->user_id !== auth()->id(), 403);
+        abort_unless(
+            $application->canModifyDocuments(),
+            422,
+            'Não é possível enviar ou alterar documentos após a finalização da inscrição.',
+        );
 
         $validated = $request->validated();
         $file = $request->file('arquivo');
@@ -126,7 +131,11 @@ class DocumentController extends Controller
     {
         abort_if($application->user_id !== auth()->id(), 403);
         abort_if($document->application_id !== $application->id, 404);
-        abort_if($application->finalizada_em !== null, 422);
+        abort_unless(
+            $application->canModifyDocuments(),
+            422,
+            'Não é possível enviar ou alterar documentos após a finalização da inscrição.',
+        );
 
         if ($document->caminho !== '') {
             Storage::delete($document->caminho);
