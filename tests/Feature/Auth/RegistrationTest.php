@@ -5,6 +5,7 @@ use App\Support\BrazilianStates;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -15,6 +16,10 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->skipUnlessFortifyHas(Features::registration());
+
+    Http::fake([
+        'challenges.cloudflare.com/*' => Http::response(['success' => true], 200),
+    ]);
 });
 
 test('registration screen can be rendered', function () {
@@ -134,6 +139,34 @@ test('registration rejects duplicate cpf with portuguese message', function () {
     $this->from(route('register'))
         ->post(route('register.store'), $payload)
         ->assertSessionHasErrors(['cpf' => 'Este CPF já está cadastrado.']);
+
+    $this->assertGuest();
+});
+
+test('registration rejects missing turnstile token', function () {
+    $email = 'cand-no-turnstile-'.uniqid().'@example.com';
+    $payload = validCandidateRegistrationPayload($email);
+    unset($payload['turnstile_token']);
+
+    $this->from(route('register'))
+        ->post(route('register.store'), $payload)
+        ->assertSessionHasErrors('turnstile_token');
+
+    $this->assertGuest();
+});
+
+test('registration rejects invalid turnstile token', function () {
+    Http::fake([
+        'challenges.cloudflare.com/*' => Http::response(['success' => false], 200),
+    ]);
+
+    $email = 'cand-bad-turnstile-'.uniqid().'@example.com';
+    $payload = validCandidateRegistrationPayload($email);
+    $payload['turnstile_token'] = 'invalid-token';
+
+    $this->from(route('register'))
+        ->post(route('register.store'), $payload)
+        ->assertSessionHasErrors('turnstile_token');
 
     $this->assertGuest();
 });

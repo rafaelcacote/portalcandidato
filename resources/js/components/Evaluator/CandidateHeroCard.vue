@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
     AtSign,
+    Briefcase,
     CalendarDays,
     GraduationCap,
     Hash,
@@ -29,6 +30,10 @@ const props = defineProps<{
             photo_url?: string | null;
         };
         selectionProcess?: { titulo: string } | null;
+        employment_relationship_summary?: {
+            concorre_vagas_sem_vinculo: boolean;
+            resposta_label: string;
+        } | null;
         research_line_summary?: {
             linha_pesquisa: string;
             linha_pesquisa_label: string;
@@ -176,6 +181,29 @@ const formattedDate = computed(() => {
                         >
                         <span class="line-clamp-1 font-semibold text-slate-800">
                             {{ application.selectionProcess.titulo }}
+                        </span>
+                    </span>
+
+                    <span
+                        v-if="application.employment_relationship_summary"
+                        class="flex items-start gap-2 rounded-xl bg-sky-50/80 px-3 py-2.5 text-xs text-slate-600 ring-1 ring-sky-100 sm:col-span-2"
+                    >
+                        <Briefcase
+                            class="mt-0.5 size-3.5 shrink-0 text-sky-500"
+                        />
+                        <span class="min-w-0">
+                            <span class="block font-medium text-slate-500"
+                                >Vínculo empregatício</span
+                            >
+                            <span
+                                class="mt-0.5 block font-semibold text-slate-800"
+                            >
+                                Concorre às vagas sem vínculo empregatício:
+                                {{
+                                    application.employment_relationship_summary
+                                        .resposta_label
+                                }}
+                            </span>
                         </span>
                     </span>
 

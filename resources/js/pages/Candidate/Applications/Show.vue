@@ -4,6 +4,7 @@ import {
     Accessibility,
     AlertTriangle,
     Award,
+    Briefcase,
     CheckCircle2,
     ClipboardCheck,
     FileText,
@@ -157,7 +158,7 @@ const profileUser = computed<CandidateProfileUser | null>(
 );
 
 async function openProfileEditOnStep2(): Promise<void> {
-    activeStep.value = '2';
+    activeStep.value = '3';
     await nextTick();
     personalDataPanelRef.value?.startEditing();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -165,12 +166,12 @@ async function openProfileEditOnStep2(): Promise<void> {
 
 function resolveInitialActiveStep(): string {
     if (props.application.status !== 'rascunho') {
-        return '6';
+        return '7';
     }
 
     const stepParam = new URLSearchParams(window.location.search).get('step');
 
-    if (stepParam !== null && /^[1-6]$/.test(stepParam)) {
+    if (stepParam !== null && /^[1-7]$/.test(stepParam)) {
         return stepParam;
     }
 
@@ -211,9 +212,9 @@ function goToEnrollmentStep(step: string): void {
     const currentStep = Number.parseInt(activeStep.value, 10) || 1;
 
     if (
-        currentStep === 3 &&
-        step !== '3' &&
-        targetStep > 3 &&
+        currentStep === 4 &&
+        step !== '4' &&
+        targetStep > 4 &&
         !isFinalized.value &&
         !canLeaveResearchLineStep.value
     ) {
@@ -223,9 +224,9 @@ function goToEnrollmentStep(step: string): void {
     }
 
     if (
-        currentStep === 4 &&
-        step !== '4' &&
-        targetStep > 4 &&
+        currentStep === 5 &&
+        step !== '5' &&
+        targetStep > 5 &&
         !isFinalized.value &&
         titleGroupsUploadRef.value?.hasPendingUploads()
     ) {
@@ -236,9 +237,9 @@ function goToEnrollmentStep(step: string): void {
     }
 
     if (
-        currentStep === 5 &&
-        step !== '5' &&
-        targetStep > 5 &&
+        currentStep === 6 &&
+        step !== '6' &&
+        targetStep > 6 &&
         !isFinalized.value &&
         requiredDocumentsListRef.value?.hasPendingUploads()
     ) {
@@ -261,6 +262,16 @@ const step1Data = (props.application.dados_inscricao?.step_1 ?? {}) as {
 const stepOneForm = useForm({
     payload: {
         concorre_vagas_pcd: step1Data.concorre_vagas_pcd ?? false,
+    },
+});
+
+const step2Data = (props.application.dados_inscricao?.step_2 ?? {}) as {
+    concorre_vagas_sem_vinculo?: boolean;
+};
+
+const stepTwoForm = useForm({
+    payload: {
+        concorre_vagas_sem_vinculo: step2Data.concorre_vagas_sem_vinculo ?? false,
     },
 });
 
@@ -372,6 +383,7 @@ const pendingRequiredDocs = computed(() => {
 
 const canSubmit = computed(
     () =>
+        step2Committed.value &&
         pendingRequiredDocs.value.length === 0 &&
         pcdDocsComplete.value &&
         confirmDeclaration.value,
@@ -383,6 +395,15 @@ const step1Committed = computed(
         Object.prototype.hasOwnProperty.call(
             props.application.dados_inscricao,
             'step_1',
+        ),
+);
+
+const step2Committed = computed(
+    () =>
+        props.application.dados_inscricao != null &&
+        Object.prototype.hasOwnProperty.call(
+            props.application.dados_inscricao,
+            'step_2',
         ),
 );
 
@@ -504,6 +525,22 @@ const canLeavePcdStep = computed(() => {
     return pcdDocsComplete.value;
 });
 
+const concorreVinculoAtivo = computed(() => {
+    const s2 = props.application.dados_inscricao?.step_2 as
+        | { concorre_vagas_sem_vinculo?: boolean }
+        | undefined;
+
+    return s2?.concorre_vagas_sem_vinculo === true;
+});
+
+const canLeaveVinculoStep = computed(() => {
+    if (isFinalized.value) {
+        return false;
+    }
+
+    return step2Committed.value;
+});
+
 const aguardandoSalvarOpcaoPcd = computed(
     () =>
         stepOneForm.payload.concorre_vagas_pcd === true &&
@@ -536,8 +573,34 @@ const savePcdStep = (): void => {
     );
 };
 
+const saveVinculoStep = (): void => {
+    syncEnrollmentStepQueryParam(activeStep.value);
+
+    stepTwoForm.post(
+        step.store({ application: props.application.id, step: 2 }).url,
+        {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: (page) => {
+                activeStep.value = '2';
+
+                const app = page.props.application as typeof props.application;
+                const v = (
+                    app.dados_inscricao?.step_2 as
+                        | { concorre_vagas_sem_vinculo?: boolean }
+                        | undefined
+                )?.concorre_vagas_sem_vinculo;
+
+                if (typeof v === 'boolean') {
+                    stepTwoForm.payload.concorre_vagas_sem_vinculo = v;
+                }
+            },
+        },
+    );
+};
+
 const saveResearchLineStep = (): void => {
-    syncEnrollmentStepQueryParam('3');
+    syncEnrollmentStepQueryParam('4');
 
     stepThreeForm.post(
         step.store({ application: props.application.id, step: 3 }).url,
@@ -545,7 +608,7 @@ const saveResearchLineStep = (): void => {
             preserveScroll: true,
             preserveState: true,
             onSuccess: (page) => {
-                activeStep.value = '3';
+                activeStep.value = '4';
 
                 const app = page.props.application as typeof props.application;
                 const s3 = app.dados_inscricao?.step_3 as
@@ -732,13 +795,14 @@ const itemsWithUploadedTitleCount = computed((): number => {
 const enrollmentMilestones = computed((): boolean[] => {
     const cur = Number.parseInt(activeStep.value, 10) || 1;
     const done1 = step1Committed.value && pcdDocsComplete.value;
-    const done2 = cur >= 3;
-    const done3 = step3Committed.value;
-    const done4 = cur >= 5;
-    const done5 = pendingRequiredDocs.value.length === 0;
-    const done6 = props.application.status !== 'rascunho';
+    const done2 = step2Committed.value;
+    const done3 = cur >= 4;
+    const done4 = step3Committed.value;
+    const done5 = cur >= 6;
+    const done6 = pendingRequiredDocs.value.length === 0;
+    const done7 = props.application.status !== 'rascunho';
 
-    return [done1, done2, done3, done4, done5, done6];
+    return [done1, done2, done3, done4, done5, done6, done7];
 });
 
 const completedMilestoneCount = computed(
@@ -746,7 +810,7 @@ const completedMilestoneCount = computed(
 );
 
 const enrollmentProgressPercent = computed(() =>
-    Math.round((completedMilestoneCount.value / 6) * 100),
+    Math.round((completedMilestoneCount.value / 7) * 100),
 );
 
 const hasStartedEnrollment = computed(
@@ -761,7 +825,7 @@ const stepNavigatorStates = computed(
         const m = enrollmentMilestones.value;
         const out: Record<string, 'done' | 'current' | 'upcoming'> = {};
 
-        for (let i = 1; i <= 6; i++) {
+        for (let i = 1; i <= 7; i++) {
             const key = String(i);
 
             if (i === cur) {
@@ -823,7 +887,7 @@ const deadlineHint = computed((): string | undefined => {
 });
 
 const isSavingEnrollment = computed(
-    () => stepOneForm.processing || stepThreeForm.processing,
+    () => stepOneForm.processing || stepTwoForm.processing || stepThreeForm.processing,
 );
 
 const showFinalizeEnrollmentReminder = computed(
@@ -863,7 +927,7 @@ function formatDate(dateStr: string | null | undefined): string {
                 :deadline-text="deadlineDisplay"
                 :deadline-hint="deadlineHint"
                 :completed-steps="completedMilestoneCount"
-                :total-steps="5"
+                :total-steps="6"
                 :edital-url="
                     application.selection_process?.edital_download_url ?? null
                 "
@@ -1102,8 +1166,138 @@ function formatDate(dateStr: string | null | undefined): string {
                             </div>
                         </StepPanel>
 
-                        <!-- Etapa 2: Dados pessoais -->
+                        <!-- Etapa 2: Vínculo empregatício -->
                         <StepPanel value="2">
+                            <div class="py-4">
+                                <div class="mb-5 flex items-center gap-2">
+                                    <Briefcase
+                                        :size="18"
+                                        class="text-primary"
+                                    />
+                                    <h3 class="text-base font-semibold">
+                                        Vínculo empregatício
+                                    </h3>
+                                </div>
+                                <p class="mb-4 text-sm text-muted-foreground">
+                                    Conforme item 4.5 do edital, até 20% das
+                                    vagas são destinadas a candidatos sem
+                                    vínculo empregatício. Informe se deseja
+                                    concorrer a essas vagas.
+                                </p>
+
+                                <div
+                                    class="rounded-xl border border-border bg-muted/15 p-4"
+                                >
+                                    <p
+                                        class="text-sm font-medium text-foreground"
+                                    >
+                                        Deseja concorrer às vagas destinadas a
+                                        candidatos sem vínculo empregatício?
+                                    </p>
+                                    <div class="mt-4 flex flex-wrap gap-6">
+                                        <label
+                                            class="flex cursor-pointer items-center gap-2 text-sm"
+                                        >
+                                            <input
+                                                v-model="
+                                                    stepTwoForm.payload
+                                                        .concorre_vagas_sem_vinculo
+                                                "
+                                                type="radio"
+                                                class="h-4 w-4 accent-primary"
+                                                :value="false"
+                                                :disabled="isFinalized"
+                                            />
+                                            Não
+                                        </label>
+                                        <label
+                                            class="flex cursor-pointer items-center gap-2 text-sm"
+                                        >
+                                            <input
+                                                v-model="
+                                                    stepTwoForm.payload
+                                                        .concorre_vagas_sem_vinculo
+                                                "
+                                                type="radio"
+                                                class="h-4 w-4 accent-primary"
+                                                :value="true"
+                                                :disabled="isFinalized"
+                                            />
+                                            Sim
+                                        </label>
+                                    </div>
+
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <Button
+                                            label="Salvar minha opção"
+                                            icon="pi pi-save"
+                                            size="small"
+                                            :loading="stepTwoForm.processing"
+                                            :disabled="isFinalized"
+                                            @click="saveVinculoStep"
+                                        />
+                                    </div>
+                                    <small
+                                        v-if="
+                                            stepTwoForm.errors[
+                                                'payload.concorre_vagas_sem_vinculo'
+                                            ]
+                                        "
+                                        class="mt-2 block text-red-500"
+                                    >
+                                        {{
+                                            stepTwoForm.errors[
+                                                'payload.concorre_vagas_sem_vinculo'
+                                            ]
+                                        }}
+                                    </small>
+                                </div>
+
+                                <div
+                                    class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                                >
+                                    <div
+                                        v-if="!step2Committed && !isFinalized"
+                                        class="min-w-0 flex-1"
+                                    >
+                                        <Message
+                                            severity="info"
+                                            :closable="false"
+                                        >
+                                            Salve <strong>Sim</strong> ou
+                                            <strong>Não</strong> antes de
+                                            continuar.
+                                        </Message>
+                                    </div>
+                                    <div
+                                        class="flex w-full shrink-0 justify-between gap-2 sm:ml-auto sm:w-auto"
+                                    >
+                                        <Button
+                                            label="Anterior"
+                                            icon="pi pi-arrow-left"
+                                            severity="secondary"
+                                            outlined
+                                            size="small"
+                                            @click="activeStep = '1'"
+                                        />
+                                        <Button
+                                            label="Continuar"
+                                            icon="pi pi-arrow-right"
+                                            icon-pos="right"
+                                            size="small"
+                                            :disabled="
+                                                isFinalized ||
+                                                !canLeaveVinculoStep
+                                            "
+                                            @click="activeStep = '3'"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </StepPanel>
+
+                        <!-- Etapa 3: Dados pessoais -->
+                        <StepPanel value="3">
                             <div class="py-2">
                                 <CandidatePersonalDataPanel
                                     ref="personalDataPanelRef"
@@ -1111,7 +1305,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                     :ufs="props.ufs"
                                     :must-verify-email="props.mustVerifyEmail"
                                     :is-finalized="isFinalized"
-                                    :enrollment-step="2"
+                                    :enrollment-step="3"
                                 />
 
                                 <div
@@ -1123,7 +1317,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         severity="secondary"
                                         outlined
                                         size="small"
-                                        @click="activeStep = '1'"
+                                        @click="activeStep = '2'"
                                     />
                                     <Button
                                         label="Próximo"
@@ -1131,14 +1325,14 @@ function formatDate(dateStr: string | null | undefined): string {
                                         icon-pos="right"
                                         size="small"
                                         :disabled="isFinalized"
-                                        @click="activeStep = '3'"
+                                        @click="activeStep = '4'"
                                     />
                                 </div>
                             </div>
                         </StepPanel>
 
-                        <!-- Etapa 3: Linha de Pesquisa e Orientador -->
-                        <StepPanel value="3">
+                        <!-- Etapa 4: Linha de Pesquisa e Orientador -->
+                        <StepPanel value="4">
                             <div class="py-2">
                                 <div class="mb-5 flex items-center gap-2">
                                     <GraduationCap
@@ -1420,7 +1614,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         severity="secondary"
                                         outlined
                                         size="small"
-                                        @click="activeStep = '2'"
+                                        @click="activeStep = '3'"
                                     />
                                     <Button
                                         label="Próximo"
@@ -1431,15 +1625,15 @@ function formatDate(dateStr: string | null | undefined): string {
                                             isFinalized ||
                                             !canLeaveResearchLineStep
                                         "
-                                        @click="activeStep = '4'"
+                                        @click="activeStep = '5'"
                                     />
                                     </div>
                                 </div>
                             </div>
                         </StepPanel>
 
-                        <!-- Etapa 4: Títulos para pontuação -->
-                        <StepPanel value="4">
+                        <!-- Etapa 5: Títulos para pontuação -->
+                        <StepPanel value="5">
                             <div class="py-2">
                                 <div class="mb-5 flex items-start gap-3">
                                     <div
@@ -1508,7 +1702,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         severity="secondary"
                                         outlined
                                         size="small"
-                                        @click="goToEnrollmentStep('3')"
+                                        @click="goToEnrollmentStep('4')"
                                     />
                                     <Button
                                         label="Próximo"
@@ -1516,14 +1710,14 @@ function formatDate(dateStr: string | null | undefined): string {
                                         icon-pos="right"
                                         size="small"
                                         :disabled="isFinalized"
-                                        @click="goToEnrollmentStep('5')"
+                                        @click="goToEnrollmentStep('6')"
                                     />
                                 </div>
                             </div>
                         </StepPanel>
 
-                        <!-- Etapa 5: Documentos obrigatórios -->
-                        <StepPanel value="5">
+                        <!-- Etapa 6: Documentos obrigatórios -->
+                        <StepPanel value="6">
                             <div class="py-4">
                                 <div class="mb-2 flex items-center gap-2">
                                     <FileText :size="18" class="text-primary" />
@@ -1587,21 +1781,21 @@ function formatDate(dateStr: string | null | undefined): string {
                                         severity="secondary"
                                         outlined
                                         size="small"
-                                        @click="goToEnrollmentStep('4')"
+                                        @click="goToEnrollmentStep('5')"
                                     />
                                     <Button
                                         label="Revisar inscrição"
                                         icon="pi pi-arrow-right"
                                         icon-pos="right"
                                         size="small"
-                                        @click="goToEnrollmentStep('6')"
+                                        @click="goToEnrollmentStep('7')"
                                     />
                                 </div>
                             </div>
                         </StepPanel>
 
-                        <!-- Etapa 6: Revisão e envio -->
-                        <StepPanel value="6">
+                        <!-- Etapa 7: Revisão e envio -->
+                        <StepPanel value="7">
                             <div class="py-4">
                                 <div class="mb-5 flex items-center gap-2">
                                     <CheckCircle2
@@ -1660,7 +1854,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                     size="small"
                                                     severity="warn"
                                                     class="mt-3"
-                                                    @click="activeStep = '5'"
+                                                    @click="activeStep = '6'"
                                                 />
                                             </div>
                                         </div>
@@ -1763,6 +1957,29 @@ function formatDate(dateStr: string | null | undefined): string {
                                     <div
                                         class="rounded-xl border border-border p-4"
                                     >
+                                        <p class="text-sm font-semibold">
+                                            Vínculo empregatício
+                                        </p>
+                                        <p
+                                            class="mt-1 text-sm text-muted-foreground"
+                                        >
+                                            <span v-if="concorreVinculoAtivo">
+                                                Você optou por
+                                                <strong>concorrer</strong> às
+                                                vagas sem vínculo empregatício.
+                                            </span>
+                                            <span v-else>
+                                                Você optou por
+                                                <strong>não concorrer</strong>
+                                                às vagas sem vínculo
+                                                empregatício.
+                                            </span>
+                                        </p>
+                                    </div>
+
+                                    <div
+                                        class="rounded-xl border border-border p-4"
+                                    >
                                         <div
                                             class="mb-3 flex items-center justify-between"
                                         >
@@ -1786,7 +2003,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                     icon="pi pi-arrow-left"
                                                     text
                                                     size="small"
-                                                    @click="activeStep = '2'"
+                                                    @click="activeStep = '3'"
                                                 />
                                             </div>
                                         </div>
@@ -1823,7 +2040,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 icon="pi pi-pencil"
                                                 text
                                                 size="small"
-                                                @click="activeStep = '3'"
+                                                @click="activeStep = '4'"
                                             />
                                         </div>
                                         <div
@@ -1865,7 +2082,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 icon="pi pi-pencil"
                                                 text
                                                 size="small"
-                                                @click="activeStep = '4'"
+                                                @click="activeStep = '5'"
                                             />
                                         </div>
                                         <div
@@ -1922,7 +2139,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 icon="pi pi-upload"
                                                 text
                                                 size="small"
-                                                @click="activeStep = '5'"
+                                                @click="activeStep = '6'"
                                             />
                                         </div>
                                         <div
@@ -2087,7 +2304,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 severity="secondary"
                                                 outlined
                                                 size="small"
-                                                @click="activeStep = '5'"
+                                                @click="activeStep = '6'"
                                             />
                                             <Button
                                                 label="Finalizar inscrição"
@@ -2103,7 +2320,14 @@ function formatDate(dateStr: string | null | undefined): string {
                                             class="mt-2 text-right text-xs text-muted-foreground"
                                         >
                                             <span
-                                                v-if="
+                                                v-if="!step2Committed"
+                                            >
+                                                Responda a pergunta sobre
+                                                vínculo empregatício para
+                                                continuar.
+                                            </span>
+                                            <span
+                                                v-else-if="
                                                     pendingRequiredDocs.length >
                                                     0
                                                 "

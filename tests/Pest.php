@@ -101,5 +101,6 @@ function validCandidateRegistrationPayload(string $email): array
         'telefone' => '(11) 98888-7777',
         'telefone_fixo' => '',
         'foto' => UploadedFile::fake()->image('avatar.jpg', 100, 100),
+        'turnstile_token' => 'valid-test-token',
     ];
 }
