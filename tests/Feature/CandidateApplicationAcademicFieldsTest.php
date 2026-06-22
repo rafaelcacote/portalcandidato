@@ -31,7 +31,9 @@ test('candidate can save research line and advisor on step 3', function () {
         ->post(route('candidate.applications.step.store', ['application' => $application, 'step' => 3]), [
             'payload' => $payload,
         ])
-        ->assertRedirect();
+        ->assertRedirect(
+            route('candidate.applications.show', $application).'?step=4',
+        );
 
     $application->refresh();
 
@@ -55,6 +57,7 @@ test('candidate cannot submit without research line step', function () {
         'status' => 'rascunho',
         'dados_inscricao' => [
             'step_1' => ['concorre_vagas_pcd' => false],
+            'step_2' => ['concorre_vagas_sem_vinculo' => false],
         ],
     ]);
 

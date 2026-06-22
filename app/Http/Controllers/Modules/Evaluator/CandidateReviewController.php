@@ -7,6 +7,7 @@ use App\Http\Requests\Modules\Evaluator\DecideApplicationDocumentRequest;
 use App\Mail\DocumentoRecusado;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\Modules\Candidate\Models\ApplicationDocument;
+use App\Modules\Candidate\Support\EmploymentRelationshipCatalog;
 use App\Modules\Candidate\Support\ResearchLineCatalog;
 use App\Modules\Evaluator\Services\DocumentValidationScoringService;
 use App\Modules\Evaluator\Support\CandidatePhotoUrl;
@@ -41,6 +42,12 @@ class CandidateReviewController extends Controller
                 CandidatePhotoUrl::forApplication($application),
             );
         }
+
+        $step2 = $application->dados_inscricao['step_2'] ?? null;
+        $application->setAttribute(
+            'employment_relationship_summary',
+            EmploymentRelationshipCatalog::summaryFromStepData(is_array($step2) ? $step2 : null),
+        );
 
         $step3 = $application->dados_inscricao['step_3'] ?? null;
         $application->setAttribute(

@@ -57,8 +57,13 @@ class ApplicationWizardController extends Controller
             InertiaToast::success("Etapa {$step} salva.");
         }
 
+        $uiStep = match ($step) {
+            3 => 4,
+            default => $step,
+        };
+
         return redirect()->to(
-            route('candidate.applications.show', $application).'?step='.$step
+            route('candidate.applications.show', $application).'?step='.$uiStep
         );
     }
 

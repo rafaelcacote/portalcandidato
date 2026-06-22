@@ -33,6 +33,13 @@ class StoreApplicationStepRequest extends FormRequest
             ];
         }
 
+        if ($step === 2) {
+            return [
+                'payload' => ['required', 'array'],
+                'payload.concorre_vagas_sem_vinculo' => ['required', 'boolean'],
+            ];
+        }
+
         if ($step === 3) {
             return [
                 'payload' => ['required', 'array'],

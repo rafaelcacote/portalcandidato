@@ -58,6 +58,7 @@ test('candidate cannot submit when concorre_vagas_pcd is true without both pcd d
         'status' => 'rascunho',
         'dados_inscricao' => [
             'step_1' => ['concorre_vagas_pcd' => true],
+            'step_2' => ['concorre_vagas_sem_vinculo' => false],
             'step_3' => validApplicationStep3Payload(),
         ],
     ]);
@@ -88,6 +89,7 @@ test('candidate can submit when concorre_vagas_pcd is true and both pcd document
         'status' => 'rascunho',
         'dados_inscricao' => [
             'step_1' => ['concorre_vagas_pcd' => true],
+            'step_2' => ['concorre_vagas_sem_vinculo' => false],
             'step_3' => validApplicationStep3Payload(),
         ],
     ]);

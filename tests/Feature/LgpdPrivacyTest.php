@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -34,6 +35,9 @@ test('registration stores lgpd consent timestamp on account creation', function 
 
     Notification::fake();
     Storage::fake('public');
+    Http::fake([
+        'challenges.cloudflare.com/*' => Http::response(['success' => true], 200),
+    ]);
 
     $email = 'lgpd-consent-'.uniqid().'@example.com';
     $payload = validCandidateRegistrationPayload($email);

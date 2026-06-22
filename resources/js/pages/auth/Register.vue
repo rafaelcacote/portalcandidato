@@ -9,11 +9,12 @@ import {
     Loader2,
     Mail,
     MapPin,
+    ShieldCheck,
     UploadCloud,
 } from 'lucide-vue-next';
 import Button from 'primevue/button';
 import type { Component, HTMLAttributes } from 'vue';
-import { computed, nextTick, onUnmounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import CandidateHeader from '@/components/Candidate/CandidateHeader.vue';
 import InputError from '@/components/InputError.vue';
 import LgpdDataProtectionNotice from '@/components/Lgpd/LgpdDataProtectionNotice.vue';
@@ -131,6 +132,7 @@ const stepFieldsMap: Record<StepId, string[]> = {
         'email_confirmation',
         'password',
         'password_confirmation',
+        'turnstile_token',
     ],
 };
 
@@ -239,6 +241,7 @@ const form = useForm({
     telefone: '',
     telefone_fixo: '',
     foto: null as File | null,
+    turnstile_token: '',
 });
 
 const blurTouched = ref<Record<string, boolean>>({});
@@ -251,6 +254,84 @@ const cepLookupLoading = ref(false);
 const cepLookupMessage = ref<string | null>(null);
 const fotoPreviewUrl = ref<string | null>(null);
 const privacyPolicyDialogOpen = ref(false);
+
+// ── Cloudflare Turnstile ─────────────────────────────────────────────────────
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
+const turnstileWidgetId = ref<string | null>(null);
+const turnstileContainerId = 'turnstile-container';
+
+declare global {
+    interface Window {
+        turnstile?: {
+            render: (
+                container: string | HTMLElement,
+                options: Record<string, unknown>,
+            ) => string;
+            reset: (widgetId: string) => void;
+            remove: (widgetId: string) => void;
+        };
+        onTurnstileLoad?: () => void;
+    }
+}
+
+function renderTurnstile(): void {
+    if (!window.turnstile) {
+        return;
+    }
+
+    const container = document.getElementById(turnstileContainerId);
+
+    if (!container) {
+        return;
+    }
+
+    if (turnstileWidgetId.value !== null) {
+        window.turnstile.remove(turnstileWidgetId.value);
+        turnstileWidgetId.value = null;
+    }
+
+    turnstileWidgetId.value = window.turnstile.render(container, {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: (token: string) => {
+            form.turnstile_token = token;
+            touch('turnstile_token');
+        },
+        'expired-callback': () => {
+            form.turnstile_token = '';
+        },
+        'error-callback': () => {
+            form.turnstile_token = '';
+        },
+        theme: 'auto',
+        language: 'pt-BR',
+    });
+}
+
+onMounted(() => {
+    window.onTurnstileLoad = renderTurnstile;
+
+    if (window.turnstile) {
+        renderTurnstile();
+    } else if (!document.getElementById('turnstile-script')) {
+        const script = document.createElement('script');
+        script.id = 'turnstile-script';
+        script.src =
+            'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit';
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    }
+});
+
+watch(
+    () => activeStep.value,
+    (step) => {
+        if (step === 5) {
+            nextTick(renderTurnstile);
+        }
+    },
+);
 
 function revokeFotoPreview(): void {
     if (fotoPreviewUrl.value !== null) {
@@ -499,7 +580,18 @@ function submit(): void {
         return;
     }
 
-    form.post(store.url());
+    form.post(store.url(), {
+        onError: () => {
+            if (
+                form.errors.turnstile_token &&
+                turnstileWidgetId.value !== null &&
+                window.turnstile
+            ) {
+                form.turnstile_token = '';
+                window.turnstile.reset(turnstileWidgetId.value);
+            }
+        },
+    });
 }
 
 const cpfHint = computed((): string | null => {
@@ -1374,6 +1466,27 @@ const cpfHint = computed((): string | null => {
                                     :message="form.errors.password_confirmation"
                                 />
                             </div>
+                        </div>
+
+                        <!-- Verificação Turnstile -->
+                        <div class="grid gap-2 pt-1">
+                            <div
+                                class="flex items-center gap-2 text-xs font-medium text-muted-foreground"
+                            >
+                                <ShieldCheck
+                                    :size="14"
+                                    class="shrink-0 text-primary"
+                                    aria-hidden="true"
+                                />
+                                Verificação de segurança
+                            </div>
+                            <div
+                                :id="turnstileContainerId"
+                                class="overflow-hidden rounded-lg"
+                            />
+                            <InputError
+                                :message="form.errors.turnstile_token"
+                            />
                         </div>
                     </CardContent>
                 </Card>

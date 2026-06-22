@@ -75,6 +75,10 @@ const props = defineProps<{
             linha_pesquisa_label: string;
             orientador: string;
         } | null;
+        employment_relationship_summary?: {
+            concorre_vagas_sem_vinculo: boolean;
+            resposta_label: string;
+        } | null;
     };
     can_evaluate: boolean;
 }>();

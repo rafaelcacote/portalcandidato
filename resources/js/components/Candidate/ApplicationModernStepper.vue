@@ -2,6 +2,7 @@
 import {
     Accessibility,
     Award,
+    Briefcase,
     CheckCircle2,
     FileText,
     GraduationCap,
@@ -22,15 +23,16 @@ const props = defineProps<{
 
 const steps: Array<{ value: string; label: string; icon: Component }> = [
     { value: '1', label: 'Ações afirmativas', icon: Accessibility },
-    { value: '2', label: 'Dados pessoais', icon: User },
+    { value: '2', label: 'Vínculo empregatício', icon: Briefcase },
+    { value: '3', label: 'Dados pessoais', icon: User },
     {
-        value: '3',
+        value: '4',
         label: 'Linha de Pesquisa e Orientador',
         icon: GraduationCap,
     },
-    { value: '4', label: 'Formação e títulos', icon: Award },
-    { value: '5', label: 'Documentos obrigatórios', icon: FileText },
-    { value: '6', label: 'Revisão e envio', icon: CheckCircle2 },
+    { value: '5', label: 'Formação e títulos', icon: Award },
+    { value: '6', label: 'Documentos obrigatórios', icon: FileText },
+    { value: '7', label: 'Revisão e envio', icon: CheckCircle2 },
 ];
 
 function stepValueStr(value: string | number): string {

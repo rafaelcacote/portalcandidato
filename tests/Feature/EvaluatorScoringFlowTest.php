@@ -134,3 +134,36 @@ test('evaluator candidate review includes research line and advisor summary', fu
                 'Linha de Pesquisa 1 - Tecnologias Sociais e Educativas como Instrumentos para Promoção da Saúde',
             ));
 });
+
+test('evaluator candidate review includes employment relationship summary', function (): void {
+    Role::findOrCreate('candidato', 'web');
+    Role::findOrCreate('avaliador', 'web');
+
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    $evaluator = User::factory()->create(['email_verified_at' => now()]);
+    $evaluator->assignRole('avaliador');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'PS',
+        'descricao' => 'D',
+        'status' => 'ativo',
+    ]);
+
+    $application = Application::query()->create(evaluableApplicationAttributes([
+        'user_id' => $candidate->id,
+        'selection_process_id' => $process->id,
+        'status' => 'em_analise',
+        'dados_inscricao' => [
+            'step_2' => ['concorre_vagas_sem_vinculo' => true],
+        ],
+    ]));
+
+    $this->actingAs($evaluator)
+        ->get(route('evaluator.candidates.show', $application))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('application.employment_relationship_summary.concorre_vagas_sem_vinculo', true)
+            ->where('application.employment_relationship_summary.resposta_label', 'Sim'));
+});

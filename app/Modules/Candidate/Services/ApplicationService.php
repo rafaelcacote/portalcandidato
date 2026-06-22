@@ -45,6 +45,7 @@ class ApplicationService
     private function assertSubmitRequirements(Application $application): void
     {
         $data = $application->dados_inscricao ?? [];
+        $this->assertEmploymentStepPresent($data);
         $this->assertAcademicFieldsPresent($data);
 
         $declaraPcd = ($data['step_1']['concorre_vagas_pcd'] ?? false) === true;
@@ -66,6 +67,18 @@ class ApplicationService
                     'submit' => 'Envie a declaração PcD e o laudo médico ou carteira PcD antes de finalizar a inscrição.',
                 ]);
             }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function assertEmploymentStepPresent(array $data): void
+    {
+        if (! array_key_exists('step_2', $data)) {
+            throw ValidationException::withMessages([
+                'submit' => 'Responda a pergunta sobre vínculo empregatício antes de finalizar a inscrição.',
+            ]);
         }
     }
 

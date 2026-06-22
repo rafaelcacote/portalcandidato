@@ -4,6 +4,7 @@ namespace App\Concerns;
 
 use App\Models\User;
 use App\Rules\Cpf;
+use App\Rules\Turnstile;
 use App\Support\BrazilianStates;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
@@ -41,6 +42,7 @@ trait CandidateRegistrationValidationRules
             'telefone' => ['required', 'string', 'max:25'],
             'telefone_fixo' => ['nullable', 'string', 'max:25'],
             'foto' => ['required', 'image', 'max:5120'],
+            'turnstile_token' => ['required', 'string', new Turnstile],
         ];
     }
 }
