@@ -40,6 +40,7 @@ class ResearchLineCatalog
                 'Dra. Amélia Nunes Sicsú',
                 'Dra. Elielza Guerreiro Menezes',
                 'Dra. Flávia Regina Ramos',
+                'Dra. Jacqueline de Almeida Gonçalves Sachett',
                 'Dra. Lihsieh Marrero',
                 'Dra. Kassia Janara Veras Lima',
                 'Dr. Wagner Ferreira Monteiro',
