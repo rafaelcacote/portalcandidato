@@ -52,7 +52,10 @@ class CandidateReviewController extends Controller
         $step3 = $application->dados_inscricao['step_3'] ?? null;
         $application->setAttribute(
             'research_line_summary',
-            ResearchLineCatalog::summaryFromStepData(is_array($step3) ? $step3 : null),
+            ResearchLineCatalog::summaryFromStepData(
+                is_array($step3) ? $step3 : null,
+                $application->selection_process_id,
+            ),
         );
 
         return Inertia::render('Evaluator/Candidates/Show', [

@@ -87,7 +87,7 @@ class ApplicationController extends Controller
             'appealStages' => $this->appealService->listStagesForApplication($application),
             'appeals' => $this->appealService->listAppealsForApplication($application),
             'hasOpenRecursoWindow' => $this->appealService->hasOpenRecursoWindow($application),
-            'researchLineOptions' => ResearchLineCatalog::forFrontend(),
+            'researchLineOptions' => ResearchLineCatalog::forFrontend($application->selection_process_id),
         ]);
     }
 }

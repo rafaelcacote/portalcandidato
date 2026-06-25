@@ -9,70 +9,63 @@ class ResearchLineCatalog
     public const LINHA_2 = 'linha_2';
 
     /**
+     * @return array{lines: array<string, string>, advisors: array<string, list<string>>}
+     */
+    public static function catalogForProcess(?int $selectionProcessId): array
+    {
+        $byProcess = config('research_lines.by_process_id', []);
+
+        if ($selectionProcessId !== null && isset($byProcess[$selectionProcessId])) {
+            return $byProcess[$selectionProcessId];
+        }
+
+        return config('research_lines.default', [
+            'lines' => [],
+            'advisors' => [],
+        ]);
+    }
+
+    /**
      * @return array<string, string>
      */
-    public static function lines(): array
+    public static function lines(?int $selectionProcessId = null): array
     {
-        return [
-            self::LINHA_1 => 'Linha de Pesquisa 1 - Tecnologias Sociais e Educativas como Instrumentos para Promoção da Saúde',
-            self::LINHA_2 => 'Linha de Pesquisa 2 - Tecnologias de Cuidado e de Gestão em Enfermagem e Saúde',
-        ];
+        return self::catalogForProcess($selectionProcessId)['lines'];
     }
 
     /**
      * @return array<string, list<string>>
      */
-    public static function advisorsByLine(): array
+    public static function advisorsByLine(?int $selectionProcessId = null): array
     {
-        return [
-            self::LINHA_1 => [
-                'Dr. Aldalice Aguiar de Souza',
-                'Dr. Altair Seabra de Farias',
-                'Dra. Cleisiane Xavier Diniz',
-                'Dr. Darlisom Sousa Ferreira',
-                'Dra. Elizabeth Teixeira',
-                'Dra. Giane Zupellari dos Santos',
-                'Dra. Lise Maria Carvalho Mendes',
-                'Dra. Maria de Nazaré de Souza Ribeiro',
-                'Dra. Thalyta Mariany Rêgo Lopes Ueno',
-            ],
-            self::LINHA_2 => [
-                'Dra. Amélia Nunes Sicsú',
-                'Dra. Elielza Guerreiro Menezes',
-                'Dra. Flávia Regina Ramos',
-                'Dra. Jacqueline de Almeida Gonçalves Sachett',
-                'Dra. Lihsieh Marrero',
-                'Dra. Kassia Janara Veras Lima',
-                'Dr. Wagner Ferreira Monteiro',
-            ],
-        ];
+        return self::catalogForProcess($selectionProcessId)['advisors'];
     }
 
     /**
      * @return list<string>
      */
-    public static function lineKeys(): array
+    public static function lineKeys(?int $selectionProcessId = null): array
     {
-        return array_keys(self::lines());
+        return array_keys(self::lines($selectionProcessId));
     }
 
-    public static function lineLabel(string $lineKey): ?string
+    public static function lineLabel(string $lineKey, ?int $selectionProcessId = null): ?string
     {
-        return self::lines()[$lineKey] ?? null;
+        return self::lines($selectionProcessId)[$lineKey] ?? null;
     }
 
-    public static function isValidLine(string $lineKey): bool
+    public static function isValidLine(string $lineKey, ?int $selectionProcessId = null): bool
     {
-        return array_key_exists($lineKey, self::lines());
+        return array_key_exists($lineKey, self::lines($selectionProcessId));
     }
 
-    public static function isValidAdvisor(string $lineKey, string $advisor): bool
+    public static function isValidAdvisor(string $lineKey, string $advisor, ?int $selectionProcessId = null): bool
     {
-        if (! self::isValidLine($lineKey)) {
+        if (! self::isValidLine($lineKey, $selectionProcessId)) {
             return false;
         }
 
-        return in_array($advisor, self::advisorsByLine()[$lineKey], true);
+        return in_array($advisor, self::advisorsByLine($selectionProcessId)[$lineKey], true);
     }
 
     /**
@@ -83,7 +76,7 @@ class ResearchLineCatalog
      *     orientador: string
      * }|null
      */
-    public static function summaryFromStepData(?array $step3): ?array
+    public static function summaryFromStepData(?array $step3, ?int $selectionProcessId = null): ?array
     {
         if ($step3 === null) {
             return null;
@@ -98,7 +91,7 @@ class ResearchLineCatalog
 
         return [
             'linha_pesquisa' => $linhaPesquisa,
-            'linha_pesquisa_label' => self::lineLabel($linhaPesquisa) ?? $linhaPesquisa,
+            'linha_pesquisa_label' => self::lineLabel($linhaPesquisa, $selectionProcessId) ?? $linhaPesquisa,
             'orientador' => $orientador,
         ];
     }
@@ -109,17 +102,17 @@ class ResearchLineCatalog
      *     advisors: array<string, list<string>>
      * }
      */
-    public static function forFrontend(): array
+    public static function forFrontend(?int $selectionProcessId = null): array
     {
         return [
-            'lines' => collect(self::lines())
+            'lines' => collect(self::lines($selectionProcessId))
                 ->map(fn (string $label, string $value): array => [
                     'value' => $value,
                     'label' => $label,
                 ])
                 ->values()
                 ->all(),
-            'advisors' => self::advisorsByLine(),
+            'advisors' => self::advisorsByLine($selectionProcessId),
         ];
     }
 }
