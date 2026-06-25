@@ -46,7 +46,7 @@ class ApplicationService
     {
         $data = $application->dados_inscricao ?? [];
         $this->assertEmploymentStepPresent($data);
-        $this->assertAcademicFieldsPresent($data);
+        $this->assertAcademicFieldsPresent($application, $data);
 
         $declaraPcd = ($data['step_1']['concorre_vagas_pcd'] ?? false) === true;
         if (! $declaraPcd) {
@@ -85,7 +85,7 @@ class ApplicationService
     /**
      * @param  array<string, mixed>  $data
      */
-    private function assertAcademicFieldsPresent(array $data): void
+    private function assertAcademicFieldsPresent(Application $application, array $data): void
     {
         $step3 = is_array($data['step_3'] ?? null) ? $data['step_3'] : [];
         $linhaPesquisa = trim((string) ($step3['linha_pesquisa'] ?? ''));
@@ -97,7 +97,7 @@ class ApplicationService
             ]);
         }
 
-        if (! ResearchLineCatalog::isValidAdvisor($linhaPesquisa, $orientador)) {
+        if (! ResearchLineCatalog::isValidAdvisor($linhaPesquisa, $orientador, $application->selection_process_id)) {
             throw ValidationException::withMessages([
                 'submit' => 'A linha de pesquisa e o orientador informados não são válidos. Revise a etapa correspondente.',
             ]);

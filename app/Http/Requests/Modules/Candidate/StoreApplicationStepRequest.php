@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Modules\Candidate;
 
+use App\Models\Modules\Candidate\Models\Application;
 use App\Modules\Candidate\Support\ResearchLineCatalog;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -41,9 +42,11 @@ class StoreApplicationStepRequest extends FormRequest
         }
 
         if ($step === 3) {
+            $selectionProcessId = $this->application()?->selection_process_id;
+
             return [
                 'payload' => ['required', 'array'],
-                'payload.linha_pesquisa' => ['required', 'string', Rule::in(ResearchLineCatalog::lineKeys())],
+                'payload.linha_pesquisa' => ['required', 'string', Rule::in(ResearchLineCatalog::lineKeys($selectionProcessId))],
                 'payload.orientador' => ['required', 'string', 'max:255'],
             ];
         }
@@ -69,12 +72,21 @@ class StoreApplicationStepRequest extends FormRequest
                 return;
             }
 
-            if (! ResearchLineCatalog::isValidAdvisor($linhaPesquisa, $orientador)) {
+            $selectionProcessId = $this->application()?->selection_process_id;
+
+            if (! ResearchLineCatalog::isValidAdvisor($linhaPesquisa, $orientador, $selectionProcessId)) {
                 $validator->errors()->add(
                     'payload.orientador',
                     'O orientador selecionado não é válido para a linha de pesquisa escolhida.',
                 );
             }
         });
+    }
+
+    private function application(): ?Application
+    {
+        $application = $this->route('application');
+
+        return $application instanceof Application ? $application : null;
     }
 }
