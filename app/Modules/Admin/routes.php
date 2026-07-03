@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Modules\Admin\AdminDashboardController;
 use App\Http\Controllers\Modules\Admin\ApplicationController;
+use App\Http\Controllers\Modules\Admin\CandidateController;
 use App\Http\Controllers\Modules\Admin\EvaluatorController;
 use App\Http\Controllers\Modules\Admin\ProcessApplicationAppealController;
 use App\Http\Controllers\Modules\Admin\ProcessApplicationFieldController;
@@ -23,6 +24,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])
     ->group(function (): void {
         Route::get('dashboard', AdminDashboardController::class)->name('dashboard');
         Route::get('applications', [ApplicationController::class, 'index'])->name('applications.index');
+        Route::get('candidates', [CandidateController::class, 'index'])->name('candidates.index');
+        Route::get('candidates/{candidate}', [CandidateController::class, 'show'])->name('candidates.show');
+        Route::get('candidates/{candidate}/photo', [CandidateController::class, 'viewPhoto'])->name('candidates.photo');
         Route::get('applications/{application}/photo', [ApplicationController::class, 'viewPhoto'])->name('applications.photo');
         Route::get('processes/types', [ProcessTypeController::class, 'index'])
             ->name('processes.types.index');

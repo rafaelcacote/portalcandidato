@@ -17,17 +17,30 @@ import {
     maskCpf,
 } from '@/components/Candidate/profileTypes';
 import type { CandidateProfileUser } from '@/components/Candidate/profileTypes';
+import { formatCpfDisplay } from '@/lib/brDocuments';
 
-const props = defineProps<{
-    user: CandidateProfileUser | null;
-}>();
+const props = withDefaults(
+    defineProps<{
+        user: CandidateProfileUser | null;
+        maskSensitive?: boolean;
+    }>(),
+    {
+        maskSensitive: true,
+    },
+);
 
 const fields = computed(() => {
     const u = props.user;
+    const cpfValue = asText(u?.cpf);
 
     return {
         name: asText(u?.name),
-        cpf: maskCpf(u?.cpf),
+        cpf:
+            cpfValue === null
+                ? null
+                : props.maskSensitive
+                  ? maskCpf(cpfValue)
+                  : formatCpfDisplay(cpfValue),
         nascimento: formatDateBR(u?.data_nascimento),
         sexo: asText(u?.sexo),
         naturalidade: asText(u?.naturalidade),
@@ -55,7 +68,9 @@ const fields = computed(() => {
                 :value="fields.cpf"
                 :icon="IdCard"
                 mono
-                hint="Mascarado por privacidade"
+                :hint="
+                    maskSensitive ? 'Mascarado por privacidade' : undefined
+                "
             />
             <CandidateReadonlyField
                 label="Data de nascimento"

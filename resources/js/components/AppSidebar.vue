@@ -42,6 +42,7 @@ import { getInitials } from '@/composables/useInitials';
 import { useUserAvatar } from '@/composables/useUserAvatar';
 import { dashboard } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
+import { index as adminCandidatesIndex } from '@/routes/admin/candidates';
 import { index as adminEvaluatorsIndex } from '@/routes/admin/evaluators';
 import { index as adminProcessesIndex } from '@/routes/admin/processes';
 import { index as adminReportsIndex } from '@/routes/admin/reports';
@@ -131,6 +132,11 @@ const adminNavSections = computed<NavSection[]>(() => [
                 icon: Users,
             },
             {
+                title: 'Candidatos',
+                href: adminCandidatesIndex.url(),
+                icon: UserCircle,
+            },
+            {
                 title: 'Relatórios',
                 href: adminReportsIndex.url(),
                 icon: ClipboardCheck,
@@ -164,6 +170,7 @@ const adminShortcutLinks = computed(() => [
     { title: 'Novo processo', href: adminProcessesIndex.url() },
     { title: 'Tipos de documentos', href: adminDocumentTypesIndex.url() },
     { title: 'Avaliadores', href: adminEvaluatorsIndex.url() },
+    { title: 'Candidatos', href: adminCandidatesIndex.url() },
     { title: 'Relatórios', href: adminReportsIndex.url(), comingSoon: true },
 ]);
 

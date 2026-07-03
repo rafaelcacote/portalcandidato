@@ -16,15 +16,27 @@ import {
 } from '@/components/Candidate/profileTypes';
 import type { CandidateProfileUser } from '@/components/Candidate/profileTypes';
 
-const props = defineProps<{
-    user: CandidateProfileUser | null;
-}>();
+const props = withDefaults(
+    defineProps<{
+        user: CandidateProfileUser | null;
+        maskSensitive?: boolean;
+    }>(),
+    {
+        maskSensitive: true,
+    },
+);
 
 const fields = computed(() => {
     const u = props.user;
+    const identidade = asText(u?.identidade);
 
     return {
-        identidade: maskRg(u?.identidade),
+        identidade:
+            identidade === null
+                ? null
+                : props.maskSensitive
+                  ? maskRg(identidade)
+                  : identidade,
         orgaoEmissor: asText(u?.orgao_emissor),
         identidadeUf: asText(u?.identidade_uf),
         emissao: formatDateBR(u?.identidade_data_emissao),
@@ -45,7 +57,9 @@ const fields = computed(() => {
                 :value="fields.identidade"
                 :icon="Fingerprint"
                 mono
-                hint="Mascarado por privacidade"
+                :hint="
+                    maskSensitive ? 'Mascarado por privacidade' : undefined
+                "
                 class="sm:col-span-2"
             />
             <CandidateReadonlyField
