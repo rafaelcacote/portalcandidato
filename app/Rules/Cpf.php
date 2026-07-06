@@ -23,6 +23,21 @@ class Cpf implements ValidationRule
         return self::digitsAreValid($digits);
     }
 
+    public static function maskForDisplay(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $digits = self::normalizeToDigits($value);
+
+        if (strlen($digits) < 11) {
+            return $value;
+        }
+
+        return substr($digits, 0, 3).'.***.***-'.substr($digits, -2);
+    }
+
     public static function digitsAreValid(string $digits): bool
     {
         if (strlen($digits) !== 11) {
