@@ -140,7 +140,6 @@ const adminNavSections = computed<NavSection[]>(() => [
                 title: 'Relatórios',
                 href: adminReportsIndex.url(),
                 icon: ClipboardCheck,
-                comingSoon: true,
             },
         ],
     },
@@ -171,7 +170,7 @@ const adminShortcutLinks = computed(() => [
     { title: 'Tipos de documentos', href: adminDocumentTypesIndex.url() },
     { title: 'Avaliadores', href: adminEvaluatorsIndex.url() },
     { title: 'Candidatos', href: adminCandidatesIndex.url() },
-    { title: 'Relatórios', href: adminReportsIndex.url(), comingSoon: true },
+    { title: 'Relatórios', href: adminReportsIndex.url() },
 ]);
 
 const candidateNavSections = computed<NavSection[]>(() => [
