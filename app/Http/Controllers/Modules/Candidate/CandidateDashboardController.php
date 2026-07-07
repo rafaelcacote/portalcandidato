@@ -40,25 +40,34 @@ class CandidateDashboardController extends Controller
             ApplicationStatus::EmAnalise->value,
         ];
 
-        $inscricoesEmAndamentoCount = Application::query()
-            ->where('user_id', $userId)
-            ->whereIn('status', $ongoingStatuses)
-            ->count();
-
-        $inscricoesEmAndamento = Application::query()
+        $ongoingApplications = Application::query()
             ->where('user_id', $userId)
             ->whereIn('status', $ongoingStatuses)
             ->with('selectionProcess:id,titulo,status,inscricao_inicio_em,inscricao_fim_em')
             ->latest('updated_at')
-            ->limit(5)
-            ->get()
-            ->map(fn (Application $application): array => [
-                'id' => $application->id,
-                'status' => $application->status,
-                'process_title' => $application->selectionProcess?->titulo ?? 'Processo',
-                'numero_protocolo' => $application->numero_protocolo,
-                'inscricao_aberta' => $application->canModifyEnrollment(),
-            ])
+            ->get();
+
+        $mapOngoingApplication = fn (Application $application): array => [
+            'id' => $application->id,
+            'status' => $application->status,
+            'process_title' => $application->selectionProcess?->titulo ?? 'Processo',
+            'numero_protocolo' => $application->numero_protocolo,
+            'inscricao_aberta' => $application->canModifyEnrollment(),
+        ];
+
+        $allOngoingApplications = $ongoingApplications
+            ->map($mapOngoingApplication)
+            ->all();
+
+        $actionableOngoingApplications = $ongoingApplications
+            ->filter(fn (Application $application): bool => $application->countsAsOngoingEnrollment());
+
+        $inscricoesEmAndamentoCount = $actionableOngoingApplications->count();
+
+        $inscricoesEmAndamento = $actionableOngoingApplications
+            ->take(5)
+            ->map($mapOngoingApplication)
+            ->values()
             ->all();
 
         $pendenciasInscricaoCount = Application::query()
@@ -137,19 +146,20 @@ class CandidateDashboardController extends Controller
                 'kind' => 'documento_recusado',
                 'detail' => $first['motivo_recusa'],
             ];
-        } elseif ($inscricoesEmAndamento !== []) {
-            $first = collect($inscricoesEmAndamento)->first(
+        } elseif ($allOngoingApplications !== []) {
+            $first = collect($allOngoingApplications)->first(
                 fn (array $row): bool => $row['status'] === ApplicationStatus::Rascunho->value
                     && ($row['inscricao_aberta'] ?? true),
-            ) ?? collect($inscricoesEmAndamento)->first(
+            ) ?? collect($allOngoingApplications)->first(
                 fn (array $row): bool => $row['inscricao_aberta'] ?? true,
-            ) ?? $inscricoesEmAndamento[0];
+            ) ?? $allOngoingApplications[0];
             $highlightApplication = [
                 'id' => $first['id'],
                 'process_title' => $first['process_title'],
                 'status' => $first['status'],
                 'numero_protocolo' => $first['numero_protocolo'],
-                'kind' => 'rascunho',
+                'kind' => ($first['inscricao_aberta'] ?? true) ? 'rascunho' : 'inscricao_encerrada',
+                'inscricao_aberta' => $first['inscricao_aberta'] ?? true,
                 'detail' => null,
             ];
         }

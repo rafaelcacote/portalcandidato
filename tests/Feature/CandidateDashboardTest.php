@@ -54,6 +54,66 @@ test('candidate sees dashboard inertia props', function (): void {
             ->where('highlight_application', null));
 });
 
+test('dashboard highlights closed draft enrollment as encerrada', function (): void {
+    Role::findOrCreate('candidato', 'web');
+
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Edital Encerrado',
+        'descricao' => 'D',
+        'status' => 'encerrado',
+    ]);
+
+    Application::query()->create([
+        'user_id' => $candidate->id,
+        'selection_process_id' => $process->id,
+        'status' => ApplicationStatus::Rascunho->value,
+    ]);
+
+    $this->actingAs($candidate)
+        ->get(route('candidate.dashboard'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Candidate/Dashboard')
+            ->where('summary.inscricoes_em_andamento', 0)
+            ->where('highlight_application.kind', 'inscricao_encerrada')
+            ->where('highlight_application.inscricao_aberta', false)
+            ->where('highlight_application.process_title', 'Edital Encerrado')
+            ->has('inscricoes_em_andamento', 0)
+        );
+});
+
+test('dashboard does not count closed draft enrollments in summary', function (): void {
+    Role::findOrCreate('candidato', 'web');
+
+    $candidate = User::factory()->create(['email_verified_at' => now()]);
+    $candidate->assignRole('candidato');
+
+    foreach (['Edital Encerrado A', 'Edital Encerrado B'] as $title) {
+        $process = SelectionProcess::query()->create([
+            'titulo' => $title,
+            'descricao' => 'D',
+            'status' => 'encerrado',
+        ]);
+
+        Application::query()->create([
+            'user_id' => $candidate->id,
+            'selection_process_id' => $process->id,
+            'status' => ApplicationStatus::Rascunho->value,
+        ]);
+    }
+
+    $this->actingAs($candidate)
+        ->get(route('candidate.dashboard'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('summary.inscricoes_em_andamento', 0)
+            ->has('inscricoes_em_andamento', 0)
+        );
+});
+
 test('dashboard summary counts applications and rejected documents', function (): void {
     Role::findOrCreate('candidato', 'web');
 
