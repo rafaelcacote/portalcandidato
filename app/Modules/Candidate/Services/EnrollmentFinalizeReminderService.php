@@ -17,7 +17,9 @@ class EnrollmentFinalizeReminderService
         return Application::query()
             ->where('user_id', $userId)
             ->where('status', ApplicationStatus::Rascunho->value)
-            ->exists();
+            ->with('selectionProcess')
+            ->get()
+            ->contains(fn (Application $application): bool => $application->canModifyEnrollment());
     }
 
     public function entryMessage(): string

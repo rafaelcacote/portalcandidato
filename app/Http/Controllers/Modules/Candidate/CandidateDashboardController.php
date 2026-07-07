@@ -48,7 +48,7 @@ class CandidateDashboardController extends Controller
         $inscricoesEmAndamento = Application::query()
             ->where('user_id', $userId)
             ->whereIn('status', $ongoingStatuses)
-            ->with('selectionProcess:id,titulo')
+            ->with('selectionProcess:id,titulo,status,inscricao_inicio_em,inscricao_fim_em')
             ->latest('updated_at')
             ->limit(5)
             ->get()
@@ -57,6 +57,7 @@ class CandidateDashboardController extends Controller
                 'status' => $application->status,
                 'process_title' => $application->selectionProcess?->titulo ?? 'Processo',
                 'numero_protocolo' => $application->numero_protocolo,
+                'inscricao_aberta' => $application->canModifyEnrollment(),
             ])
             ->all();
 
@@ -137,8 +138,12 @@ class CandidateDashboardController extends Controller
                 'detail' => $first['motivo_recusa'],
             ];
         } elseif ($inscricoesEmAndamento !== []) {
-            $first = collect($inscricoesEmAndamento)->firstWhere('status', ApplicationStatus::Rascunho->value)
-                ?? $inscricoesEmAndamento[0];
+            $first = collect($inscricoesEmAndamento)->first(
+                fn (array $row): bool => $row['status'] === ApplicationStatus::Rascunho->value
+                    && ($row['inscricao_aberta'] ?? true),
+            ) ?? collect($inscricoesEmAndamento)->first(
+                fn (array $row): bool => $row['inscricao_aberta'] ?? true,
+            ) ?? $inscricoesEmAndamento[0];
             $highlightApplication = [
                 'id' => $first['id'],
                 'process_title' => $first['process_title'],

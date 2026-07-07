@@ -139,6 +139,7 @@ const props = withDefaults(
             lines: Array<{ value: string; label: string }>;
             advisors: Record<string, string[]>;
         };
+        inscricaoAberta?: boolean;
     }>(),
     {
         ufs: () => [],
@@ -148,6 +149,7 @@ const props = withDefaults(
         appeals: () => [],
         hasOpenRecursoWindow: false,
         researchLineOptions: () => ({ lines: [], advisors: {} }),
+        inscricaoAberta: true,
     },
 );
 
@@ -215,7 +217,7 @@ function goToEnrollmentStep(step: string): void {
         currentStep === 4 &&
         step !== '4' &&
         targetStep > 4 &&
-        !isFinalized.value &&
+        !isFormLocked.value &&
         !canLeaveResearchLineStep.value
     ) {
         showAcademicPendingSaveWarning.value = true;
@@ -227,7 +229,7 @@ function goToEnrollmentStep(step: string): void {
         currentStep === 5 &&
         step !== '5' &&
         targetStep > 5 &&
-        !isFinalized.value &&
+        !isFormLocked.value &&
         titleGroupsUploadRef.value?.hasPendingUploads()
     ) {
         showTitlesPendingUploadWarning.value = true;
@@ -240,7 +242,7 @@ function goToEnrollmentStep(step: string): void {
         currentStep === 6 &&
         step !== '6' &&
         targetStep > 6 &&
-        !isFinalized.value &&
+        !isFormLocked.value &&
         requiredDocumentsListRef.value?.hasPendingUploads()
     ) {
         showRequiredPendingUploadWarning.value = true;
@@ -316,6 +318,10 @@ const isFinalized = computed(
     () =>
         props.application.finalizada_em != null &&
         props.application.status !== 'rascunho',
+);
+
+const isFormLocked = computed(
+    () => isFinalized.value || !props.inscricaoAberta,
 );
 
 const concorrePcdAtivo = computed(() => {
@@ -445,11 +451,11 @@ const researchLineHasUnsavedChanges = computed(() => {
 const showResearchLineSavedPanel = computed(
     () =>
         step3Committed.value &&
-        (!isEditingResearchLineStep.value || isFinalized.value),
+        (!isEditingResearchLineStep.value || isFormLocked.value),
 );
 
 const showResearchLineForm = computed(
-    () => !isFinalized.value && isEditingResearchLineStep.value,
+    () => !isFormLocked.value && isEditingResearchLineStep.value,
 );
 
 const savedResearchLineLabel = computed(() => {
@@ -476,7 +482,7 @@ const researchLineFormCanSave = computed(() => {
 });
 
 const canLeaveResearchLineStep = computed(() => {
-    if (isFinalized.value) {
+    if (isFormLocked.value) {
         return false;
     }
 
@@ -492,7 +498,7 @@ const canLeaveResearchLineStep = computed(() => {
 });
 
 function startEditingResearchLine(): void {
-    if (isFinalized.value) {
+    if (isFormLocked.value) {
         return;
     }
 
@@ -514,7 +520,7 @@ function cancelEditingResearchLine(): void {
 }
 
 const canLeavePcdStep = computed(() => {
-    if (isFinalized.value) {
+    if (isFormLocked.value) {
         return false;
     }
 
@@ -534,7 +540,7 @@ const concorreVinculoAtivo = computed(() => {
 });
 
 const canLeaveVinculoStep = computed(() => {
-    if (isFinalized.value) {
+    if (isFormLocked.value) {
         return false;
     }
 
@@ -935,7 +941,24 @@ function formatDate(dateStr: string | null | undefined): string {
                 :updated-at="application.updated_at ?? null"
                 :is-saving="isSavingEnrollment"
                 :is-finalized="isFinalized"
+                :inscricao-aberta="inscricaoAberta"
             />
+
+            <Message
+                v-if="!inscricaoAberta && !isFinalized"
+                severity="warn"
+                :closable="false"
+                class="rounded-xl"
+            >
+                <div class="flex flex-col gap-1 text-sm">
+                    <span class="font-semibold">Inscrições encerradas</span>
+                    <span>
+                        O prazo de inscrições para este processo foi encerrado.
+                        Você pode visualizar os dados preenchidos, mas não é
+                        mais possível alterar ou finalizar esta inscrição.
+                    </span>
+                </div>
+            </Message>
 
             <div
                 v-if="isFinalized"
@@ -1003,7 +1026,7 @@ function formatDate(dateStr: string | null | undefined): string {
                     <ApplicationModernStepper
                         :model-value="activeStep"
                         :step-states="stepNavigatorStates"
-                        :is-read-only="isFinalized"
+                        :is-read-only="isFormLocked"
                         @update:model-value="goToEnrollmentStep"
                     >
                         <!-- Etapa 1: PcD -->
@@ -1046,7 +1069,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 type="radio"
                                                 class="h-4 w-4 accent-primary"
                                                 :value="false"
-                                                :disabled="isFinalized"
+                                                :disabled="isFormLocked"
                                             />
                                             Não
                                         </label>
@@ -1061,7 +1084,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 type="radio"
                                                 class="h-4 w-4 accent-primary"
                                                 :value="true"
-                                                :disabled="isFinalized"
+                                                :disabled="isFormLocked"
                                             />
                                             Sim
                                         </label>
@@ -1073,7 +1096,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                             icon="pi pi-save"
                                             size="small"
                                             :loading="stepOneForm.processing"
-                                            :disabled="isFinalized"
+                                            :disabled="isFormLocked"
                                             @click="savePcdStep"
                                         />
                                     </div>
@@ -1121,7 +1144,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         description="Documento conforme modelo constante no edital do processo."
                                         accepted-hint="Formatos aceitos: PDF, JPG ou PNG · até 10 MB."
                                         :uploaded-doc="pcdDeclaracaoDoc"
-                                        :is-finalized="isFinalized"
+                                        :is-finalized="isFormLocked"
                                     />
                                     <CandidaturaSpecialDocumentUpload
                                         :application-id="application.id"
@@ -1130,7 +1153,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         description="Laudo médico ou parecer de equipe multiprofissional, emitido nos últimos três meses, ou laudo com validade indeterminada; ou Carteira de Pessoa com Deficiência (PcD)."
                                         accepted-hint="Formatos aceitos: PDF, JPG ou PNG · até 10 MB."
                                         :uploaded-doc="pcdLaudoDoc"
-                                        :is-finalized="isFinalized"
+                                        :is-finalized="isFormLocked"
                                     />
                                 </div>
 
@@ -1138,7 +1161,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                     class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                                 >
                                     <div
-                                        v-if="!step1Committed && !isFinalized"
+                                        v-if="!step1Committed && !isFormLocked"
                                         class="min-w-0 flex-1"
                                     >
                                         <Message
@@ -1157,7 +1180,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                             icon-pos="right"
                                             size="small"
                                             :disabled="
-                                                isFinalized || !canLeavePcdStep
+                                                isFormLocked || !canLeavePcdStep
                                             "
                                             @click="activeStep = '2'"
                                         />
@@ -1206,7 +1229,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 type="radio"
                                                 class="h-4 w-4 accent-primary"
                                                 :value="false"
-                                                :disabled="isFinalized"
+                                                :disabled="isFormLocked"
                                             />
                                             Não
                                         </label>
@@ -1221,7 +1244,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 type="radio"
                                                 class="h-4 w-4 accent-primary"
                                                 :value="true"
-                                                :disabled="isFinalized"
+                                                :disabled="isFormLocked"
                                             />
                                             Sim
                                         </label>
@@ -1233,7 +1256,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                             icon="pi pi-save"
                                             size="small"
                                             :loading="stepTwoForm.processing"
-                                            :disabled="isFinalized"
+                                            :disabled="isFormLocked"
                                             @click="saveVinculoStep"
                                         />
                                     </div>
@@ -1257,7 +1280,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                     class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                                 >
                                     <div
-                                        v-if="!step2Committed && !isFinalized"
+                                        v-if="!step2Committed && !isFormLocked"
                                         class="min-w-0 flex-1"
                                     >
                                         <Message
@@ -1286,7 +1309,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                             icon-pos="right"
                                             size="small"
                                             :disabled="
-                                                isFinalized ||
+                                                isFormLocked ||
                                                 !canLeaveVinculoStep
                                             "
                                             @click="activeStep = '3'"
@@ -1304,7 +1327,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                     :user="profileUser"
                                     :ufs="props.ufs"
                                     :must-verify-email="props.mustVerifyEmail"
-                                    :is-finalized="isFinalized"
+                                    :is-finalized="isFormLocked"
                                     :enrollment-step="3"
                                 />
 
@@ -1324,7 +1347,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         icon="pi pi-arrow-right"
                                         icon-pos="right"
                                         size="small"
-                                        :disabled="isFinalized"
+                                        :disabled="isFormLocked"
                                         @click="activeStep = '4'"
                                     />
                                 </div>
@@ -1355,7 +1378,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                     <Message
                                         v-if="
                                             showResearchLineSavedPanel &&
-                                            !isFinalized
+                                            !isFormLocked
                                         "
                                         severity="success"
                                         :closable="false"
@@ -1412,7 +1435,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         </div>
 
                                         <div
-                                            v-if="!isFinalized"
+                                            v-if="!isFormLocked"
                                             class="flex justify-end"
                                         >
                                             <Button
@@ -1581,7 +1604,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                     <div
                                         v-if="
                                             !canLeaveResearchLineStep &&
-                                            !isFinalized
+                                            !isFormLocked
                                         "
                                         class="min-w-0 flex-1"
                                     >
@@ -1622,7 +1645,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         icon-pos="right"
                                         size="small"
                                         :disabled="
-                                            isFinalized ||
+                                            isFormLocked ||
                                             !canLeaveResearchLineStep
                                         "
                                         @click="activeStep = '5'"
@@ -1666,7 +1689,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                     "
                                     :documents="application.documents ?? []"
                                     :application-id="application.id"
-                                    :is-finalized="isFinalized"
+                                    :is-finalized="isFormLocked"
                                     @pending-uploads-change="
                                         onTitlesPendingUploadsChange
                                     "
@@ -1709,7 +1732,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         icon="pi pi-arrow-right"
                                         icon-pos="right"
                                         size="small"
-                                        :disabled="isFinalized"
+                                        :disabled="isFormLocked"
                                         @click="goToEnrollmentStep('6')"
                                     />
                                 </div>
@@ -1727,7 +1750,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                 </div>
                                 <p class="mb-5 text-sm text-muted-foreground">
                                     Envie os documentos exigidos pelo processo.
-                                    <template v-if="!isFinalized">
+                                    <template v-if="!isFormLocked">
                                         Documentos recusados precisam ser
                                         reenviados antes de finalizar a
                                         inscrição.
@@ -1746,7 +1769,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                     "
                                     :uploaded-docs="application.documents ?? []"
                                     :application-id="application.id"
-                                    :is-finalized="isFinalized"
+                                    :is-finalized="isFormLocked"
                                     @pending-uploads-change="
                                         onRequiredPendingUploadsChange
                                     "
@@ -1810,7 +1833,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                 <div class="flex flex-col gap-4">
                                     <div
                                         v-if="
-                                            !isFinalized &&
+                                            !isFormLocked &&
                                             pendingRequiredDocs.length > 0
                                         "
                                         class="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/20"
@@ -1862,7 +1885,7 @@ function formatDate(dateStr: string | null | undefined): string {
 
                                     <div
                                         v-if="
-                                            !isFinalized &&
+                                            !isFormLocked &&
                                             pendingPcdDocLabels.length > 0
                                         "
                                         class="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/20"
@@ -1988,7 +2011,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                             </p>
                                             <div class="flex gap-1">
                                                 <Button
-                                                    v-if="!isFinalized"
+                                                    v-if="!isFormLocked"
                                                     label="Editar perfil"
                                                     icon="pi pi-user"
                                                     text
@@ -1998,7 +2021,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                     "
                                                 />
                                                 <Button
-                                                    v-if="!isFinalized"
+                                                    v-if="!isFormLocked"
                                                     label="Ver etapa"
                                                     icon="pi pi-arrow-left"
                                                     text
@@ -2035,7 +2058,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 Linha de Pesquisa e Orientador
                                             </p>
                                             <Button
-                                                v-if="!isFinalized"
+                                                v-if="!isFormLocked"
                                                 label="Editar"
                                                 icon="pi pi-pencil"
                                                 text
@@ -2077,7 +2100,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 Comprovantes de títulos
                                             </p>
                                             <Button
-                                                v-if="!isFinalized"
+                                                v-if="!isFormLocked"
                                                 label="Gerenciar"
                                                 icon="pi pi-pencil"
                                                 text
@@ -2134,7 +2157,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                                 Documentos enviados
                                             </p>
                                             <Button
-                                                v-if="!isFinalized"
+                                                v-if="!isFormLocked"
                                                 label="Gerenciar"
                                                 icon="pi pi-upload"
                                                 text
@@ -2262,7 +2285,7 @@ function formatDate(dateStr: string | null | undefined): string {
                                         </ul>
                                     </div>
 
-                                    <div v-if="!isFinalized">
+                                    <div v-if="!isFormLocked">
                                         <Message
                                             severity="info"
                                             :closable="false"

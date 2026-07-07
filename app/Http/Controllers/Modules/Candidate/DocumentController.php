@@ -57,7 +57,9 @@ class DocumentController extends Controller
         abort_unless(
             $application->canModifyDocuments(),
             422,
-            'Não é possível enviar ou alterar documentos após a finalização da inscrição.',
+            $application->canModifyEnrollment()
+                ? 'Não é possível enviar ou alterar documentos após a finalização da inscrição.'
+                : 'As inscrições para este processo seletivo estão encerradas.',
         );
 
         $validated = $request->validated();
@@ -134,7 +136,9 @@ class DocumentController extends Controller
         abort_unless(
             $application->canModifyDocuments(),
             422,
-            'Não é possível enviar ou alterar documentos após a finalização da inscrição.',
+            $application->canModifyEnrollment()
+                ? 'Não é possível enviar ou alterar documentos após a finalização da inscrição.'
+                : 'As inscrições para este processo seletivo estão encerradas.',
         );
 
         if ($document->caminho !== '') {
