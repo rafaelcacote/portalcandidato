@@ -13,12 +13,21 @@ defineProps<{
         process_title: string;
         status: string;
         numero_protocolo: string | null;
-        kind: 'pendencia' | 'rascunho' | 'documento_recusado';
+        kind:
+            | 'pendencia'
+            | 'rascunho'
+            | 'documento_recusado'
+            | 'inscricao_encerrada';
+        inscricao_aberta?: boolean;
         detail?: string | null;
     } | null;
 }>();
 
-function statusLabel(status: string): string {
+function statusLabel(status: string, kind: string): string {
+    if (kind === 'inscricao_encerrada') {
+        return 'Inscrições encerradas';
+    }
+
     const labels: Record<string, string> = {
         rascunho: 'Rascunho',
         em_analise: 'Em análise',
@@ -40,6 +49,13 @@ function highlightBadge(kind: string): { label: string; class: string } {
         return {
             label: 'Documento recusado',
             class: 'bg-red-50 text-red-700 ring-1 ring-red-200',
+        };
+    }
+
+    if (kind === 'inscricao_encerrada') {
+        return {
+            label: 'Inscrições encerradas',
+            class: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/70',
         };
     }
 
@@ -99,9 +115,11 @@ function highlightBadge(kind: string): { label: string; class: string } {
                     >
                         <span class="size-2 rounded-full bg-emerald-500" />
                         {{
-                            inscricoesEmAndamento === 1
-                                ? '1 inscrição em andamento'
-                                : `${inscricoesEmAndamento} inscrições em andamento`
+                            inscricoesEmAndamento === 0
+                                ? 'Nenhuma inscrição em andamento'
+                                : inscricoesEmAndamento === 1
+                                  ? '1 inscrição em andamento'
+                                  : `${inscricoesEmAndamento} inscrições em andamento`
                         }}
                     </span>
                     <span
@@ -174,7 +192,10 @@ function highlightBadge(kind: string): { label: string; class: string } {
                                     class="mt-0.5 text-xs font-medium text-slate-700"
                                 >
                                     {{
-                                        statusLabel(highlightApplication.status)
+                                        statusLabel(
+                                            highlightApplication.status,
+                                            highlightApplication.kind,
+                                        )
                                     }}
                                     <span
                                         v-if="

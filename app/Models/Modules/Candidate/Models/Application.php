@@ -5,6 +5,7 @@ namespace App\Models\Modules\Candidate\Models;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Evaluator\Models\ApplicationEvaluation;
 use App\Models\User;
+use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -73,6 +74,19 @@ class Application extends Model
         }
 
         return $selectionProcess->inscricaoEstaAberta();
+    }
+
+    public function countsAsOngoingEnrollment(): bool
+    {
+        if ($this->status === ApplicationStatus::EmAnalise->value) {
+            return true;
+        }
+
+        if ($this->status === ApplicationStatus::Rascunho->value) {
+            return $this->canModifyEnrollment();
+        }
+
+        return false;
     }
 
     public function canModifyDocuments(): bool

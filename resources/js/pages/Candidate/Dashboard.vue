@@ -30,6 +30,7 @@ defineProps<{
         status: string;
         process_title: string;
         numero_protocolo: string | null;
+        inscricao_aberta?: boolean;
     }>;
     pendencias_inscricao: Array<{
         id: number;
@@ -49,7 +50,12 @@ defineProps<{
         process_title: string;
         status: string;
         numero_protocolo: string | null;
-        kind: 'pendencia' | 'rascunho' | 'documento_recusado';
+        kind:
+            | 'pendencia'
+            | 'rascunho'
+            | 'documento_recusado'
+            | 'inscricao_encerrada';
+        inscricao_aberta?: boolean;
         detail?: string | null;
     } | null;
 }>();
