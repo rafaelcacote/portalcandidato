@@ -12,6 +12,7 @@ defineProps<{
         status: string;
         process_title: string;
         numero_protocolo: string | null;
+        inscricao_aberta?: boolean;
     }>;
 }>();
 
@@ -84,9 +85,17 @@ function statusClasses(status: string): string {
                         </div>
                         <span
                             class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                            :class="statusClasses(row.status)"
+                            :class="
+                                row.inscricao_aberta === false
+                                    ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/70'
+                                    : statusClasses(row.status)
+                            "
                         >
-                            {{ statusLabel(row.status) }}
+                            {{
+                                row.inscricao_aberta === false
+                                    ? 'Inscrições encerradas'
+                                    : statusLabel(row.status)
+                            }}
                         </span>
                     </div>
                 </Link>

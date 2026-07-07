@@ -15,7 +15,14 @@ class StoreApplicationStepRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $application = $this->application();
+
+        if ($application === null) {
+            return false;
+        }
+
+        return $this->user()?->id === $application->user_id
+            && $application->canModifyEnrollment();
     }
 
     /**

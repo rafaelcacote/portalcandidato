@@ -15,6 +15,8 @@ class ApplicationService
 {
     public function saveStep(Application $application, int $step, array $payload): Application
     {
+        $this->assertEnrollmentIsOpen($application);
+
         if ($step === 1 && array_key_exists('concorre_vagas_pcd', $payload) && $payload['concorre_vagas_pcd'] === false) {
             $this->deletePcdDocuments($application);
         }
@@ -31,6 +33,7 @@ class ApplicationService
 
     public function submit(Application $application): Application
     {
+        $this->assertEnrollmentIsOpen($application);
         $this->assertSubmitRequirements($application);
 
         $application->update([
@@ -40,6 +43,15 @@ class ApplicationService
         ]);
 
         return $application->refresh();
+    }
+
+    private function assertEnrollmentIsOpen(Application $application): void
+    {
+        if (! $application->canModifyEnrollment()) {
+            throw ValidationException::withMessages([
+                'submit' => 'As inscrições para este processo seletivo estão encerradas.',
+            ]);
+        }
     }
 
     private function assertSubmitRequirements(Application $application): void

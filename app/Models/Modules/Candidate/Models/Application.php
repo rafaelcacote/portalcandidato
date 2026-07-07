@@ -62,9 +62,22 @@ class Application extends Model
             && $this->status !== 'rascunho';
     }
 
+    public function canModifyEnrollment(): bool
+    {
+        $this->loadMissing('selectionProcess');
+
+        $selectionProcess = $this->selectionProcess;
+
+        if ($selectionProcess === null) {
+            return false;
+        }
+
+        return $selectionProcess->inscricaoEstaAberta();
+    }
+
     public function canModifyDocuments(): bool
     {
-        return ! $this->isFinalizedForDocuments();
+        return ! $this->isFinalizedForDocuments() && $this->canModifyEnrollment();
     }
 
     public function isEvaluable(): bool

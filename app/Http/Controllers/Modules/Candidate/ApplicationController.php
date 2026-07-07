@@ -38,6 +38,7 @@ class ApplicationController extends Controller
                     ? route('candidate.applications.documents.comprovante', $application)
                     : null,
             );
+            $application->setAttribute('inscricao_aberta', $application->canModifyEnrollment());
 
             return $application;
         });
@@ -80,6 +81,7 @@ class ApplicationController extends Controller
 
         return Inertia::render('Candidate/Applications/Show', [
             'application' => $application,
+            'inscricaoAberta' => $application->canModifyEnrollment(),
             'ufs' => BrazilianStates::abbreviations(),
             'mustVerifyEmail' => $user instanceof MustVerifyEmail
                 && $user->mustVerifyEmailAddress(),

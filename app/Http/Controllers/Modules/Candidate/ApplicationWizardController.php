@@ -30,6 +30,12 @@ class ApplicationWizardController extends Controller
             return redirect()->route('profile.edit');
         }
 
+        if (! $selectionProcess->inscricaoEstaAberta()) {
+            InertiaToast::error('As inscrições para este processo seletivo estão encerradas.');
+
+            return redirect()->route('candidate.processes.index');
+        }
+
         $application = Application::query()->firstOrCreate([
             'selection_process_id' => $selectionProcess->id,
             'user_id' => auth()->id(),
@@ -41,6 +47,11 @@ class ApplicationWizardController extends Controller
     public function storeStep(Application $application, int $step, StoreApplicationStepRequest $request): RedirectResponse
     {
         abort_if($application->user_id !== auth()->id(), 403);
+        abort_unless(
+            $application->canModifyEnrollment(),
+            403,
+            'As inscrições para este processo seletivo estão encerradas.',
+        );
 
         $application = $this->applicationService->saveStep(
             $application,
@@ -70,6 +81,11 @@ class ApplicationWizardController extends Controller
     public function submit(Application $application): RedirectResponse
     {
         abort_if($application->user_id !== auth()->id(), 403);
+        abort_unless(
+            $application->canModifyEnrollment(),
+            403,
+            'As inscrições para este processo seletivo estão encerradas.',
+        );
 
         $application = $this->applicationService->submit($application);
         Mail::to(auth()->user())->queue(new InscricaoConfirmada($application));

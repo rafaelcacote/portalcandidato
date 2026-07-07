@@ -25,6 +25,7 @@ defineProps<{
     updatedAt?: string | null;
     isSaving?: boolean;
     isFinalized: boolean;
+    inscricaoAberta?: boolean;
 }>();
 </script>
 
@@ -153,7 +154,7 @@ defineProps<{
                 </div>
 
                 <div
-                    v-if="!isFinalized"
+                    v-if="!isFinalized && inscricaoAberta !== false"
                     class="flex items-start gap-3 rounded-xl border border-dashed border-primary/25 bg-primary/[0.04] p-4 dark:border-primary/30 dark:bg-primary/[0.07]"
                 >
                     <div
