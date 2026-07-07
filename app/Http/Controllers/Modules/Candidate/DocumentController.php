@@ -27,11 +27,14 @@ class DocumentController extends Controller
             ->get();
 
         $applications = Application::query()
-            ->with(['selectionProcess', 'selectionProcess.requiredDocuments'])
+            ->with([
+                'selectionProcess:id,titulo,status,inscricao_inicio_em,inscricao_fim_em',
+                'selectionProcess.requiredDocuments',
+            ])
             ->where('user_id', $request->user()->id)
             ->latest()
             ->get()
-            ->map(fn (Application $app) => [
+            ->map(fn (Application $app): array => [
                 'id' => $app->id,
                 'numero_protocolo' => $app->numero_protocolo,
                 'selection_process' => $app->selectionProcess ? [
@@ -43,11 +46,15 @@ class DocumentController extends Controller
                     'nome' => $d->nome,
                     'obrigatorio' => $d->obrigatorio,
                 ])->values() ?? [],
+                'can_upload_documents' => $app->canModifyDocuments(),
             ]);
 
         return Inertia::render('Candidate/Documents/Index', [
             'documents' => $documents,
             'applications' => $applications,
+            'has_uploadable_applications' => $applications->contains(
+                fn (array $application): bool => $application['can_upload_documents'],
+            ),
         ]);
     }
 

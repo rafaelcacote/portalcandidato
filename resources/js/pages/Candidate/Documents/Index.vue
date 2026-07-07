@@ -48,7 +48,9 @@ const props = defineProps<{
             nome: string;
             obrigatorio: boolean;
         }>;
+        can_upload_documents?: boolean;
     }>;
+    has_uploadable_applications?: boolean;
 }>();
 
 const statusSeverity: Record<
@@ -85,6 +87,16 @@ const statusFilterOptions = [
     { label: 'Aprovado', value: 'aprovado' },
     { label: 'Recusado', value: 'recusado' },
 ];
+
+const uploadableApplications = computed(() =>
+    props.applications.filter((a) => a.can_upload_documents !== false),
+);
+
+const canUploadDocuments = computed(
+    () =>
+        props.has_uploadable_applications ??
+        uploadableApplications.value.length > 0,
+);
 
 const appFilterOptions = computed(() => [
     { label: 'Todas as inscrições', value: '' },
@@ -124,7 +136,7 @@ const uploadForm = useForm({
 });
 
 const selectedAppOptions = computed(() =>
-    props.applications.map((a) => ({
+    uploadableApplications.value.map((a) => ({
         label: a.selection_process?.titulo ?? `Inscrição #${a.id}`,
         value: a.id,
     })),
@@ -135,7 +147,9 @@ const selectedAppRequiredDocs = computed(() => {
         return [];
     }
 
-    const app = props.applications.find((a) => a.id === selectedAppId.value);
+    const app = uploadableApplications.value.find(
+        (a) => a.id === selectedAppId.value,
+    );
 
     return (app?.required_documents ?? []).map((d) => ({
         label: d.nome + (d.obrigatorio ? ' *' : ''),
@@ -169,6 +183,16 @@ const doUpload = (): void => {
         },
     });
 };
+
+function applicationAllowsUpload(applicationId: number | null | undefined): boolean {
+    if (applicationId == null) {
+        return false;
+    }
+
+    const application = props.applications.find((a) => a.id === applicationId);
+
+    return application?.can_upload_documents !== false;
+}
 
 function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('pt-BR', {
@@ -212,12 +236,22 @@ function mimeIcon(mime: string | null | undefined): string {
                     :icon="FolderOpen"
                 />
                 <Button
+                    v-if="canUploadDocuments"
                     label="Enviar documento"
                     icon="pi pi-upload"
                     size="small"
                     @click="showUploadDialog = true"
                 />
             </div>
+
+            <Message
+                v-if="!canUploadDocuments && applications.length > 0"
+                severity="warn"
+                :closable="false"
+            >
+                As inscrições para os processos vinculados aos seus documentos
+                estão encerradas. Não é possível enviar ou reenviar documentos.
+            </Message>
 
             <!-- Alerta de documentos recusados -->
             <Message
@@ -236,8 +270,12 @@ function mimeIcon(mime: string | null | undefined): string {
                         recusado{{ recusadosCount > 1 ? 's' : '' }}
                     </span>
                     <span class="text-sm">
-                        Revise os motivos de recusa e reenvie os arquivos para
-                        continuar com suas inscrições.
+                        Revise os motivos de recusa e reenvie os arquivos
+                        {{
+                            canUploadDocuments
+                                ? 'para continuar com suas inscrições.'
+                                : 'nas inscrições com prazo aberto.'
+                        }}
                     </span>
                 </div>
             </Message>
@@ -314,6 +352,7 @@ function mimeIcon(mime: string | null | undefined): string {
                     </p>
                 </div>
                 <Button
+                    v-if="canUploadDocuments"
                     label="Enviar documento"
                     icon="pi pi-upload"
                     size="small"
@@ -463,7 +502,12 @@ function mimeIcon(mime: string | null | undefined): string {
                                     size="small"
                                 />
                                 <Button
-                                    v-if="doc.status === 'recusado'"
+                                    v-if="
+                                        doc.status === 'recusado' &&
+                                        applicationAllowsUpload(
+                                            doc.application?.id,
+                                        )
+                                    "
                                     v-tooltip.top="'Reenviar documento'"
                                     icon="pi pi-refresh"
                                     severity="warn"
