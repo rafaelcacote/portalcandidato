@@ -25,6 +25,7 @@ function createEnrolledCandidateApplication(
     string $name,
     string $cpf,
     string $protocol,
+    ?array $dadosInscricao = null,
 ): Application {
     Role::findOrCreate('candidato', 'web');
 
@@ -41,6 +42,7 @@ function createEnrolledCandidateApplication(
         'status' => ApplicationStatus::Inscrita->value,
         'numero_protocolo' => $protocol,
         'finalizada_em' => now(),
+        'dados_inscricao' => $dadosInscricao,
     ]);
 }
 
@@ -91,7 +93,13 @@ test('admin sees enrolled candidates with masked cpf', function (): void {
         'status' => 'ativo',
     ]);
 
-    createEnrolledCandidateApplication($process, 'João Souza', '52998224725', '2026-0042');
+    createEnrolledCandidateApplication(
+        $process,
+        'João Souza',
+        '52998224725',
+        '2026-0042',
+        ['step_3' => validApplicationStep3Payload()],
+    );
 
     $this->actingAs($admin)
         ->get(route('admin.reports.processes.show', $process))
@@ -102,8 +110,35 @@ test('admin sees enrolled candidates with masked cpf', function (): void {
             ->has('candidates.data', 1)
             ->where('candidates.data.0.numero_protocolo', '2026-0042')
             ->where('candidates.data.0.nome_completo', 'João Souza')
+            ->where(
+                'candidates.data.0.linha_pesquisa_label',
+                'Linha de Pesquisa 1 - Tecnologias Sociais e Educativas como Instrumentos para Promoção da Saúde',
+            )
             ->where('candidates.data.0.cpf_mascarado', '529.***.***-25')
             ->missing('candidates.data.0.cpf')
+        );
+});
+
+test('enrolled candidates report is ordered alphabetically by name', function (): void {
+    $admin = createAdminUser();
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Processo Ordenação 2026',
+        'descricao' => 'Descrição',
+        'status' => 'ativo',
+    ]);
+
+    createEnrolledCandidateApplication($process, 'Zélia Andrade', '39053344705', '2026-0003');
+    createEnrolledCandidateApplication($process, 'Ana Costa', '11144477735', '2026-0001');
+    createEnrolledCandidateApplication($process, 'Bruno Lima', '15350946056', '2026-0002');
+
+    $this->actingAs($admin)
+        ->get(route('admin.reports.processes.show', $process))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('candidates.data.0.nome_completo', 'Ana Costa')
+            ->where('candidates.data.1.nome_completo', 'Bruno Lima')
+            ->where('candidates.data.2.nome_completo', 'Zélia Andrade')
         );
 });
 

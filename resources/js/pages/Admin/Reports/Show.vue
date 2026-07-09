@@ -38,6 +38,7 @@ const props = defineProps<{
             id: number;
             numero_protocolo: string | null;
             nome_completo: string | null;
+            linha_pesquisa_label: string | null;
             cpf_mascarado: string | null;
         }>;
         links: Array<{ url: string | null; label: string; active: boolean }>;
@@ -160,6 +161,12 @@ const openPrint = (): void => {
                         <Column
                             field="nome_completo"
                             header="Nome completo"
+                            header-class="px-4 py-3 min-w-0"
+                            body-class="px-4 py-3 min-w-0"
+                        />
+                        <Column
+                            field="linha_pesquisa_label"
+                            header="Linha"
                             header-class="px-4 py-3 min-w-0"
                             body-class="px-4 py-3 min-w-0"
                         />

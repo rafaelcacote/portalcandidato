@@ -16,6 +16,7 @@ use App\Http\Controllers\Modules\Admin\ProcessTypeController;
 use App\Http\Controllers\Modules\Admin\ReportController;
 use App\Http\Controllers\Modules\Admin\SelectionProcessController;
 use App\Http\Controllers\Modules\Admin\SelectionProcessEditalController;
+use App\Http\Controllers\Modules\Admin\TemporaryMissingResearchLineController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'role:admin'])
@@ -112,4 +113,16 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             ->name('reports.processes.show');
         Route::get('reports/processes/{selectionProcess}/print', [ReportController::class, 'print'])
             ->name('reports.processes.print');
+
+        // TEMPORÁRIO — remover após preencher linhas de pesquisa dos candidatos legados.
+        Route::prefix('temporary/missing-research-lines')
+            ->name('temporary.missing-research-lines.')
+            ->group(function (): void {
+                Route::get('/', [TemporaryMissingResearchLineController::class, 'index'])
+                    ->name('index');
+                Route::get('processes/{selectionProcess}', [TemporaryMissingResearchLineController::class, 'show'])
+                    ->name('processes.show');
+                Route::put('applications/{application}', [TemporaryMissingResearchLineController::class, 'update'])
+                    ->name('applications.update');
+            });
     });

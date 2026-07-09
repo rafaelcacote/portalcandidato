@@ -4,7 +4,9 @@ namespace App\Modules\Admin\Services;
 
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
+use App\Models\User;
 use App\Modules\Candidate\Services\ApplicationPdfService;
+use App\Modules\Candidate\Support\ResearchLineCatalog;
 use App\Modules\Shared\Enums\ApplicationStatus;
 use App\Rules\Cpf;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -30,17 +32,37 @@ class ReportPdfService
     }
 
     /**
-     * @return Collection<int, array{numero_protocolo: string|null, nome_completo: string|null, cpf_mascarado: string|null}>
+     * @return Collection<int, array{numero_protocolo: string|null, nome_completo: string|null, linha_pesquisa_label: string|null, cpf_mascarado: string|null}>
      */
     public function enrolledCandidates(SelectionProcess $selectionProcess): Collection
     {
         return $this->enrolledApplicationsQuery($selectionProcess)
             ->get()
-            ->map(fn (Application $application): array => [
-                'numero_protocolo' => $application->numero_protocolo,
-                'nome_completo' => $application->user?->name,
-                'cpf_mascarado' => Cpf::maskForDisplay($application->user?->cpf),
-            ]);
+            ->map(fn (Application $application): array => $this->mapApplicationForReport($application));
+    }
+
+    /**
+     * @return array{
+     *     numero_protocolo: string|null,
+     *     nome_completo: string|null,
+     *     linha_pesquisa_label: string|null,
+     *     cpf_mascarado: string|null
+     * }
+     */
+    public function mapApplicationForReport(Application $application): array
+    {
+        $step3 = $application->dados_inscricao['step_3'] ?? null;
+        $researchLineSummary = ResearchLineCatalog::summaryFromStepData(
+            is_array($step3) ? $step3 : null,
+            $application->selection_process_id,
+        );
+
+        return [
+            'numero_protocolo' => $application->numero_protocolo,
+            'nome_completo' => $application->user?->name,
+            'linha_pesquisa_label' => $researchLineSummary['linha_pesquisa_label'] ?? null,
+            'cpf_mascarado' => Cpf::maskForDisplay($application->user?->cpf),
+        ];
     }
 
     /**
@@ -54,7 +76,12 @@ class ReportPdfService
             ->whereNotNull('numero_protocolo')
             ->where('status', '!=', ApplicationStatus::Rascunho->value)
             ->with('user:id,name,cpf')
-            ->orderBy('numero_protocolo');
+            ->orderBy(
+                User::query()
+                    ->select('name')
+                    ->whereColumn('users.id', 'applications.user_id')
+                    ->limit(1),
+            );
     }
 
     private function filename(SelectionProcess $selectionProcess): string
