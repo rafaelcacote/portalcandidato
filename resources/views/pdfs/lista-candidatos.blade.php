@@ -10,13 +10,16 @@
     <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
         <thead>
             <tr>
-                <th style="border: 1px solid #cbd5e1; padding: 8px 10px; background: #f8fafc; text-align: left; width: 22%;">
+                <th style="border: 1px solid #cbd5e1; padding: 8px 10px; background: #f8fafc; text-align: left; width: 16%;">
                     Cod. inscrição
                 </th>
                 <th style="border: 1px solid #cbd5e1; padding: 8px 10px; background: #f8fafc; text-align: left;">
                     Nome completo
                 </th>
-                <th style="border: 1px solid #cbd5e1; padding: 8px 10px; background: #f8fafc; text-align: left; width: 22%;">
+                <th style="border: 1px solid #cbd5e1; padding: 8px 10px; background: #f8fafc; text-align: left; width: 28%;">
+                    Linha
+                </th>
+                <th style="border: 1px solid #cbd5e1; padding: 8px 10px; background: #f8fafc; text-align: left; width: 16%;">
                     CPF
                 </th>
             </tr>
@@ -31,12 +34,15 @@
                         {{ $candidate['nome_completo'] }}
                     </td>
                     <td style="border: 1px solid #cbd5e1; padding: 8px 10px; vertical-align: top;">
+                        {{ $candidate['linha_pesquisa_label'] ?? '—' }}
+                    </td>
+                    <td style="border: 1px solid #cbd5e1; padding: 8px 10px; vertical-align: top;">
                         {{ $candidate['cpf_mascarado'] }}
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3" style="border: 1px solid #cbd5e1; padding: 16px 10px; text-align: center; color: #64748b;">
+                    <td colspan="4" style="border: 1px solid #cbd5e1; padding: 16px 10px; text-align: center; color: #64748b;">
                         Nenhum candidato inscrito neste processo.
                     </td>
                 </tr>

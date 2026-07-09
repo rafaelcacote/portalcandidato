@@ -14,6 +14,7 @@ import { formatDateTimeBR } from '@/lib/utils';
 import { home } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as reportsIndex } from '@/routes/admin/reports';
+import { index as missingResearchLinesIndex } from '@/routes/admin/temporary/missing-research-lines';
 import { show as reportProcessShow } from '@/routes/admin/reports/processes';
 
 defineOptions({
@@ -79,6 +80,15 @@ const filteredProcesses = computed(() => {
                     description="Consulte a listagem de candidatos inscritos por processo seletivo."
                     :icon="ClipboardCheck"
                 />
+                <Link :href="missingResearchLinesIndex().url">
+                    <Button
+                        label="Linhas pendentes (temp.)"
+                        icon="pi pi-exclamation-triangle"
+                        severity="warn"
+                        outlined
+                        size="small"
+                    />
+                </Link>
             </div>
 
             <Card class="overflow-hidden rounded-xl shadow-md">

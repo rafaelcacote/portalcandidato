@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Modules\Admin\Services\ReportPdfService;
 use App\Modules\Shared\Enums\ApplicationStatus;
-use App\Rules\Cpf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -55,9 +54,7 @@ class ReportController extends Controller
             ->withQueryString()
             ->through(fn ($application): array => [
                 'id' => $application->id,
-                'numero_protocolo' => $application->numero_protocolo,
-                'nome_completo' => $application->user?->name,
-                'cpf_mascarado' => Cpf::maskForDisplay($application->user?->cpf),
+                ...$this->reportPdfService->mapApplicationForReport($application),
             ]);
 
         return Inertia::render('Admin/Reports/Show', [
