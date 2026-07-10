@@ -60,9 +60,20 @@ class ReportPdfService
         return [
             'numero_protocolo' => $application->numero_protocolo,
             'nome_completo' => $application->user?->name,
-            'linha_pesquisa_label' => $researchLineSummary['linha_pesquisa_label'] ?? null,
+            'linha_pesquisa_label' => $this->shortResearchLineLabel(
+                $researchLineSummary['linha_pesquisa_label'] ?? null,
+            ),
             'cpf_mascarado' => Cpf::maskForDisplay($application->user?->cpf),
         ];
+    }
+
+    private function shortResearchLineLabel(?string $label): ?string
+    {
+        if ($label === null || trim($label) === '') {
+            return null;
+        }
+
+        return trim(explode(' - ', $label, 2)[0]);
     }
 
     /**

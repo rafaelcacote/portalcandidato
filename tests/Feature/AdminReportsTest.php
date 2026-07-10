@@ -110,10 +110,7 @@ test('admin sees enrolled candidates with masked cpf', function (): void {
             ->has('candidates.data', 1)
             ->where('candidates.data.0.numero_protocolo', '2026-0042')
             ->where('candidates.data.0.nome_completo', 'João Souza')
-            ->where(
-                'candidates.data.0.linha_pesquisa_label',
-                'Linha de Pesquisa 1 - Tecnologias Sociais e Educativas como Instrumentos para Promoção da Saúde',
-            )
+            ->where('candidates.data.0.linha_pesquisa_label', 'Linha de Pesquisa 1')
             ->where('candidates.data.0.cpf_mascarado', '529.***.***-25')
             ->missing('candidates.data.0.cpf')
         );

@@ -77,6 +77,7 @@
             width: 280px;
             margin: 48px auto 8px;
         }
+        @stack('styles')
     </style>
 </head>
 <body>
