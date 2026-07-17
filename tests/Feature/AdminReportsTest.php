@@ -3,6 +3,7 @@
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
 use App\Models\User;
+use App\Modules\Admin\Services\ReportPdfService;
 use App\Modules\Shared\Enums\ApplicationStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -188,6 +189,172 @@ test('admin can generate enrolled candidates print pdf', function (): void {
         ->get(route('admin.reports.processes.print', $process))
         ->assertSuccessful()
         ->assertHeader('content-type', 'application/pdf');
+});
+
+test('admin can filter enrolled candidates report by pcd vinculo linha status and orientador', function (): void {
+    $admin = createAdminUser();
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Processo Filtros 2026',
+        'descricao' => 'Descrição',
+        'status' => 'ativo',
+    ]);
+
+    createEnrolledCandidateApplication(
+        $process,
+        'Ana PcD Sem Vínculo',
+        '52998224725',
+        '2026-0001',
+        [
+            'step_1' => ['concorre_vagas_pcd' => true],
+            'step_2' => ['concorre_vagas_sem_vinculo' => true],
+            'step_3' => [
+                'linha_pesquisa' => 'linha_1',
+                'orientador' => 'Dra. Aldalice Aguiar de Souza',
+            ],
+        ],
+    );
+
+    createEnrolledCandidateApplication(
+        $process,
+        'Bruno Sem PcD Com Vínculo',
+        '39053344705',
+        '2026-0002',
+        [
+            'step_1' => ['concorre_vagas_pcd' => false],
+            'step_2' => ['concorre_vagas_sem_vinculo' => false],
+            'step_3' => [
+                'linha_pesquisa' => 'linha_2',
+                'orientador' => 'Dra. Amélia Nunes Sicsú',
+            ],
+        ],
+    );
+
+    $approved = createEnrolledCandidateApplication(
+        $process,
+        'Carla Aprovada Linha 1',
+        '11144477735',
+        '2026-0003',
+        [
+            'step_1' => ['concorre_vagas_pcd' => true],
+            'step_2' => ['concorre_vagas_sem_vinculo' => false],
+            'step_3' => [
+                'linha_pesquisa' => 'linha_1',
+                'orientador' => 'Dra. Aldalice Aguiar de Souza',
+            ],
+        ],
+    );
+    $approved->update(['status' => ApplicationStatus::Aprovada->value]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.reports.processes.show', [
+            'selectionProcess' => $process,
+            'pcd' => 'sim',
+            'vinculo' => 'sem_vinculo',
+            'linha_pesquisa' => 'linha_1',
+            'orientador' => 'Dra. Aldalice Aguiar de Souza',
+            'status' => ApplicationStatus::Inscrita->value,
+        ]))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/Reports/Show')
+            ->has('candidates.data', 1)
+            ->where('candidates.data.0.nome_completo', 'Ana PcD Sem Vínculo')
+            ->where('filters.pcd', 'sim')
+            ->where('filters.vinculo', 'sem_vinculo')
+            ->where('filters.linha_pesquisa', 'linha_1')
+            ->where('filters.orientador', 'Dra. Aldalice Aguiar de Souza')
+            ->where('filters.status', ApplicationStatus::Inscrita->value)
+            ->has('filterOptions.pcd')
+            ->has('filterOptions.vinculo')
+            ->has('filterOptions.status')
+            ->has('filterOptions.researchLines.lines')
+        );
+});
+
+test('admin print pdf respects enrolled candidates report filters', function (): void {
+    $admin = createAdminUser();
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Processo PDF Filtros 2026',
+        'descricao' => 'Descrição',
+        'status' => 'ativo',
+    ]);
+
+    createEnrolledCandidateApplication(
+        $process,
+        'Ana PcD',
+        '52998224725',
+        '2026-0101',
+        [
+            'step_1' => ['concorre_vagas_pcd' => true],
+            'step_2' => ['concorre_vagas_sem_vinculo' => true],
+            'step_3' => validApplicationStep3Payload(),
+        ],
+    );
+
+    createEnrolledCandidateApplication(
+        $process,
+        'Bruno Sem PcD',
+        '39053344705',
+        '2026-0102',
+        [
+            'step_1' => ['concorre_vagas_pcd' => false],
+            'step_2' => ['concorre_vagas_sem_vinculo' => false],
+            'step_3' => [
+                'linha_pesquisa' => 'linha_2',
+                'orientador' => 'Dra. Amélia Nunes Sicsú',
+            ],
+        ],
+    );
+
+    $this->actingAs($admin)
+        ->get(route('admin.reports.processes.print', [
+            'selectionProcess' => $process,
+            'pcd' => 'sim',
+        ]))
+        ->assertSuccessful()
+        ->assertHeader('content-type', 'application/pdf');
+});
+
+test('report pdf filter labels describe active filters for print', function (): void {
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Processo Labels PDF 2026',
+        'descricao' => 'Descrição',
+        'status' => 'ativo',
+    ]);
+
+    $labels = app(ReportPdfService::class)
+        ->activeFilterLabels($process, [
+            'pcd' => 'sim',
+            'vinculo' => 'sem_vinculo',
+            'linha_pesquisa' => 'linha_1',
+            'orientador' => 'Dra. Aldalice Aguiar de Souza',
+            'status' => ApplicationStatus::Inscrita->value,
+            'search' => 'Ana',
+        ]);
+
+    expect($labels)->toBe([
+        'Busca: Ana',
+        'PcD: candidatos que concorrem às vagas PcD',
+        'Vínculo empregatício: sem vínculo',
+        'Linha de pesquisa: Linha de Pesquisa 1',
+        'Orientador: Dra. Aldalice Aguiar de Souza',
+        'Status da inscrição: Inscrita',
+    ]);
+});
+
+test('report pdf filter labels are empty when no filters are applied', function (): void {
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Processo Sem Filtro PDF 2026',
+        'descricao' => 'Descrição',
+        'status' => 'ativo',
+    ]);
+
+    $labels = app(ReportPdfService::class)
+        ->activeFilterLabels($process, []);
+
+    expect($labels)->toBe([]);
 });
 
 test('non-admin cannot print enrolled candidates report', function (): void {

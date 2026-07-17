@@ -56,6 +56,24 @@
         margin: 0 0 12px;
         font-size: 9pt;
     }
+    .candidates-filters {
+        margin: 0 0 12px;
+        padding: 8px 10px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        font-size: 8.5pt;
+    }
+    .candidates-filters strong {
+        display: block;
+        margin-bottom: 4px;
+    }
+    .candidates-filters ul {
+        margin: 0;
+        padding-left: 16px;
+    }
+    .candidates-filters li {
+        margin: 0 0 2px;
+    }
     .footer {
         margin-top: 24px;
         padding-top: 10px;
@@ -65,7 +83,20 @@
 
 @section('content')
     <p class="candidates-meta"><strong>Processo:</strong> {{ $process->titulo }}</p>
-    <p class="candidates-meta-last"><strong>Data:</strong> {{ $generatedAt }}</p>
+    <p class="candidates-meta"><strong>Data:</strong> {{ $generatedAt }}</p>
+
+    @if (! empty($appliedFilters))
+        <div class="candidates-filters">
+            <strong>Filtros aplicados nesta listagem:</strong>
+            <ul>
+                @foreach ($appliedFilters as $filterLabel)
+                    <li>{{ $filterLabel }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @else
+        <p class="candidates-meta-last"><strong>Filtros:</strong> nenhum (todos os candidatos inscritos)</p>
+    @endif
 
     <table class="candidates-list">
         <thead>
