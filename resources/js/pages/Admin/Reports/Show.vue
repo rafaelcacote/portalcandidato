@@ -6,7 +6,8 @@ import Card from 'primevue/card';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
-import { ref } from 'vue';
+import Select from 'primevue/select';
+import { computed, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { home } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
@@ -27,6 +28,11 @@ defineOptions({
     },
 });
 
+type FilterOption = {
+    value: string;
+    label: string;
+};
+
 const props = defineProps<{
     selectionProcess: {
         id: number;
@@ -45,27 +51,118 @@ const props = defineProps<{
     };
     filters: {
         search: string;
+        pcd: string;
+        vinculo: string;
+        linha_pesquisa: string;
+        orientador: string;
+        status: string;
+    };
+    filterOptions: {
+        pcd: FilterOption[];
+        vinculo: FilterOption[];
+        status: FilterOption[];
+        researchLines: {
+            lines: FilterOption[];
+            advisors: Record<string, string[]>;
+        };
     };
 }>();
 
 const searchTerm = ref(props.filters.search);
+const pcdFilter = ref(props.filters.pcd || 'all');
+const vinculoFilter = ref(props.filters.vinculo || 'all');
+const linhaFilter = ref(props.filters.linha_pesquisa || '');
+const orientadorFilter = ref(props.filters.orientador || '');
+const statusFilter = ref(props.filters.status || 'all');
 
-const applySearch = (): void => {
+const lineOptions = computed(() => [
+    { value: '', label: 'Todas' },
+    ...props.filterOptions.researchLines.lines,
+]);
+
+const advisorOptions = computed(() => {
+    const advisors =
+        linhaFilter.value === ''
+            ? Object.values(props.filterOptions.researchLines.advisors).flat()
+            : (props.filterOptions.researchLines.advisors[linhaFilter.value] ??
+              []);
+
+    const uniqueAdvisors = [...new Set(advisors)];
+
+    return [
+        { value: '', label: 'Todos' },
+        ...uniqueAdvisors.map((name) => ({
+            value: name,
+            label: name,
+        })),
+    ];
+});
+
+watch(linhaFilter, () => {
+    const validAdvisors = advisorOptions.value.map((option) => option.value);
+
+    if (!validAdvisors.includes(orientadorFilter.value)) {
+        orientadorFilter.value = '';
+    }
+});
+
+watch(
+    () => props.filters,
+    (filters) => {
+        searchTerm.value = filters.search;
+        pcdFilter.value = filters.pcd || 'all';
+        vinculoFilter.value = filters.vinculo || 'all';
+        linhaFilter.value = filters.linha_pesquisa || '';
+        orientadorFilter.value = filters.orientador || '';
+        statusFilter.value = filters.status || 'all';
+    },
+);
+
+const filterQuery = (): Record<string, string | undefined> => ({
+    search: searchTerm.value || undefined,
+    pcd: pcdFilter.value !== 'all' ? pcdFilter.value : undefined,
+    vinculo: vinculoFilter.value !== 'all' ? vinculoFilter.value : undefined,
+    linha_pesquisa: linhaFilter.value || undefined,
+    orientador: orientadorFilter.value || undefined,
+    status: statusFilter.value !== 'all' ? statusFilter.value : undefined,
+});
+
+const applyFilters = (): void => {
+    router.get(reportProcessShow(props.selectionProcess.id).url, filterQuery(), {
+        preserveState: true,
+        replace: true,
+    });
+};
+
+const clearFilters = (): void => {
+    searchTerm.value = '';
+    pcdFilter.value = 'all';
+    vinculoFilter.value = 'all';
+    linhaFilter.value = '';
+    orientadorFilter.value = '';
+    statusFilter.value = 'all';
+
     router.get(
         reportProcessShow(props.selectionProcess.id).url,
-        { search: searchTerm.value || undefined },
+        {},
         { preserveState: true, replace: true },
     );
 };
 
-const clearSearch = (): void => {
-    searchTerm.value = '';
-    applySearch();
-};
-
 const openPrint = (): void => {
+    const url = reportProcessPrint(props.selectionProcess.id).url;
+    const params = new URLSearchParams();
+
+    Object.entries(filterQuery()).forEach(([key, value]) => {
+        if (value) {
+            params.set(key, value);
+        }
+    });
+
+    const query = params.toString();
+
     window.open(
-        reportProcessPrint(props.selectionProcess.id).url,
+        query ? `${url}?${query}` : url,
         '_blank',
         'noopener,noreferrer',
     );
@@ -104,27 +201,100 @@ const openPrint = (): void => {
 
             <Card class="overflow-hidden rounded-xl shadow-md">
                 <template #content>
-                    <div
-                        class="mb-5 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto]"
-                    >
-                        <InputText
-                            v-model="searchTerm"
-                            placeholder="Buscar por nome ou código de inscrição"
-                            @keyup.enter="applySearch"
-                        />
-                        <Button
-                            label="Buscar"
-                            icon="pi pi-search"
-                            size="small"
-                            @click="applySearch"
-                        />
-                        <Button
-                            label="Limpar"
-                            severity="secondary"
-                            outlined
-                            size="small"
-                            @click="clearSearch"
-                        />
+                    <div class="mb-5 flex flex-col gap-3">
+                        <div
+                            class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"
+                        >
+                            <label class="flex flex-col gap-2">
+                                <span class="text-sm font-medium"
+                                    >Busca</span
+                                >
+                                <InputText
+                                    v-model="searchTerm"
+                                    placeholder="Nome ou código de inscrição"
+                                    class="w-full"
+                                    @keyup.enter="applyFilters"
+                                />
+                            </label>
+                            <label class="flex flex-col gap-2">
+                                <span class="text-sm font-medium">PcD</span>
+                                <Select
+                                    v-model="pcdFilter"
+                                    :options="filterOptions.pcd"
+                                    option-label="label"
+                                    option-value="value"
+                                    placeholder="Selecione"
+                                    class="w-full"
+                                />
+                            </label>
+                            <label class="flex flex-col gap-2">
+                                <span class="text-sm font-medium"
+                                    >Vínculo empregatício</span
+                                >
+                                <Select
+                                    v-model="vinculoFilter"
+                                    :options="filterOptions.vinculo"
+                                    option-label="label"
+                                    option-value="value"
+                                    placeholder="Selecione"
+                                    class="w-full"
+                                />
+                            </label>
+                            <label class="flex flex-col gap-2">
+                                <span class="text-sm font-medium"
+                                    >Linha de pesquisa</span
+                                >
+                                <Select
+                                    v-model="linhaFilter"
+                                    :options="lineOptions"
+                                    option-label="label"
+                                    option-value="value"
+                                    placeholder="Selecione"
+                                    class="w-full"
+                                />
+                            </label>
+                            <label class="flex flex-col gap-2">
+                                <span class="text-sm font-medium"
+                                    >Orientador</span
+                                >
+                                <Select
+                                    v-model="orientadorFilter"
+                                    :options="advisorOptions"
+                                    option-label="label"
+                                    option-value="value"
+                                    placeholder="Selecione"
+                                    class="w-full"
+                                />
+                            </label>
+                            <label class="flex flex-col gap-2">
+                                <span class="text-sm font-medium"
+                                    >Status da inscrição</span
+                                >
+                                <Select
+                                    v-model="statusFilter"
+                                    :options="filterOptions.status"
+                                    option-label="label"
+                                    option-value="value"
+                                    placeholder="Selecione"
+                                    class="w-full"
+                                />
+                            </label>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <Button
+                                label="Filtrar"
+                                icon="pi pi-filter"
+                                size="small"
+                                @click="applyFilters"
+                            />
+                            <Button
+                                label="Limpar"
+                                severity="secondary"
+                                outlined
+                                size="small"
+                                @click="clearFilters"
+                            />
+                        </div>
                     </div>
 
                     <DataTable
@@ -141,13 +311,14 @@ const openPrint = (): void => {
                                     class="pi pi-users text-3xl text-muted-foreground"
                                 />
                                 <p class="text-base font-medium">
-                                    Nenhum candidato inscrito
+                                    Nenhum candidato encontrado
                                 </p>
                                 <p
                                     class="max-w-md text-sm text-muted-foreground"
                                 >
-                                    Este processo ainda não possui candidatos com
-                                    inscrição finalizada.
+                                    Ajuste os filtros ou verifique se este
+                                    processo possui candidatos com inscrição
+                                    finalizada.
                                 </p>
                             </div>
                         </template>

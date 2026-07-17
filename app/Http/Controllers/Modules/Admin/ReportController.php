@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Modules\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Modules\Admin\FilterEnrolledCandidatesReportRequest;
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Modules\Admin\Services\ReportPdfService;
+use App\Modules\Candidate\Support\ResearchLineCatalog;
 use App\Modules\Shared\Enums\ApplicationStatus;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -33,23 +34,14 @@ class ReportController extends Controller
         ]);
     }
 
-    public function show(SelectionProcess $selectionProcess, Request $request): Response
-    {
-        $search = $request->string('search')->trim()->toString();
+    public function show(
+        SelectionProcess $selectionProcess,
+        FilterEnrolledCandidatesReportRequest $request,
+    ): Response {
+        $filters = $request->filters();
 
         $candidates = $this->reportPdfService
-            ->enrolledApplicationsQuery($selectionProcess)
-            ->when(
-                $search,
-                fn ($query) => $query->where(function ($innerQuery) use ($search): void {
-                    $innerQuery
-                        ->where('numero_protocolo', 'like', "%{$search}%")
-                        ->orWhereHas(
-                            'user',
-                            fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"),
-                        );
-                }),
-            )
+            ->enrolledApplicationsQuery($selectionProcess, $filters)
             ->paginate(25)
             ->withQueryString()
             ->through(fn ($application): array => [
@@ -60,14 +52,70 @@ class ReportController extends Controller
         return Inertia::render('Admin/Reports/Show', [
             'selectionProcess' => $selectionProcess->only('id', 'titulo', 'status'),
             'candidates' => $candidates,
-            'filters' => [
-                'search' => $search,
-            ],
+            'filters' => $filters,
+            'filterOptions' => $this->filterOptions($selectionProcess),
         ]);
     }
 
-    public function print(SelectionProcess $selectionProcess): SymfonyResponse
+    public function print(
+        SelectionProcess $selectionProcess,
+        FilterEnrolledCandidatesReportRequest $request,
+    ): SymfonyResponse {
+        return $this->reportPdfService->inlineEnrolledCandidatesList(
+            $selectionProcess,
+            $request->filters(),
+        );
+    }
+
+    /**
+     * @return array{
+     *     pcd: list<array{value: string, label: string}>,
+     *     vinculo: list<array{value: string, label: string}>,
+     *     status: list<array{value: string, label: string}>,
+     *     researchLines: array{
+     *         lines: list<array{value: string, label: string}>,
+     *         advisors: array<string, list<string>>
+     *     }
+     * }
+     */
+    private function filterOptions(SelectionProcess $selectionProcess): array
     {
-        return $this->reportPdfService->inlineEnrolledCandidatesList($selectionProcess);
+        return [
+            'pcd' => [
+                ['value' => 'all', 'label' => 'Todos'],
+                ['value' => 'sim', 'label' => 'Sim'],
+                ['value' => 'nao', 'label' => 'Não'],
+            ],
+            'vinculo' => [
+                ['value' => 'all', 'label' => 'Todos'],
+                ['value' => 'sem_vinculo', 'label' => 'Sem vínculo empregatício'],
+                ['value' => 'com_vinculo', 'label' => 'Com vínculo empregatício'],
+            ],
+            'status' => [
+                ['value' => 'all', 'label' => 'Todos'],
+                ...collect(ApplicationStatus::cases())
+                    ->reject(fn (ApplicationStatus $status): bool => $status === ApplicationStatus::Rascunho)
+                    ->map(fn (ApplicationStatus $status): array => [
+                        'value' => $status->value,
+                        'label' => $this->statusLabel($status),
+                    ])
+                    ->values()
+                    ->all(),
+            ],
+            'researchLines' => ResearchLineCatalog::forFrontend($selectionProcess->id),
+        ];
+    }
+
+    private function statusLabel(ApplicationStatus $status): string
+    {
+        return match ($status) {
+            ApplicationStatus::Inscrita => 'Inscrita',
+            ApplicationStatus::EmAnalise => 'Em análise',
+            ApplicationStatus::Pendencia => 'Pendência',
+            ApplicationStatus::Aprovada => 'Aprovada',
+            ApplicationStatus::Reprovada => 'Reprovada',
+            ApplicationStatus::Cancelada => 'Cancelada',
+            ApplicationStatus::Rascunho => 'Rascunho',
+        };
     }
 }
