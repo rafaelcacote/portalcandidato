@@ -13,7 +13,10 @@ import Heading from '@/components/Heading.vue';
 import { formatDateTimeBR } from '@/lib/utils';
 import { home } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
-import { index as reportsIndex } from '@/routes/admin/reports';
+import {
+    evaluated as reportsEvaluated,
+    index as reportsIndex,
+} from '@/routes/admin/reports';
 import { index as missingResearchLinesIndex } from '@/routes/admin/temporary/missing-research-lines';
 import { show as reportProcessShow } from '@/routes/admin/reports/processes';
 
@@ -77,18 +80,27 @@ const filteredProcesses = computed(() => {
             <div class="flex items-start justify-between gap-8 py-3">
                 <Heading
                     title="Relatórios"
-                    description="Consulte a listagem de candidatos inscritos por processo seletivo."
+                    description="Consulte candidatos inscritos por processo ou candidatos já avaliados com nota."
                     :icon="ClipboardCheck"
                 />
-                <Link :href="missingResearchLinesIndex().url">
-                    <Button
-                        label="Linhas pendentes (temp.)"
-                        icon="pi pi-exclamation-triangle"
-                        severity="warn"
-                        outlined
-                        size="small"
-                    />
-                </Link>
+                <div class="flex shrink-0 flex-wrap gap-2">
+                    <Link :href="reportsEvaluated().url">
+                        <Button
+                            label="Candidatos avaliados"
+                            icon="pi pi-check-square"
+                            size="small"
+                        />
+                    </Link>
+                    <Link :href="missingResearchLinesIndex().url">
+                        <Button
+                            label="Linhas pendentes (temp.)"
+                            icon="pi pi-exclamation-triangle"
+                            severity="warn"
+                            outlined
+                            size="small"
+                        />
+                    </Link>
+                </div>
             </div>
 
             <Card class="overflow-hidden rounded-xl shadow-md">

@@ -109,6 +109,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::delete('evaluators/{evaluator}/assignments/{assignment}', [EvaluatorController::class, 'destroyAssignment'])
             ->name('evaluators.assignments.destroy');
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/evaluated', [ReportController::class, 'evaluated'])
+            ->name('reports.evaluated');
+        Route::get('reports/evaluated/print', [ReportController::class, 'printEvaluated'])
+            ->name('reports.evaluated.print');
         Route::get('reports/processes/{selectionProcess}', [ReportController::class, 'show'])
             ->name('reports.processes.show');
         Route::get('reports/processes/{selectionProcess}/print', [ReportController::class, 'print'])
