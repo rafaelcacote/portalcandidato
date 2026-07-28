@@ -4,7 +4,6 @@ namespace App\Modules\Admin\Services;
 
 use App\Models\Modules\Admin\Models\SelectionProcess;
 use App\Models\Modules\Candidate\Models\Application;
-use App\Models\User;
 use App\Modules\Candidate\Services\ApplicationPdfService;
 use App\Modules\Candidate\Support\ResearchLineCatalog;
 use App\Modules\Shared\Enums\EvaluationStatus;
@@ -124,12 +123,8 @@ class EvaluatedCandidatesReportService
                 $linhaPesquisa !== '',
                 fn (Builder $query) => $query->where('dados_inscricao->step_3->linha_pesquisa', $linhaPesquisa),
             )
-            ->orderBy(
-                User::query()
-                    ->select('name')
-                    ->whereColumn('users.id', 'applications.user_id')
-                    ->limit(1),
-            );
+            ->orderByDesc('nota')
+            ->orderByDesc('applications.id');
     }
 
     /**
