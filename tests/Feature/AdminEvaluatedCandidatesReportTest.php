@@ -235,6 +235,53 @@ test('admin can filter evaluated candidates by selection process and linha de pe
         );
 });
 
+test('evaluated candidates report is ordered by highest nota first', function (): void {
+    $admin = createEvaluatedReportAdmin();
+
+    $process = SelectionProcess::query()->create([
+        'titulo' => 'Processo Ordenação Avaliados',
+        'descricao' => 'Descrição',
+        'status' => 'ativo',
+        'tipo_programa' => 'mestrado',
+    ]);
+
+    createEvaluatedCandidate(
+        $process,
+        'Nota Mais Baixa',
+        '39053344705',
+        '2026-9301',
+        10.0,
+    );
+
+    createEvaluatedCandidate(
+        $process,
+        'Nota Mais Alta',
+        '11144477735',
+        '2026-9302',
+        22.5,
+    );
+
+    createEvaluatedCandidate(
+        $process,
+        'Nota Intermediária',
+        '15350946056',
+        '2026-9303',
+        15.0,
+    );
+
+    $this->actingAs($admin)
+        ->get(route('admin.reports.evaluated'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('candidates.data.0.nome_completo', 'Nota Mais Alta')
+            ->where('candidates.data.0.nota', 22.5)
+            ->where('candidates.data.1.nome_completo', 'Nota Intermediária')
+            ->where('candidates.data.1.nota', 15)
+            ->where('candidates.data.2.nome_completo', 'Nota Mais Baixa')
+            ->where('candidates.data.2.nota', 10)
+        );
+});
+
 test('admin can generate evaluated candidates print pdf with filters', function (): void {
     $admin = createEvaluatedReportAdmin();
 
