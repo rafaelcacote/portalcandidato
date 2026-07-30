@@ -32,6 +32,8 @@ export type EvaluatorApplicationDocument = {
     process_title_item_id?: number | null;
     candidatura_document_kind?: string | null;
     quantidade?: number | null;
+    data_inicio?: string | null;
+    data_fim?: string | null;
     required_document?: { nome: string; descricao?: string | null } | null;
     title_item?: EvaluatorTitleItemMeta | null;
 };

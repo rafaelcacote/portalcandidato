@@ -51,6 +51,7 @@ const props = defineProps<{
         selectionProcess?: {
             id: number;
             titulo: string;
+            inscricao_fim_em?: string | null;
             criteria?: Array<{
                 id: number;
                 nome: string;
@@ -88,6 +89,23 @@ const allDocuments = computed(() => props.application.documents ?? []);
 const sections = computed(() =>
     buildEvaluatorDocumentSections(allDocuments.value),
 );
+
+const periodWindowEnd = computed(() => {
+    const processEnd = props.application.selectionProcess?.inscricao_fim_em;
+
+    if (processEnd) {
+        return String(processEnd).slice(0, 10);
+    }
+
+    const finalized = (props.application as { finalizada_em?: string | null })
+        .finalizada_em;
+
+    if (finalized) {
+        return String(finalized).slice(0, 10);
+    }
+
+    return new Date().toISOString().slice(0, 10);
+});
 
 const searchQuery = ref('');
 const statusFilter = ref('all');
@@ -160,6 +178,9 @@ function buildInitialDocumentScores(): Array<{
                     doc,
                     scores,
                     docs,
+                    null,
+                    null,
+                    periodWindowEnd.value,
                 ),
             });
         } else {
@@ -249,7 +270,7 @@ watch(
         props.application.evaluations?.[0]?.document_scores,
         props.application.evaluations?.[0]?.pontuacao_total,
         (props.application.documents ?? [])
-            .map((d) => `${d.id}:${d.status}`)
+            .map((d) => `${d.id}:${d.status}:${d.quantidade ?? 1}`)
             .join('|'),
     ],
     () => {
@@ -310,8 +331,43 @@ function applyAutoScoreForDocument(documentId: number, status: string): void {
                   doc,
                   scoreForm.document_scores,
                   allDocuments.value,
+                  null,
+                  null,
+                  periodWindowEnd.value,
               )
             : 0;
+
+    patchDocumentScore({
+        application_document_id: documentId,
+        pontuacao: points,
+    });
+}
+
+function handleDocumentPeriodUpdated(
+    documentId: number,
+    payload: { data_inicio: string; data_fim: string; quantidade: number },
+): void {
+    const doc = allDocuments.value.find((d) => d.id === documentId);
+
+    if (doc == null || !doc.process_title_item_id) {
+        return;
+    }
+
+    if (doc.status !== 'aprovado') {
+        return;
+    }
+
+    const points = resolvePointsForApprovedTitleDocument(
+        doc,
+        scoreForm.document_scores,
+        allDocuments.value,
+        null,
+        {
+            data_inicio: payload.data_inicio,
+            data_fim: payload.data_fim,
+        },
+        periodWindowEnd.value,
+    );
 
     patchDocumentScore({
         application_document_id: documentId,
@@ -450,10 +506,13 @@ function finalize(): void {
                     :title-group-score-max="
                         titleGroupStatsForSection(section)?.max ?? null
                     "
+                    :all-documents="allDocuments"
+                    :period-window-end="periodWindowEnd"
                     @open-observation="openObservation"
                     @open-refuse="openRefuse"
                     @patch-document-score="patchDocumentScore"
                     @document-decision-saved="applyAutoScoreForDocument"
+                    @document-period-updated="handleDocumentPeriodUpdated"
                 />
 
                 <!-- Score section -->
