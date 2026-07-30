@@ -16,6 +16,8 @@ class ApplicationDocument extends Model
         'process_required_document_id',
         'process_title_item_id',
         'quantidade',
+        'data_inicio',
+        'data_fim',
         'caminho',
         'nome_arquivo',
         'mime',
@@ -31,6 +33,8 @@ class ApplicationDocument extends Model
         return [
             'validado_em' => 'datetime',
             'quantidade' => 'integer',
+            'data_inicio' => 'date',
+            'data_fim' => 'date',
         ];
     }
 

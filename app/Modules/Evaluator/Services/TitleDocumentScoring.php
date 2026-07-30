@@ -2,25 +2,41 @@
 
 namespace App\Modules\Evaluator\Services;
 
+use App\Models\Modules\Candidate\Models\Application;
 use App\Models\Modules\Candidate\Models\ApplicationDocument;
 use App\Models\Modules\Evaluator\Models\ApplicationEvaluation;
 use App\Models\Modules\Evaluator\Models\ApplicationEvaluationDocumentScore;
 
 class TitleDocumentScoring
 {
-    public function maxPointsForRow(ApplicationDocument $document): float
+    public function __construct(
+        private readonly TitlePeriodQuantityCalculator $periodQuantityCalculator,
+    ) {}
+
+    public function quantityForRow(ApplicationDocument $document, Application $application): int
     {
-        $document->loadMissing('titleItem');
+        return $this->periodQuantityCalculator->effectiveQuantityForDocument($document, $application);
+    }
+
+    public function maxPointsForRow(ApplicationDocument $document, ?Application $application = null): float
+    {
+        $document->loadMissing(['titleItem', 'application']);
 
         $item = $document->titleItem;
         if ($item === null) {
             return 0.0;
         }
 
+        $application ??= $document->application;
+        if ($application === null) {
+            return 0.0;
+        }
+
         $perUnit = (float) $item->score_per_unit;
-        $qty = max(1, (int) ($document->quantidade ?? 1));
-        if ($item->max_quantity !== null) {
-            $qty = min($qty, (int) $item->max_quantity);
+        $qty = $this->quantityForRow($document, $application);
+
+        if ($qty <= 0) {
+            return 0.0;
         }
 
         return round($perUnit * $qty, 2);
@@ -30,14 +46,19 @@ class TitleDocumentScoring
         ApplicationDocument $document,
         ApplicationEvaluation $evaluation,
     ): float {
-        $document->loadMissing('titleItem.titleGroup');
+        $document->loadMissing(['titleItem.titleGroup', 'application']);
 
         $item = $document->titleItem;
         if ($item === null || $item->titleGroup === null) {
             return 0.0;
         }
 
-        $rowMax = $this->maxPointsForRow($document);
+        $application = $document->application;
+        if ($application === null) {
+            return 0.0;
+        }
+
+        $rowMax = $this->maxPointsForRow($document, $application);
         $groupId = (int) $item->process_title_group_id;
         $groupMax = (float) $item->titleGroup->max_score;
 

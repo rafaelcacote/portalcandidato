@@ -22,6 +22,8 @@ const props = defineProps<{
     /** Soma dos pontos já atribuídos no grupo (titulação) vs. teto do grupo no edital. */
     titleGroupScoreCurrent?: number | null;
     titleGroupScoreMax?: number | null;
+    allDocuments?: EvaluatorApplicationDocument[];
+    periodWindowEnd?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -31,6 +33,10 @@ const emit = defineEmits<{
         payload: { application_document_id: number; pontuacao: number },
     ];
     'document-decision-saved': [documentId: number, status: string];
+    'document-period-updated': [
+        documentId: number,
+        payload: { data_inicio: string; data_fim: string; quantidade: number },
+    ];
 }>();
 
 const expanded = ref(false);
@@ -197,6 +203,8 @@ const sectionStats = computed(() => {
                                 !readOnly && section.kind === 'titles'
                             "
                             :document-scores="documentScores"
+                            :all-documents="allDocuments"
+                            :period-window-end="periodWindowEnd"
                             @open-observation="emit('open-observation', $event)"
                             @open-refuse="emit('open-refuse', $event)"
                             @patch-document-score="
@@ -205,6 +213,14 @@ const sectionStats = computed(() => {
                             @document-decision-saved="
                                 (id, status) =>
                                     emit('document-decision-saved', id, status)
+                            "
+                            @document-period-updated="
+                                (id, payload) =>
+                                    emit(
+                                        'document-period-updated',
+                                        id,
+                                        payload,
+                                    )
                             "
                         />
                     </tbody>

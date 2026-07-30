@@ -17,5 +17,7 @@ Route::middleware(['auth', 'verified', 'role:avaliador'])
         Route::get('candidates/{application}/photo', [CandidateReviewController::class, 'viewPhoto'])->name('candidates.photo');
         Route::get('candidates/{application}/documents/{applicationDocument}/view', [CandidateReviewController::class, 'viewDocument'])->name('candidates.documents.view');
         Route::post('candidates/{application}/documents/{applicationDocument}/decision', [CandidateReviewController::class, 'decideDocument'])->name('candidates.documents.decision');
+        Route::patch('candidates/{application}/documents/{applicationDocument}/quantidade', [CandidateReviewController::class, 'updateDocumentQuantidade'])->name('candidates.documents.quantidade');
+        Route::patch('candidates/{application}/documents/{applicationDocument}/period', [CandidateReviewController::class, 'updateDocumentPeriod'])->name('candidates.documents.period');
         Route::post('candidates/{application}/score', [ScoringController::class, 'store'])->name('candidates.score.store');
     });
