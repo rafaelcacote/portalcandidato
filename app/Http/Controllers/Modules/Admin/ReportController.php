@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Modules\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Modules\Admin\FilterCandidateContactsReportRequest;
 use App\Http\Requests\Modules\Admin\FilterEnrolledCandidatesReportRequest;
 use App\Http\Requests\Modules\Admin\FilterEvaluatedCandidatesReportRequest;
 use App\Models\Modules\Admin\Models\SelectionProcess;
+use App\Modules\Admin\Services\CandidateContactsReportService;
 use App\Modules\Admin\Services\EvaluatedCandidatesReportService;
 use App\Modules\Admin\Services\ReportPdfService;
 use App\Modules\Candidate\Support\ResearchLineCatalog;
@@ -19,6 +21,7 @@ class ReportController extends Controller
     public function __construct(
         private ReportPdfService $reportPdfService,
         private EvaluatedCandidatesReportService $evaluatedCandidatesReportService,
+        private CandidateContactsReportService $candidateContactsReportService,
     ) {}
 
     public function index(): Response
@@ -61,6 +64,30 @@ class ReportController extends Controller
     public function printEvaluated(FilterEvaluatedCandidatesReportRequest $request): SymfonyResponse
     {
         return $this->evaluatedCandidatesReportService->inlineEvaluatedCandidatesList(
+            $request->filters(),
+        );
+    }
+
+    public function contacts(FilterCandidateContactsReportRequest $request): Response
+    {
+        $filters = $request->filters();
+
+        $candidates = $this->candidateContactsReportService
+            ->query($filters)
+            ->paginate(25)
+            ->withQueryString()
+            ->through(fn ($application): array => $this->candidateContactsReportService->mapApplication($application));
+
+        return Inertia::render('Admin/Reports/Contacts', [
+            'candidates' => $candidates,
+            'filters' => $filters,
+            'filterOptions' => $this->candidateContactsReportService->filterOptions(),
+        ]);
+    }
+
+    public function printContacts(FilterCandidateContactsReportRequest $request): SymfonyResponse
+    {
+        return $this->candidateContactsReportService->inlineContactsList(
             $request->filters(),
         );
     }

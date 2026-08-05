@@ -14,7 +14,7 @@ import { formatDateTimeBR } from '@/lib/utils';
 import { home } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import {
-    evaluated as reportsEvaluated,
+    contacts as reportsContacts,
     index as reportsIndex,
 } from '@/routes/admin/reports';
 import { index as missingResearchLinesIndex } from '@/routes/admin/temporary/missing-research-lines';
@@ -80,15 +80,16 @@ const filteredProcesses = computed(() => {
             <div class="flex items-start justify-between gap-8 py-3">
                 <Heading
                     title="Relatórios"
-                    description="Consulte candidatos inscritos por processo ou candidatos já avaliados com nota."
+                    description="Consulte candidatos inscritos, avaliados ou a lista de contatos com e-mail."
                     :icon="ClipboardCheck"
                 />
                 <div class="flex shrink-0 flex-wrap gap-2">
-                    <Link :href="reportsEvaluated().url">
+                    <Link :href="reportsContacts().url">
                         <Button
-                            label="Candidatos avaliados"
-                            icon="pi pi-check-square"
+                            label="Contatos (e-mail)"
+                            icon="pi pi-envelope"
                             size="small"
+                            outlined
                         />
                     </Link>
                     <Link :href="missingResearchLinesIndex().url">

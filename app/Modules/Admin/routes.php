@@ -113,6 +113,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             ->name('reports.evaluated');
         Route::get('reports/evaluated/print', [ReportController::class, 'printEvaluated'])
             ->name('reports.evaluated.print');
+        Route::get('reports/contacts', [ReportController::class, 'contacts'])
+            ->name('reports.contacts');
+        Route::get('reports/contacts/print', [ReportController::class, 'printContacts'])
+            ->name('reports.contacts.print');
         Route::get('reports/processes/{selectionProcess}', [ReportController::class, 'show'])
             ->name('reports.processes.show');
         Route::get('reports/processes/{selectionProcess}/print', [ReportController::class, 'print'])
