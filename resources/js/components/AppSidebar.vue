@@ -45,7 +45,11 @@ import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminCandidatesIndex } from '@/routes/admin/candidates';
 import { index as adminEvaluatorsIndex } from '@/routes/admin/evaluators';
 import { index as adminProcessesIndex } from '@/routes/admin/processes';
-import { index as adminReportsIndex } from '@/routes/admin/reports';
+import {
+    contacts as adminReportsContacts,
+    evaluated as adminReportsEvaluated,
+    index as adminReportsIndex,
+} from '@/routes/admin/reports';
 import { index as adminDocumentTypesIndex } from '@/routes/admin/support-tables/document-types';
 import { index as adminTitleTypesIndex } from '@/routes/admin/support-tables/title-types';
 import { dashboard as candidateDashboard } from '@/routes/candidate';
@@ -140,6 +144,20 @@ const adminNavSections = computed<NavSection[]>(() => [
                 title: 'Relatórios',
                 href: adminReportsIndex.url(),
                 icon: ClipboardCheck,
+                children: [
+                    {
+                        title: 'Candidatos inscritos',
+                        href: adminReportsIndex.url(),
+                    },
+                    {
+                        title: 'Candidatos avaliados',
+                        href: adminReportsEvaluated.url(),
+                    },
+                    {
+                        title: 'Contatos (e-mail)',
+                        href: adminReportsContacts.url(),
+                    },
+                ],
             },
         ],
     },
